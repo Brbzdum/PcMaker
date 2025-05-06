@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
 import java.util.Set;
+import ru.compshp.model.enums.UserRole;
 
 @Data
 @Entity
@@ -16,24 +17,25 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 50)
     private String name;
 
     @Column(nullable = false)
-    private Boolean active;
+    private Boolean active = true;
 
     @Column(name = "activation_code")
     private String activationCode;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String password;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @ElementCollection
+    @ElementCollection(targetClass = UserRole.class, fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
+    @Column(name = "role")
     private Set<UserRole> roles;
 
     // TODO: Добавить метод для проверки роли пользователя

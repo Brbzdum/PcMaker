@@ -2,6 +2,7 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 
 @Data
 @Entity
@@ -10,18 +11,18 @@ public class ConfigComponent {
     @EmbeddedId
     private ConfigComponentId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("configId")
     @JoinColumn(name = "config_id")
     private PCConfiguration configuration;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer quantity = 1;
 
     // TODO: Добавить метод для проверки совместимости с другими компонентами
     // TODO: Добавить метод для расчета стоимости компонента с учетом количества
@@ -31,7 +32,7 @@ public class ConfigComponent {
 
 @Embeddable
 @Data
-class ConfigComponentId implements java.io.Serializable {
+class ConfigComponentId implements Serializable {
     private Long configId;
     private Long productId;
 } 

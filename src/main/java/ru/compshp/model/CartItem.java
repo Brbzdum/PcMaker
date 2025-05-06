@@ -2,6 +2,7 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 
 @Data
 @Entity
@@ -10,12 +11,12 @@ public class CartItem {
     @EmbeddedId
     private CartItemId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("cartId")
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
@@ -31,7 +32,7 @@ public class CartItem {
 
 @Embeddable
 @Data
-class CartItemId implements java.io.Serializable {
+class CartItemId implements Serializable {
     private Long cartId;
     private Long productId;
 } 

@@ -2,6 +2,7 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import ru.compshp.model.enums.ComponentType;
 
 @Data
 @Entity
@@ -22,6 +23,7 @@ public class CompatibilityRule {
     @Column(name = "check_condition", columnDefinition = "jsonb", nullable = false)
     private String checkCondition;
 
+    @Column(columnDefinition = "TEXT")
     private String description;
 
     // TODO: Добавить метод для проверки условия совместимости

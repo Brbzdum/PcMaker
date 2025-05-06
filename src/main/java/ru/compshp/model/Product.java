@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import ru.compshp.model.enums.ProductCategory;
+import ru.compshp.model.enums.ComponentType;
 
 @Data
 @Entity
@@ -13,10 +15,10 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 100)
     private String title;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
 
     @Column(nullable = false, precision = 15, scale = 2)
@@ -25,7 +27,7 @@ public class Product {
     @Column(name = "purchase_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal purchasePrice;
 
-    @Column(name = "image_path")
+    @Column(name = "image_path", length = 255)
     private String imagePath;
 
     @Column(name = "created_at")
@@ -34,7 +36,7 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "manufacturer_id", nullable = false)
     private Manufacturer manufacturer;
 

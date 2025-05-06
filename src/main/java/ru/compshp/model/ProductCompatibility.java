@@ -12,20 +12,20 @@ public class ProductCompatibility {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id_source", nullable = false)
     private Product sourceProduct;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id_target", nullable = false)
     private Product targetProduct;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "rule_id")
     private CompatibilityRule rule;
 
     @Column(nullable = false)
-    private Boolean valid;
+    private Boolean valid = true;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

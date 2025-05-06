@@ -2,6 +2,7 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
@@ -11,12 +12,12 @@ public class OrderItem {
     @EmbeddedId
     private OrderItemId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("orderId")
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
@@ -35,7 +36,7 @@ public class OrderItem {
 
 @Embeddable
 @Data
-class OrderItemId implements java.io.Serializable {
+class OrderItemId implements Serializable {
     private Long orderId;
     private Long productId;
 } 

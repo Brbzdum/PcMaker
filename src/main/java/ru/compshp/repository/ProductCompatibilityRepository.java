@@ -2,8 +2,13 @@ package ru.compshp.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import ru.compshp.model.ProductCompatibility;
+import ru.compshp.model.Product;
+import ru.compshp.model.CompatibilityRule;
+import java.util.List;
 
 // TODO: Репозиторий для совместимости продуктов
 public interface ProductCompatibilityRepository extends JpaRepository<ProductCompatibility, Long> {
-    // TODO: Методы поиска по продуктам и правилам
+    List<ProductCompatibility> findBySourceProduct(Product sourceProduct);
+    List<ProductCompatibility> findByTargetProduct(Product targetProduct);
+    List<ProductCompatibility> findByRule(CompatibilityRule rule);
 } 
