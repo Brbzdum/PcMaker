@@ -9,4 +9,5 @@ import java.util.List;
 public interface CompatibilityRuleRepository extends JpaRepository<CompatibilityRule, Long> {
     List<CompatibilityRule> findBySourceType(ComponentType sourceType);
     List<CompatibilityRule> findByTargetType(ComponentType targetType);
+    List<CompatibilityRule> findBySourceTypeAndTargetType(ComponentType sourceType, ComponentType targetType);
 } 
