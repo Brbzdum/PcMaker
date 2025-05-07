@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Заказ отправлен</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Ваш заказ отправлен!</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Мы рады сообщить, что ваш заказ #<span th:text="${order.id}">123</span> отправлен.</p>
+        
+        <h3>Информация о доставке:</h3>
+        <p><strong>Адрес доставки:</strong><br>
+        <span th:text="${order.deliveryAddress}">Адрес доставки</span></p>
+        
+        <p><strong>Способ доставки:</strong><br>
+        <span th:text="${order.deliveryMethod}">Способ доставки</span></p>
+        
+        <p><strong>Трек-номер:</strong><br>
+        <span th:text="${order.trackingNumber}">Трек-номер</span></p>
+        
+        <p>Вы можете отслеживать статус доставки на сайте транспортной компании или в личном кабинете.</p>
+        
+        <h3>Состав заказа:</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Товар</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Количество</th>
+            </tr>
+            <tr th:each="item : ${order.orderItems}">
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.product.title}">Товар</td>
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.quantity}">1</td>
+            </tr>
+        </table>
+        
+        <p>Если у вас возникнут вопросы по доставке, наша служба поддержки всегда готова помочь!</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

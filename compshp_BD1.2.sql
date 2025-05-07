@@ -7,16 +7,19 @@ CREATE TYPE component_type AS ENUM (
     'CPU', 'GPU', 'MB', 'RAM', 'PSU', 
     'CASE', 'COOLER', 'STORAGE', 'SSD', 'HDD'
 );
-CREATE TYPE product_category AS ENUM (
-    'PC_COMPONENT', 'LAPTOP', 'MONITOR',
-    'PERIPHERAL', 'STORAGE', 'ACCESSORY'
-);
 CREATE TYPE order_status AS ENUM (
     'PENDING', 'PROCESSING', 
     'SHIPPED', 'DELIVERED', 'CANCELLED'
 );
 
-
+-- Таблица категорий
+CREATE TABLE categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    parent_id BIGINT REFERENCES categories(id),
+    created_at TIMESTAMP DEFAULT NOW()
+);
 
 -- Основные таблицы
 CREATE TABLE users (
@@ -53,12 +56,12 @@ CREATE TABLE products (
     created_at TIMESTAMP DEFAULT NOW(),
     stock INT NOT NULL CHECK (stock >= 0),
     manufacturer_id BIGINT NOT NULL REFERENCES manufacturers(id) ON DELETE CASCADE,
-    category product_category NOT NULL,
+    category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     component_type component_type,
     specs JSONB NOT NULL,
     CHECK (
-        (category = 'PC_COMPONENT' AND component_type IS NOT NULL) OR
-        (category != 'PC_COMPONENT' AND component_type IS NULL)
+        (SELECT name FROM categories WHERE id = category_id) = 'PC_COMPONENT' AND component_type IS NOT NULL OR
+        (SELECT name FROM categories WHERE id = category_id) != 'PC_COMPONENT' AND component_type IS NULL
     )
 );
 -- Пересоздаем таблицу правил совместимости с корректными внешними ключами
@@ -146,7 +149,17 @@ CREATE TABLE reviews (
     UNIQUE (user_id, product_id) -- Один отзыв на пользователя и продукт
 );
 
+-- Таблица истории статусов заказа
+CREATE TABLE order_status_history (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    status order_status NOT NULL,
+    timestamp TIMESTAMP NOT NULL DEFAULT NOW(),
+    comment TEXT
+);
 
+CREATE INDEX idx_order_status_history_order ON order_status_history(order_id);
+CREATE INDEX idx_order_status_history_timestamp ON order_status_history(timestamp);
 
 -- Индексы для быстрого поиска
 CREATE INDEX idx_reviews_product ON reviews(product_id);
@@ -212,7 +225,7 @@ CREATE TRIGGER trg_review_ratings
 AFTER INSERT OR UPDATE OR DELETE ON reviews
 FOR EACH ROW EXECUTE FUNCTION update_product_ratings();
 -- Индексы и оптимизации
-CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_components_type ON products(component_type);
 CREATE INDEX idx_specs ON products USING GIN(specs);
 CREATE INDEX idx_orders_status ON orders(status);

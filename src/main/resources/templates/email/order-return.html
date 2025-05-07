@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Возврат заказа</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Возврат заказа</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Мы получили ваш запрос на возврат заказа #<span th:text="${order.id}">123</span>.</p>
+        
+        <h3>Информация о возврате:</h3>
+        <p><strong>Статус возврата:</strong> <span th:text="${order.returnStatus}">В обработке</span></p>
+        <p><strong>Причина возврата:</strong> <span th:text="${order.returnReason}">Причина возврата</span></p>
+        
+        <h3>Состав возвращаемого заказа:</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Товар</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Количество</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Сумма возврата</th>
+            </tr>
+            <tr th:each="item : ${order.orderItems}">
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.product.title}">Товар</td>
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.quantity}">1</td>
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.price}">1000</td>
+            </tr>
+        </table>
+        
+        <p><strong>Общая сумма возврата:</strong> <span th:text="${order.totalPrice}">1000</span> руб.</p>
+        
+        <p>Мы обработаем ваш возврат в течение 3-5 рабочих дней. Деньги будут возвращены на ваш счет в течение 10 рабочих дней после получения и проверки товара.</p>
+        
+        <p>Если у вас возникнут вопросы по возврату, наша служба поддержки всегда готова помочь!</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Специальные предложения</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Специальные предложения в PcMaker!</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Мы подготовили для вас специальные предложения:</p>
+        
+        <div th:each="discount : ${discountInfo.discounts}" style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0;" th:text="${discount.title}">Название акции</h3>
+            <p><strong>Скидка:</strong> <span th:text="${discount.percentage}">10</span>%</p>
+            <p><strong>Действует до:</strong> <span th:text="${discount.endDate}">01.01.2024</span></p>
+            <p th:text="${discount.description}">Описание акции</p>
+            
+            <p style="text-align: center;">
+                <a th:href="${discount.link}"
+                   style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                    Подробнее
+                </a>
+            </p>
+        </div>
+        
+        <p>Успейте воспользоваться предложениями, пока действует акция!</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

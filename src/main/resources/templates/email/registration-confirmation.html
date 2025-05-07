@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение регистрации</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Подтверждение регистрации</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Спасибо за регистрацию в PcMaker! Для завершения регистрации, пожалуйста, подтвердите ваш email, перейдя по ссылке ниже:</p>
+        
+        <p style="text-align: center;">
+            <a th:href="${'http://localhost:8080/activate-account?token=' + activationToken}"
+               style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                Подтвердить регистрацию
+            </a>
+        </p>
+        
+        <p>Если вы не регистрировались в PcMaker, пожалуйста, проигнорируйте это письмо.</p>
+        
+        <p>Ссылка действительна в течение 24 часов.</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

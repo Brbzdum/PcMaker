@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Новые поступления</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Новые поступления в PcMaker!</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Мы рады сообщить о новых поступлениях в нашем магазине:</p>
+        
+        <div th:each="product : ${newProducts}" style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0;" th:text="${product.title}">Название товара</h3>
+            <p><strong>Цена:</strong> <span th:text="${product.price}">1000</span> руб.</p>
+            <p><strong>Категория:</strong> <span th:text="${product.category.name}">Категория</span></p>
+            <p><strong>Описание:</strong><br>
+            <span th:text="${product.description}">Описание товара</span></p>
+            
+            <p style="text-align: center;">
+                <a th:href="${'http://localhost:8080/products/' + product.id}"
+                   style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                    Подробнее
+                </a>
+            </p>
+        </div>
+        
+        <p>Будьте первыми, кто узнает о новых поступлениях!</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

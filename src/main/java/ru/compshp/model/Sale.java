@@ -13,14 +13,14 @@ public class Sale {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false, unique = true)
+    @OneToOne
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @Column(name = "sale_date")
+    @Column(name = "sale_date", nullable = false)
     private LocalDateTime saleDate;
 
-    @Column(name = "total_profit", nullable = false, precision = 15, scale = 2)
+    @Column(name = "total_profit", nullable = false)
     private BigDecimal totalProfit;
 
     // TODO: Добавить метод для расчета прибыли

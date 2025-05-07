@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Товар в наличии</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Товар снова в наличии!</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        
+        <p>Мы рады сообщить, что товар, который вас интересовал, снова доступен для заказа:</p>
+        
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px; margin: 20px 0;">
+            <h3 style="margin-top: 0;" th:text="${product.title}">Название товара</h3>
+            <p><strong>Цена:</strong> <span th:text="${product.price}">1000</span> руб.</p>
+            <p><strong>Описание:</strong><br>
+            <span th:text="${product.description}">Описание товара</span></p>
+        </div>
+        
+        <p style="text-align: center;">
+            <a th:href="${'http://localhost:8080/products/' + product.id}"
+               style="background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
+                Перейти к товару
+            </a>
+        </p>
+        
+        <p>Успейте заказать, пока товар снова не закончился!</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 

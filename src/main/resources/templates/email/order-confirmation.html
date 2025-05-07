@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение заказа</title>
+</head>
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2>Спасибо за ваш заказ!</h2>
+        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
+        <p>Мы получили ваш заказ #<span th:text="${order.id}">123</span>.</p>
+        
+        <h3>Детали заказа:</h3>
+        <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Товар</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Количество</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Цена</th>
+            </tr>
+            <tr th:each="item : ${order.orderItems}">
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.product.title}">Товар</td>
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.quantity}">1</td>
+                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.price}">1000</td>
+            </tr>
+        </table>
+        
+        <p><strong>Общая сумма заказа:</strong> <span th:text="${order.totalPrice}">1000</span> руб.</p>
+        
+        <h3>Статус заказа:</h3>
+        <p th:text="${order.status}">PENDING</p>
+        
+        <p>Мы будем держать вас в курсе о статусе вашего заказа.</p>
+        
+        <p>С уважением,<br>Команда PcMaker</p>
+    </div>
+</body>
+</html> 
