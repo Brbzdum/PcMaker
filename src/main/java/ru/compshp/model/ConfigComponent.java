@@ -2,37 +2,45 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.io.Serializable;
+import lombok.NoArgsConstructor;
+import java.time.LocalDateTime;
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "config_components")
 public class ConfigComponent {
-    @EmbeddedId
-    private ConfigComponentId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("configId")
-    @JoinColumn(name = "config_id")
+    @JoinColumn(name = "configuration_id", nullable = false)
     private PCConfiguration configuration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("productId")
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    @Column(nullable = false)
-    private Integer quantity = 1;
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     // TODO: Добавить метод для проверки совместимости с другими компонентами
     // TODO: Добавить метод для расчета стоимости компонента с учетом количества
     // TODO: Добавить метод для проверки наличия компонента на складе
     // TODO: Добавить метод для обновления количества компонента
-}
-
-@Embeddable
-@Data
-class ConfigComponentId implements Serializable {
-    private Long configId;
-    private Long productId;
 } 

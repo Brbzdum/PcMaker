@@ -4,8 +4,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
-
+import ru.compshp.model.enums.OrderStatus;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -43,7 +44,7 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (!productService.isInStock(productId, quantity)) {
+        if (product.getStockQuantity() < quantity) {
             throw new RuntimeException("Not enough stock for product: " + product.getTitle());
         }
 
@@ -81,7 +82,7 @@ public class CartService {
             cart.getItems().remove(item);
             cartItemRepository.delete(item);
         } else {
-            if (!productService.isInStock(productId, quantity)) {
+            if (item.getProduct().getStockQuantity() < quantity) {
                 throw new RuntimeException("Not enough stock for product: " + item.getProduct().getTitle());
             }
             item.setQuantity(quantity);
@@ -119,9 +120,12 @@ public class CartService {
     public BigDecimal calculateTotalPrice(User user) {
         return getByUser(user)
                 .map(cart -> cart.getItems().stream()
-                        .map(item -> item.getProduct().getPrice()
-                                .multiply(BigDecimal.valueOf(item.getQuantity()))
-                                .multiply(BigDecimal.valueOf(1 - item.getProduct().getDiscount() / 100.0)))
+                        .map(item -> {
+                            BigDecimal price = item.getProduct().getPrice();
+                            BigDecimal discount = item.getProduct().getDiscount() != null ? item.getProduct().getDiscount() : BigDecimal.ZERO;
+                            BigDecimal discountedPrice = price.multiply(BigDecimal.ONE.subtract(discount.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP)));
+                            return discountedPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
+                        })
                         .reduce(BigDecimal.ZERO, BigDecimal::add))
                 .orElse(BigDecimal.ZERO);
     }
@@ -129,9 +133,7 @@ public class CartService {
     public boolean checkAllItemsInStock(User user) {
         return getByUser(user)
                 .map(cart -> cart.getItems().stream()
-                        .allMatch(item -> productService.isInStock(
-                                item.getProduct().getId(),
-                                item.getQuantity())))
+                        .allMatch(item -> item.getProduct().getStockQuantity() >= item.getQuantity()))
                 .orElse(true);
     }
 
@@ -159,13 +161,15 @@ public class CartService {
             orderItem.setOrder(order);
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPrice(cartItem.getProduct().getPrice()
-                    .multiply(BigDecimal.valueOf(1 - cartItem.getProduct().getDiscount() / 100.0)));
+            BigDecimal price = cartItem.getProduct().getPrice();
+            BigDecimal discount = cartItem.getProduct().getDiscount() != null ? cartItem.getProduct().getDiscount() : BigDecimal.ZERO;
+            BigDecimal discountedPrice = price.multiply(BigDecimal.ONE.subtract(discount.divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP)));
+            orderItem.setPrice(discountedPrice);
             orderItemRepository.save(orderItem);
-            order.getItems().add(orderItem);
-
+            order.getOrderItems().add(orderItem);
             // Update product stock
-            productService.updateStock(cartItem.getProduct().getId(), -cartItem.getQuantity());
+            cartItem.getProduct().setStockQuantity(cartItem.getProduct().getStockQuantity() - cartItem.getQuantity());
+            productRepository.save(cartItem.getProduct());
         });
 
         clearCart(user);
@@ -173,13 +177,8 @@ public class CartService {
     }
 
     public List<Product> getRecommendedProducts(User user) {
-        return getByUser(user)
-                .map(cart -> cart.getItems().stream()
-                        .flatMap(item -> productService.getSimilarProducts(item.getProduct().getId()).stream())
-                        .distinct()
-                        .limit(5)
-                        .collect(Collectors.toList()))
-                .orElse(List.of());
+        // TODO: Реализовать рекомендацию товаров
+        return List.of();
     }
 
     // TODO: Добавить метод для создания корзины

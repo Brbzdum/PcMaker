@@ -1,128 +1,40 @@
 package ru.compshp.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.compshp.model.Product;
-import ru.compshp.model.enums.ProductCategory;
-import ru.compshp.model.Manufacturer;
-import ru.compshp.repository.ProductRepository;
-import ru.compshp.repository.ProductCompatibilityRepository;
-import ru.compshp.repository.ReviewRepository;
+import ru.compshp.model.*;
+import ru.compshp.repository.*;
+import ru.compshp.model.enums.ComponentType;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
 public class ProductService {
-    private final ProductRepository productRepository;
-    private final ProductCompatibilityRepository compatibilityRepository;
-    private final ReviewRepository reviewRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
-    public ProductService(ProductRepository productRepository, ProductCompatibilityRepository compatibilityRepository, ReviewRepository reviewRepository) {
-        this.productRepository = productRepository;
-        this.compatibilityRepository = compatibilityRepository;
-        this.reviewRepository = reviewRepository;
-    }
+    @Autowired
+    private CategoryRepository categoryRepository;
 
-    public List<Product> getAll() {
-        return productRepository.findAll();
-    }
+    @Autowired
+    private ReviewRepository reviewRepository;
 
-    public Optional<Product> getById(Long id) {
-        return productRepository.findById(id);
-    }
+    @Autowired
+    private CompatibilityRuleRepository ruleRepository;
 
-    public List<Product> getByCategory(ProductCategory category) {
-        return productRepository.findByCategory(category);
-    }
-
-    public List<Product> getByManufacturer(Manufacturer manufacturer) {
-        return productRepository.findByManufacturer(manufacturer);
-    }
-
-    public List<Product> searchByTitle(String title) {
-        return productRepository.findByTitleContainingIgnoreCase(title);
-    }
-
-    @Transactional
-    public Product save(Product product) {
-        return productRepository.save(product);
-    }
-
-    @Transactional
-    public void delete(Long id) {
-        productRepository.deleteById(id);
-    }
-
-    public boolean isInStock(Long productId, int quantity) {
-        return productRepository.findById(productId)
-                .map(p -> p.getStock() >= quantity)
-                .orElse(false);
-    }
-
-    @Transactional
-    public void updateRating(Long productId) {
-        productRepository.findById(productId).ifPresent(product -> {
-            double averageRating = reviewRepository.findByProduct(product).stream()
-                    .mapToDouble(review -> review.getRating())
-                    .average()
-                    .orElse(0.0);
-            product.setRating(averageRating);
-            productRepository.save(product);
-        });
-    }
-
-    public List<Product> getPopularProducts() {
+    public List<Product> getAvailableProducts() {
         return productRepository.findAll().stream()
-                .sorted((p1, p2) -> Double.compare(p2.getRating(), p1.getRating()))
-                .limit(10)
+                .filter(p -> p.getStockQuantity() > 0)
                 .collect(Collectors.toList());
     }
 
-    public List<Product> getCompatibleProducts(Long productId) {
-        return productRepository.findById(productId)
-                .map(product -> compatibilityRepository.findBySourceProduct(product)
-                        .stream()
-                        .map(pc -> pc.getTargetProduct())
-                        .collect(Collectors.toList()))
-                .orElse(List.of());
-    }
-
-    public List<Product> getRecommendedProducts(Long userId) {
-        // TODO: Implement recommendation system based on user's purchase history and preferences
-        return getPopularProducts();
-    }
-
-    public double calculateDiscount(Product product) {
-        if (product.getDiscount() != null && product.getDiscount() > 0) {
-            return product.getPrice() * (product.getDiscount() / 100.0);
-        }
-        return 0.0;
-    }
-
-    @Transactional
-    public Product createProduct(Product product) {
-        return productRepository.save(product);
-    }
-
-    @Transactional
-    public Product updateProduct(Long id, Product updatedProduct) {
-        return productRepository.findById(id)
-                .map(existingProduct -> {
-                    existingProduct.setTitle(updatedProduct.getTitle());
-                    existingProduct.setDescription(updatedProduct.getDescription());
-                    existingProduct.setPrice(updatedProduct.getPrice());
-                    existingProduct.setStock(updatedProduct.getStock());
-                    existingProduct.setCategory(updatedProduct.getCategory());
-                    existingProduct.setManufacturer(updatedProduct.getManufacturer());
-                    existingProduct.setDiscount(updatedProduct.getDiscount());
-                    return productRepository.save(existingProduct);
-                })
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-    }
-
-    public List<Product> getProductsByCategory(ProductCategory category) {
+    public List<Product> getProductsByCategory(Category category) {
         return productRepository.findByCategory(category);
     }
 
@@ -130,39 +42,77 @@ public class ProductService {
         return productRepository.findByManufacturer(manufacturer);
     }
 
-    public List<Product> searchProducts(String query) {
-        return productRepository.findByTitleContainingIgnoreCase(query);
-    }
-
-    public List<Product> filterProducts(ProductCategory category, Manufacturer manufacturer, Double minPrice, Double maxPrice) {
+    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
         return productRepository.findAll().stream()
-                .filter(p -> category == null || p.getCategory() == category)
-                .filter(p -> manufacturer == null || p.getManufacturer().equals(manufacturer))
-                .filter(p -> minPrice == null || p.getPrice() >= minPrice)
-                .filter(p -> maxPrice == null || p.getPrice() <= maxPrice)
+                .filter(p -> p.getPrice().compareTo(minPrice) >= 0 && p.getPrice().compareTo(maxPrice) <= 0)
                 .collect(Collectors.toList());
     }
 
-    public List<Product> getDiscountedProducts() {
+    public List<Product> getProductsWithDiscount() {
         return productRepository.findAll().stream()
-                .filter(p -> p.getDiscount() != null && p.getDiscount() > 0)
+                .filter(p -> p.getDiscount() != null && p.getDiscount().compareTo(BigDecimal.ZERO) > 0)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void updateStock(Long productId, int quantity) {
-        productRepository.findById(productId).ifPresent(product -> {
-            product.setStock(product.getStock() + quantity);
+    public List<Product> getProductsByRating(double minRating) {
+        return productRepository.findAll().stream()
+                .filter(p -> p.getRating() != null && p.getRating() >= minRating)
+                .collect(Collectors.toList());
+    }
+
+    public void updateProductRating(Product product) {
+        List<Review> reviews = reviewRepository.findByProductAndApprovedTrue(product);
+        if (!reviews.isEmpty()) {
+            double averageRating = reviews.stream()
+                    .mapToDouble(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+            product.setRating(averageRating);
             productRepository.save(product);
-        });
+        }
     }
 
-    public List<Product> getSimilarProducts(Long productId) {
+    public List<Product> getCompatibleProducts(Product sourceProduct) {
+        return productRepository.findAll().stream()
+                .filter(p -> !p.equals(sourceProduct))
+                .collect(Collectors.toList());
+    }
+
+    public List<Product> getProductsByCategoryAndPriceRange(Category category, BigDecimal minPrice, BigDecimal maxPrice) {
+        return productRepository.findByCategory(category).stream()
+                .filter(p -> p.getPrice().compareTo(minPrice) >= 0 && p.getPrice().compareTo(maxPrice) <= 0)
+                .collect(Collectors.toList());
+    }
+
+    public List<Product> getProductsWithDiscountByCategory(Category category) {
+        return productRepository.findByCategory(category).stream()
+                .filter(p -> p.getDiscount() != null && p.getDiscount().compareTo(BigDecimal.ZERO) > 0)
+                .collect(Collectors.toList());
+    }
+
+    public void updateProductStock(Product product, int quantity) {
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+        productRepository.save(product);
+    }
+
+    public List<Product> getProductsByComponentType(ComponentType componentType) {
+        return productRepository.findByComponentType(componentType);
+    }
+
+    public Optional<Product> getById(Long id) {
+        return productRepository.findById(id);
+    }
+
+    public boolean isInStock(Long productId, int quantity) {
         return productRepository.findById(productId)
-                .map(product -> productRepository.findByCategory(product.getCategory()).stream()
-                        .filter(p -> !p.getId().equals(productId))
-                        .limit(5)
-                        .collect(Collectors.toList()))
-                .orElse(List.of());
+                .map(product -> product.getStockQuantity() >= quantity)
+                .orElse(false);
+    }
+
+    public BigDecimal calculateDiscountedPrice(Product product) {
+        if (product.getDiscount() != null && product.getDiscount().compareTo(BigDecimal.ZERO) > 0) {
+            return product.getPrice().multiply(BigDecimal.ONE.subtract(product.getDiscount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP)));
+        }
+        return product.getPrice();
     }
 } 

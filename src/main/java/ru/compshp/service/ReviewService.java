@@ -32,7 +32,7 @@ public class ReviewService {
     @Transactional
     public Review save(Review review) {
         Review savedReview = reviewRepository.save(review);
-        productService.updateRating(review.getProduct().getId());
+        productService.updateProductRating(review.getProduct());
         return savedReview;
     }
 
@@ -42,7 +42,7 @@ public class ReviewService {
                 .orElseThrow(() -> new RuntimeException("Review not found"));
         Product product = review.getProduct();
         reviewRepository.deleteById(id);
-        productService.updateRating(product.getId());
+        productService.updateProductRating(product);
     }
 
     public double calculateAverageRating(Product product) {
@@ -54,6 +54,7 @@ public class ReviewService {
 
     public List<Review> getPopularReviews(Product product) {
         return reviewRepository.findByProduct(product).stream()
+                .filter(review -> review.getLikes() != null)
                 .sorted((r1, r2) -> Integer.compare(r2.getLikes(), r1.getLikes()))
                 .limit(5)
                 .collect(Collectors.toList());
@@ -68,7 +69,7 @@ public class ReviewService {
         reviewRepository.save(review);
         
         if (approved) {
-            productService.updateRating(review.getProduct().getId());
+            productService.updateProductRating(review.getProduct());
         }
     }
 

@@ -2,10 +2,14 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
+import java.math.BigDecimal;
 
 @Data
+@NoArgsConstructor
 @Entity
 @Table(name = "pc_configurations")
 public class PCConfiguration {
@@ -14,20 +18,37 @@ public class PCConfiguration {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String name;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "last_modified")
-    private LocalDateTime lastModified;
+    @Column(columnDefinition = "TEXT")
+    private String description;
 
     @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ConfigComponent> components;
+    private List<ConfigComponent> components = new ArrayList<>();
+
+    @Column(name = "total_price", nullable = false, precision = 15, scale = 2)
+    private BigDecimal totalPrice;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     // TODO: Добавить метод для расчета общей стоимости конфигурации
     // TODO: Добавить метод для проверки совместимости всех компонентов

@@ -2,8 +2,12 @@ package ru.compshp.model.enums;
 
 public enum OrderStatus {
     PENDING,
+    CONFIRMED,
     PROCESSING,
     SHIPPED,
     DELIVERED,
-    CANCELLED
+    COMPLETED,
+    CANCELLED,
+    RETURNED,
+    REFUNDED
 } 

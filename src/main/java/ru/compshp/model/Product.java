@@ -42,7 +42,7 @@ public class Product {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ProductCategory category;
+    private ProductCategory productCategory;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "component_type")
@@ -56,6 +56,39 @@ public class Product {
 
     @Column(name = "ratings_count")
     private Integer ratingsCount;
+
+    @Column
+    private BigDecimal discount;
+
+    @Column
+    private Double rating;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @Column(name = "stock_quantity")
+    private Integer stockQuantity;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "physical_specs", columnDefinition = "jsonb")
+    private String physicalSpecs;
+
+    @Column(name = "compatibility_specs", columnDefinition = "jsonb")
+    private String compatibilitySpecs;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 
     // TODO: Реализовать валидацию типа компонента в зависимости от категории товара
     // TODO: Добавить методы для управления складом (увеличение/уменьшение количества)

@@ -5,11 +5,13 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.model.enums.ComponentType;
 import ru.compshp.repository.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.HashMap;
 
 @Service
 public class PCConfigurationService {
@@ -19,6 +21,7 @@ public class PCConfigurationService {
     private final CompatibilityRuleRepository compatibilityRuleRepository;
     private final ComponentCompatibilityService compatibilityService;
     private final ProductService productService;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public PCConfigurationService(
             PCConfigurationRepository configurationRepository,
@@ -181,7 +184,7 @@ public class PCConfigurationService {
                             .map(ConfigComponent::getProduct)
                             .toList();
                     
-                    return productService.getByComponentType(type).stream()
+                    return productService.getProductsByComponentType(type).stream()
                             .filter(product -> compatibilityService.checkConfigurationCompatibility(product, existingComponents))
                             .toList();
                 })
@@ -251,6 +254,21 @@ public class PCConfigurationService {
 
     public void exportToPdf(Long configId) {
         // TODO: Экспортировать конфигурацию в PDF
+    }
+
+    public PCConfiguration getById(Long id) {
+        return configurationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Configuration not found"));
+    }
+
+    public boolean isInStock(Long productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        return product.getStockQuantity() >= quantity;
+    }
+
+    public List<Product> getByComponentType(ComponentType componentType) {
+        return productService.getProductsByComponentType(componentType);
     }
 
     // TODO: Методы для публикации конфигурации, получения истории изменений и т.д.

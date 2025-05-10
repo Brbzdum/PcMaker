@@ -3,6 +3,7 @@ package ru.compshp.service;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.Order;
+import ru.compshp.model.OrderStatusHistory;
 import ru.compshp.model.User;
 import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.repository.OrderRepository;
@@ -70,15 +71,14 @@ public class OrderService {
         // Save status change history
         OrderStatusHistory history = new OrderStatusHistory();
         history.setOrder(order);
-        history.setOldStatus(oldStatus);
-        history.setNewStatus(newStatus);
-        history.setChangeDate(LocalDateTime.now());
+        history.setStatus(newStatus);
+        history.setComment("Changed from " + oldStatus + " to " + newStatus);
         statusHistoryRepository.save(history);
 
         // If order is cancelled, return items to stock
         if (newStatus == OrderStatus.CANCELLED) {
-            order.getItems().forEach(item -> 
-                productService.updateStock(item.getProduct().getId(), item.getQuantity()));
+            order.getOrderItems().forEach(item -> 
+                productService.updateProductStock(item.getProduct(), item.getQuantity()));
         }
 
         return order;
@@ -103,7 +103,7 @@ public class OrderService {
 
     public double calculateTotalPrice(Long orderId) {
         return orderRepository.findById(orderId)
-                .map(order -> order.getItems().stream()
+                .map(order -> order.getOrderItems().stream()
                         .mapToDouble(item -> item.getPrice().doubleValue() * item.getQuantity())
                         .sum())
                 .orElse(0.0);
@@ -111,7 +111,7 @@ public class OrderService {
 
     public List<OrderStatus> getOrderHistory(Long orderId) {
         return statusHistoryRepository.findByOrderId(orderId).stream()
-                .map(OrderStatusHistory::getNewStatus)
+                .map(OrderStatusHistory::getStatus)
                 .collect(Collectors.toList());
     }
 

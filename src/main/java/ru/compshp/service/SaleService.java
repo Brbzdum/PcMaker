@@ -12,6 +12,7 @@ import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.model.Product;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -125,7 +126,7 @@ public class SaleService {
         return sales.stream()
                 .map(sale -> sale.getOrder().getTotalPrice())
                 .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .divide(new BigDecimal(sales.size()), 2, BigDecimal.ROUND_HALF_UP);
+                .divide(new BigDecimal(sales.size()), 2, RoundingMode.HALF_UP);
     }
 
     private BigDecimal calculateProfit(Order order) {
