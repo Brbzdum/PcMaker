@@ -10,7 +10,7 @@ import java.util.List;
  * Репозиторий для работы с кешем совместимости компонентов
  */
 @Repository
-public interface CompatibilityCacheRepository extends JpaRepository<CompatibilityCache, String> {
+public interface CompatibilityCacheRepository extends JpaRepository<CompatibilityCache, Long> {
     
     /**
      * Находит записи кеша по хешу конфигурации
@@ -26,4 +26,7 @@ public interface CompatibilityCacheRepository extends JpaRepository<Compatibilit
      * Находит записи кеша по статусу совместимости
      */
     List<CompatibilityCache> findByIsCompatible(boolean isCompatible);
+
+    boolean existsByCacheKey(String cacheKey);
+    CompatibilityCache findByCacheKey(String cacheKey);
 } 

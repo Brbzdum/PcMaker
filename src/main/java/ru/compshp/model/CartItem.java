@@ -8,17 +8,16 @@ import java.io.Serializable;
 @Entity
 @Table(name = "cart_items")
 public class CartItem {
-    @EmbeddedId
-    private CartItemId id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("cartId")
-    @JoinColumn(name = "cart_id")
+    @ManyToOne
+    @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("productId")
-    @JoinColumn(name = "product_id")
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(nullable = false)

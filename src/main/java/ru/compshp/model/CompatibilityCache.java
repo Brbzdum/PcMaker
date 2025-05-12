@@ -12,19 +12,16 @@ import java.time.LocalDateTime;
 @Table(name = "compatibility_cache")
 public class CompatibilityCache {
     @Id
-    @Column(name = "config_hash", length = 64)
-    private String configHash;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Column(name = "is_compatible", nullable = false)
-    private boolean isCompatible;
+    @Column(name = "cache_key", unique = true, nullable = false)
+    private String cacheKey;
 
-    @Column(name = "errors", columnDefinition = "jsonb")
-    private String errors;
+    @Column(columnDefinition = "jsonb", nullable = false)
+    private String result;
 
-    @Column(name = "warnings", columnDefinition = "jsonb")
-    private String warnings;
-
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist

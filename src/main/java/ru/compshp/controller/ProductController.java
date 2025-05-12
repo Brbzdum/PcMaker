@@ -1,5 +1,6 @@
 package ru.compshp.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.compshp.dto.ProductDto;
@@ -8,64 +9,83 @@ import ru.compshp.service.ReviewService;
 
 @RestController
 @RequestMapping("/api/products")
+@RequiredArgsConstructor
 @CrossOrigin
 public class ProductController {
     private final ProductService productService;
     private final ReviewService reviewService;
 
-    public ProductController(ProductService productService, ReviewService reviewService) {
-        this.productService = productService;
-        this.reviewService = reviewService;
-    }
-
-    // TODO: Получить список товаров с пагинацией и фильтрацией
+    // Получение списка товаров с фильтрацией
     @GetMapping
-    public ResponseEntity<?> listProducts(/* @RequestParam параметры фильтрации */) {
-        // TODO: Реализовать получение списка товаров
-        return ResponseEntity.ok(/* список товаров */ null);
+    public ResponseEntity<?> listProducts(
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String manufacturer,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return productService.getProducts(category, manufacturer, minPrice, maxPrice, sortBy, page, size);
     }
 
-    // TODO: Получить товар по ID
+    // Получение товара по ID
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getProduct(@PathVariable Long id) {
-        // TODO: Реализовать получение товара по ID
-        return ResponseEntity.ok(/* productDto */ null);
+    public ResponseEntity<?> getProduct(@PathVariable Long id) {
+        return productService.getProduct(id);
     }
 
-    // TODO: Создать новый товар
+    // Поиск товаров
+    @GetMapping("/search")
+    public ResponseEntity<?> searchProducts(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return productService.searchProducts(query, page, size);
+    }
+
+    // Популярные товары
+    @GetMapping("/popular")
+    public ResponseEntity<?> getPopularProducts() {
+        return productService.getPopularProducts();
+    }
+
+    // Новые поступления
+    @GetMapping("/new-arrivals")
+    public ResponseEntity<?> getNewArrivals() {
+        return productService.getNewArrivals();
+    }
+
+    // Товары по категории
+    @GetMapping("/category/{category}")
+    public ResponseEntity<?> getProductsByCategory(
+            @PathVariable String category,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return productService.getProductsByCategory(category, page, size);
+    }
+
+    // Товары по производителю
+    @GetMapping("/manufacturer/{manufacturerId}")
+    public ResponseEntity<?> getProductsByManufacturer(
+            @PathVariable Long manufacturerId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return productService.getProductsByManufacturer(manufacturerId, page, size);
+    }
+
+    // Административные эндпоинты
     @PostMapping
-    public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto productDto) {
-        // TODO: Реализовать создание товара
-        return ResponseEntity.ok(/* productDto */ null);
+    public ResponseEntity<?> createProduct(@RequestBody ProductDto productDto) {
+        return productService.createProduct(productDto);
     }
 
-    // TODO: Обновить товар
     @PutMapping("/{id}")
-    public ResponseEntity<ProductDto> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
-        // TODO: Реализовать обновление товара
-        return ResponseEntity.ok(/* productDto */ null);
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
+        return productService.updateProduct(id, productDto);
     }
 
-    // TODO: Удалить товар
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
-        // TODO: Реализовать удаление товара
-        return ResponseEntity.ok().build();
+        return productService.deleteProduct(id);
     }
-
-    // TODO: Получить товары по категории
-    @GetMapping("/category/{category}")
-    public ResponseEntity<?> listByCategory(@PathVariable String category) {
-        // TODO: Реализовать получение товаров по категории
-        return ResponseEntity.ok(/* список товаров */ null);
-    }
-
-    // TODO: Получить товары по производителю
-    @GetMapping("/manufacturer/{manufacturerId}")
-    public ResponseEntity<?> listByManufacturer(@PathVariable Long manufacturerId) {
-        // TODO: Реализовать получение товаров по производителю
-        return ResponseEntity.ok(/* список товаров */ null);
-    }
-
-    // TODO: Методы поиска, фильтрации, сортировки, получения популярных и акционных товаров и т.д.
 } 

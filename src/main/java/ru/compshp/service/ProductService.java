@@ -1,6 +1,8 @@
 package ru.compshp.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
@@ -13,20 +15,165 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления продуктами
+ * Основные функции:
+ * - Управление продуктами (CRUD)
+ * - Фильтрация и поиск продуктов
+ * - Управление категориями
+ * - Управление производителями
+ * - Управление отзывами
+ */
 @Service
+@RequiredArgsConstructor
 @Transactional
 public class ProductService {
-    @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ManufacturerRepository manufacturerRepository;
+    private final ReviewRepository reviewRepository;
+    private final CompatibilityRuleRepository ruleRepository;
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    // Product methods
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(pageable);
+    }
 
-    @Autowired
-    private ReviewRepository reviewRepository;
+    public Optional<Product> getProductById(Long id) {
+        return productRepository.findById(id);
+    }
 
-    @Autowired
-    private CompatibilityRuleRepository ruleRepository;
+    public List<Product> getProductsByCategory(String category) {
+        return productRepository.findByCategoryName(category);
+    }
+
+    public List<Product> getProductsByManufacturer(String manufacturer) {
+        return productRepository.findByManufacturerName(manufacturer);
+    }
+
+    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        return productRepository.findByPriceBetween(minPrice, maxPrice);
+    }
+
+    public List<Product> getProductsByRating(Double minRating) {
+        return productRepository.findByRatingGreaterThanEqual(minRating);
+    }
+
+    public List<Product> searchProducts(String query) {
+        return productRepository.findByNameContainingIgnoreCase(query);
+    }
+
+    public List<Product> getPopularProducts() {
+        return productRepository.findTop10ByOrderByRatingDesc();
+    }
+
+    public List<Product> getNewArrivals() {
+        return productRepository.findTop10ByOrderByCreatedAtDesc();
+    }
+
+    @Transactional
+    public Product saveProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public void deleteProduct(Long id) {
+        productRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void updateProductStock(Long id, int quantity) {
+        productRepository.findById(id).ifPresent(product -> {
+            product.setStock(quantity);
+            productRepository.save(product);
+        });
+    }
+
+    @Transactional
+    public void updateProductRating(Long id) {
+        productRepository.findById(id).ifPresent(product -> {
+            List<Review> reviews = reviewRepository.findByProduct(product);
+            if (!reviews.isEmpty()) {
+                double averageRating = reviews.stream()
+                    .mapToDouble(Review::getRating)
+                    .average()
+                    .orElse(0.0);
+                product.setRating(averageRating);
+                productRepository.save(product);
+            }
+        });
+    }
+
+    // Category methods
+    public List<Category> getAllCategories() {
+        return categoryRepository.findAll();
+    }
+
+    public Optional<Category> getCategoryById(Long id) {
+        return categoryRepository.findById(id);
+    }
+
+    public Optional<Category> getCategoryByName(String name) {
+        return categoryRepository.findByName(name);
+    }
+
+    @Transactional
+    public Category saveCategory(Category category) {
+        return categoryRepository.save(category);
+    }
+
+    @Transactional
+    public void deleteCategory(Long id) {
+        categoryRepository.deleteById(id);
+    }
+
+    // Manufacturer methods
+    public List<Manufacturer> getAllManufacturers() {
+        return manufacturerRepository.findAll();
+    }
+
+    public Optional<Manufacturer> getManufacturerById(Long id) {
+        return manufacturerRepository.findById(id);
+    }
+
+    public Optional<Manufacturer> getManufacturerByName(String name) {
+        return manufacturerRepository.findByName(name);
+    }
+
+    @Transactional
+    public Manufacturer saveManufacturer(Manufacturer manufacturer) {
+        return manufacturerRepository.save(manufacturer);
+    }
+
+    @Transactional
+    public void deleteManufacturer(Long id) {
+        manufacturerRepository.deleteById(id);
+    }
+
+    // Review methods
+    public List<Review> getReviewsByProduct(Product product) {
+        return reviewRepository.findByProduct(product);
+    }
+
+    public List<Review> getReviewsByUser(Long userId) {
+        return reviewRepository.findByUserId(userId);
+    }
+
+    @Transactional
+    public Review saveReview(Review review) {
+        Review savedReview = reviewRepository.save(review);
+        updateProductRating(review.getProduct().getId());
+        return savedReview;
+    }
+
+    @Transactional
+    public void deleteReview(Long id) {
+        reviewRepository.findById(id).ifPresent(review -> {
+            Long productId = review.getProduct().getId();
+            reviewRepository.deleteById(id);
+            updateProductRating(productId);
+        });
+    }
 
     public List<Product> getAvailableProducts() {
         return productRepository.findAll().stream()
@@ -36,10 +183,6 @@ public class ProductService {
 
     public List<Product> getProductsByCategory(Category category) {
         return productRepository.findByCategory(category);
-    }
-
-    public List<Product> getProductsByManufacturer(Manufacturer manufacturer) {
-        return productRepository.findByManufacturer(manufacturer);
     }
 
     public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
@@ -97,10 +240,6 @@ public class ProductService {
 
     public List<Product> getProductsByComponentType(ComponentType componentType) {
         return productRepository.findByComponentType(componentType);
-    }
-
-    public Optional<Product> getById(Long id) {
-        return productRepository.findById(id);
     }
 
     public boolean isInStock(Long productId, int quantity) {

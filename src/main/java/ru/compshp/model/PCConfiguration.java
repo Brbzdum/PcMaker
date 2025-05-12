@@ -2,14 +2,12 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.math.BigDecimal;
 
 @Data
-@NoArgsConstructor
 @Entity
 @Table(name = "pc_configurations")
 public class PCConfiguration {
@@ -17,23 +15,65 @@ public class PCConfiguration {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @ManyToOne
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String description;
 
-    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ConfigComponent> components = new ArrayList<>();
+    @ManyToOne
+    @JoinColumn(name = "cpu_id")
+    private Product cpu;
 
-    @Column(name = "total_price", nullable = false, precision = 15, scale = 2)
+    @ManyToOne
+    @JoinColumn(name = "motherboard_id")
+    private Product motherboard;
+
+    @ManyToOne
+    @JoinColumn(name = "gpu_id")
+    private Product gpu;
+
+    @ManyToOne
+    @JoinColumn(name = "psu_id")
+    private Product psu;
+
+    @ManyToOne
+    @JoinColumn(name = "case_id")
+    private Product pcCase;
+
+    @ManyToMany
+    @JoinTable(
+        name = "configuration_ram",
+        joinColumns = @JoinColumn(name = "configuration_id"),
+        inverseJoinColumns = @JoinColumn(name = "ram_id")
+    )
+    private Set<Product> ram = new HashSet<>();
+
+    @ManyToMany
+    @JoinTable(
+        name = "configuration_storage",
+        joinColumns = @JoinColumn(name = "configuration_id"),
+        inverseJoinColumns = @JoinColumn(name = "storage_id")
+    )
+    private Set<Product> storage = new HashSet<>();
+
+    @Column(name = "total_price")
     private BigDecimal totalPrice;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "power_requirement")
+    private Integer powerRequirement;
+
+    @Column(name = "is_compatible")
+    private boolean compatible;
+
+    @Column(name = "compatibility_notes", columnDefinition = "jsonb")
+    private String compatibilityNotes;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

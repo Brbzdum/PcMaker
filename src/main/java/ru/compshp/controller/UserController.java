@@ -1,62 +1,96 @@
 package ru.compshp.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.UserDto;
-import ru.compshp.dto.UserRegistrationDto;
+import ru.compshp.dto.UserProfileDTO;
 import ru.compshp.service.UserService;
 
 @RestController
-@RequestMapping("/api/users")
-@CrossOrigin
+@RequestMapping("/api/user")
+@PreAuthorize("hasRole('USER')")
+@RequiredArgsConstructor
 public class UserController {
+
     private final UserService userService;
 
-    public UserController(UserService userService) {
-        this.userService = userService;
-    }
-
-    // TODO: Реализовать получение профиля текущего пользователя
+    // Профиль пользователя
     @GetMapping("/profile")
-    public ResponseEntity<UserDto> getProfile() {
-        // TODO: Получить профиль пользователя по токену/сессии
-        return ResponseEntity.ok(/* userDto */ null);
+    public ResponseEntity<?> getProfile() {
+        return userService.getCurrentUserProfile();
     }
 
-    // TODO: Реализовать регистрацию пользователя
-    @PostMapping("/register")
-    public ResponseEntity<UserDto> register(@RequestBody UserRegistrationDto registrationDto) {
-        // TODO: Зарегистрировать пользователя и вернуть его DTO
-        return ResponseEntity.ok(/* userDto */ null);
-    }
-
-    // TODO: Реализовать обновление профиля пользователя
     @PutMapping("/profile")
-    public ResponseEntity<UserDto> updateProfile(@RequestBody UserDto userDto) {
-        // TODO: Обновить профиль пользователя
-        return ResponseEntity.ok(/* userDto */ null);
+    public ResponseEntity<?> updateProfile(@Valid @RequestBody UserProfileDTO profileDTO) {
+        return userService.updateProfile(profileDTO);
     }
 
-    // TODO: Реализовать получение заказов пользователя
+    @PutMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestParam String oldPassword,
+                                          @RequestParam String newPassword) {
+        return userService.changePassword(oldPassword, newPassword);
+    }
+
+    // Заказы пользователя
     @GetMapping("/orders")
     public ResponseEntity<?> getUserOrders() {
-        // TODO: Вернуть список заказов пользователя
-        return ResponseEntity.ok(/* orders */ null);
+        return userService.getUserOrders();
     }
 
-    // TODO: Реализовать получение конфигураций пользователя
-    @GetMapping("/configurations")
-    public ResponseEntity<?> getUserConfigurations() {
-        // TODO: Вернуть список конфигураций пользователя
-        return ResponseEntity.ok(/* configurations */ null);
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<?> getOrderDetails(@PathVariable Long id) {
+        return userService.getOrderDetails(id);
     }
 
-    // TODO: Реализовать получение отзывов пользователя
-    @GetMapping("/reviews")
-    public ResponseEntity<?> getUserReviews() {
-        // TODO: Вернуть список отзывов пользователя
-        return ResponseEntity.ok(/* reviews */ null);
+    @PostMapping("/orders/{id}/cancel")
+    public ResponseEntity<?> cancelOrder(@PathVariable Long id) {
+        return userService.cancelOrder(id);
     }
 
-    // TODO: Реализовать смену пароля, восстановление пароля, активацию аккаунта и т.д.
+    // Корзина пользователя
+    @GetMapping("/cart")
+    public ResponseEntity<?> getCart() {
+        return userService.getCart();
+    }
+
+    @PostMapping("/cart/add")
+    public ResponseEntity<?> addToCart(@RequestParam Long productId,
+                                     @RequestParam Integer quantity) {
+        return userService.addToCart(productId, quantity);
+    }
+
+    @PutMapping("/cart/update")
+    public ResponseEntity<?> updateCartItem(@RequestParam Long cartItemId,
+                                          @RequestParam Integer quantity) {
+        return userService.updateCartItem(cartItemId, quantity);
+    }
+
+    @DeleteMapping("/cart/remove")
+    public ResponseEntity<?> removeFromCart(@RequestParam Long cartItemId) {
+        return userService.removeFromCart(cartItemId);
+    }
+
+    // Конфигурации ПК
+    @GetMapping("/configs")
+    public ResponseEntity<?> getUserConfigs() {
+        return userService.getUserConfigs();
+    }
+
+    @PostMapping("/configs")
+    public ResponseEntity<?> createConfig(@RequestBody String configJson) {
+        return userService.createConfig(configJson);
+    }
+
+    @PutMapping("/configs/{id}")
+    public ResponseEntity<?> updateConfig(@PathVariable Long id,
+                                        @RequestBody String configJson) {
+        return userService.updateConfig(id, configJson);
+    }
+
+    @DeleteMapping("/configs/{id}")
+    public ResponseEntity<?> deleteConfig(@PathVariable Long id) {
+        return userService.deleteConfig(id);
+    }
 } 

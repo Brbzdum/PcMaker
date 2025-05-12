@@ -1,137 +1,121 @@
 package ru.compshp.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.Order;
-import ru.compshp.model.OrderStatusHistory;
+import ru.compshp.model.OrderItem;
+import ru.compshp.model.Product;
 import ru.compshp.model.User;
-import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.repository.OrderRepository;
-import ru.compshp.repository.OrderStatusHistoryRepository;
-import ru.compshp.service.ProductService;
+import ru.compshp.repository.ProductRepository;
+import ru.compshp.repository.UserRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
+/**
+ * Сервис для управления заказами
+ * Основные функции:
+ * - Создание и управление заказами
+ * - Обработка заказов
+ * - Управление статусами заказов
+ * - Расчет стоимости заказов
+ */
 @Service
+@RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final OrderStatusHistoryRepository statusHistoryRepository;
+    private final UserRepository userRepository;
+    private final ProductRepository productRepository;
     private final ProductService productService;
 
-    public OrderService(OrderRepository orderRepository, 
-                       OrderStatusHistoryRepository statusHistoryRepository,
-                       ProductService productService) {
-        this.orderRepository = orderRepository;
-        this.statusHistoryRepository = statusHistoryRepository;
-        this.productService = productService;
-    }
-
-    public List<Order> getAll() {
+    public List<Order> getAllOrders() {
         return orderRepository.findAll();
     }
 
-    public Optional<Order> getById(Long id) {
+    public Optional<Order> getOrderById(Long id) {
         return orderRepository.findById(id);
     }
 
-    public List<Order> getByUser(User user) {
+    public List<Order> getOrdersByUser(User user) {
         return orderRepository.findByUser(user);
     }
 
-    public List<Order> getByStatus(OrderStatus status) {
+    public List<Order> getOrdersByStatus(String status) {
         return orderRepository.findByStatus(status);
     }
 
-    public List<Order> getByUserAndStatus(User user, OrderStatus status) {
-        return orderRepository.findByUserAndStatus(user, status);
-    }
-
     @Transactional
-    public Order save(Order order) {
+    public Order createOrder(User user, List<OrderItem> items) {
+        Order order = new Order();
+        order.setUser(user);
+        order.setItems(items);
+        order.setStatus("PENDING");
+        order.setCreatedAt(LocalDateTime.now());
+        
+        // Рассчитываем общую стоимость
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        for (OrderItem item : items) {
+            totalAmount = totalAmount.add(item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+        }
+        order.setTotalAmount(totalAmount);
+
+        // Обновляем количество товаров
+        for (OrderItem item : items) {
+            Product product = item.getProduct();
+            product.setStock(product.getStock() - item.getQuantity());
+            productRepository.save(product);
+        }
+
         return orderRepository.save(order);
     }
 
     @Transactional
-    public void delete(Long id) {
+    public Order updateOrderStatus(Long id, String status) {
+        return orderRepository.findById(id)
+            .map(order -> {
+                order.setStatus(status);
+                if ("COMPLETED".equals(status)) {
+                    order.setCompletedAt(LocalDateTime.now());
+                }
+                return orderRepository.save(order);
+            })
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+    }
+
+    @Transactional
+    public void cancelOrder(Long id) {
+        orderRepository.findById(id).ifPresent(order -> {
+            if ("PENDING".equals(order.getStatus())) {
+                // Возвращаем товары на склад
+                for (OrderItem item : order.getItems()) {
+                    Product product = item.getProduct();
+                    product.setStock(product.getStock() + item.getQuantity());
+                    productRepository.save(product);
+                }
+                order.setStatus("CANCELLED");
+                orderRepository.save(order);
+            }
+        });
+    }
+
+    @Transactional
+    public void deleteOrder(Long id) {
         orderRepository.deleteById(id);
     }
 
-    @Transactional
-    public Order changeStatus(Long orderId, OrderStatus newStatus) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        OrderStatus oldStatus = order.getStatus();
-        order.setStatus(newStatus);
-        order = orderRepository.save(order);
-
-        // Save status change history
-        OrderStatusHistory history = new OrderStatusHistory();
-        history.setOrder(order);
-        history.setStatus(newStatus);
-        history.setComment("Changed from " + oldStatus + " to " + newStatus);
-        statusHistoryRepository.save(history);
-
-        // If order is cancelled, return items to stock
-        if (newStatus == OrderStatus.CANCELLED) {
-            order.getOrderItems().forEach(item -> 
-                productService.updateProductStock(item.getProduct(), item.getQuantity()));
-        }
-
-        return order;
+    public BigDecimal calculateOrderTotal(List<OrderItem> items) {
+        return items.stream()
+            .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    @Transactional
-    public Order cancelOrder(Long orderId) {
-        Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
-
-        if (!canBeCancelled(order)) {
-            throw new RuntimeException("Order cannot be cancelled in current status: " + order.getStatus());
-        }
-
-        return changeStatus(orderId, OrderStatus.CANCELLED);
-    }
-
-    public boolean canBeCancelled(Order order) {
-        return order.getStatus() == OrderStatus.PENDING || 
-               order.getStatus() == OrderStatus.PROCESSING;
-    }
-
-    public double calculateTotalPrice(Long orderId) {
-        return orderRepository.findById(orderId)
-                .map(order -> order.getOrderItems().stream()
-                        .mapToDouble(item -> item.getPrice().doubleValue() * item.getQuantity())
-                        .sum())
-                .orElse(0.0);
-    }
-
-    public List<OrderStatus> getOrderHistory(Long orderId) {
-        return statusHistoryRepository.findByOrderId(orderId).stream()
-                .map(OrderStatusHistory::getStatus)
-                .collect(Collectors.toList());
-    }
-
-    public List<Order> getRecentOrders(User user, int limit) {
-        return orderRepository.findByUserOrderByCreatedAtDesc(user)
-                .stream()
-                .limit(limit)
-                .collect(Collectors.toList());
-    }
-
-    public List<Order> getActiveOrders(User user) {
-        return orderRepository.findByUserAndStatusIn(user, 
-                List.of(OrderStatus.PENDING, OrderStatus.PROCESSING, OrderStatus.SHIPPED));
-    }
-
-    public List<Order> getCompletedOrders(User user) {
-        return orderRepository.findByUserAndStatus(user, OrderStatus.COMPLETED);
-    }
-
-    public List<Order> getCancelledOrders(User user) {
-        return orderRepository.findByUserAndStatus(user, OrderStatus.CANCELLED);
+    public boolean validateOrderItems(List<OrderItem> items) {
+        return items.stream().allMatch(item -> 
+            productService.isInStock(item.getProduct().getId(), item.getQuantity())
+        );
     }
 } 

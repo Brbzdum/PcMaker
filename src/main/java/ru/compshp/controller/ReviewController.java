@@ -1,57 +1,87 @@
 package ru.compshp.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.ReviewDto;
+import ru.compshp.dto.ReviewDTO;
 import ru.compshp.service.ReviewService;
-import ru.compshp.service.ProductService;
 
 @RestController
 @RequestMapping("/api/reviews")
-@CrossOrigin
+@RequiredArgsConstructor
 public class ReviewController {
+
     private final ReviewService reviewService;
-    private final ProductService productService;
 
-    public ReviewController(ReviewService reviewService, ProductService productService) {
-        this.reviewService = reviewService;
-        this.productService = productService;
-    }
-
-    // TODO: Получить отзывы о товаре
+    // Публичные эндпоинты
     @GetMapping("/product/{productId}")
-    public ResponseEntity<?> listProductReviews(@PathVariable Long productId) {
-        // TODO: Вернуть список отзывов о товаре
-        return ResponseEntity.ok(/* список отзывов */ null);
+    public ResponseEntity<?> getProductReviews(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return reviewService.getProductReviews(productId, page, size);
     }
 
-    // TODO: Создать отзыв
-    @PostMapping
-    public ResponseEntity<ReviewDto> createReview(@RequestBody ReviewDto reviewDto) {
-        // TODO: Создать отзыв
-        return ResponseEntity.ok(/* reviewDto */ null);
+    @GetMapping("/product/{productId}/rating")
+    public ResponseEntity<?> getProductRating(@PathVariable Long productId) {
+        return reviewService.getProductRating(productId);
     }
 
-    // TODO: Получить отзыв для редактирования
-    @GetMapping("/{id}")
-    public ResponseEntity<ReviewDto> getReview(@PathVariable Long id) {
-        // TODO: Получить отзыв по ID
-        return ResponseEntity.ok(/* reviewDto */ null);
+    // Эндпоинты для авторизованных пользователей
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/product/{productId}")
+    public ResponseEntity<?> createReview(
+            @PathVariable Long productId,
+            @Valid @RequestBody ReviewDTO reviewDTO) {
+        return reviewService.createReview(productId, reviewDTO);
     }
 
-    // TODO: Обновить отзыв
-    @PutMapping("/{id}")
-    public ResponseEntity<ReviewDto> updateReview(@PathVariable Long id, @RequestBody ReviewDto reviewDto) {
-        // TODO: Обновить отзыв
-        return ResponseEntity.ok(/* reviewDto */ null);
+    @PreAuthorize("hasRole('USER')")
+    @PutMapping("/{reviewId}")
+    public ResponseEntity<?> updateReview(
+            @PathVariable Long reviewId,
+            @Valid @RequestBody ReviewDTO reviewDTO) {
+        return reviewService.updateReview(reviewId, reviewDTO);
     }
 
-    // TODO: Удалить отзыв
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReview(@PathVariable Long id) {
-        // TODO: Удалить отзыв
-        return ResponseEntity.ok().build();
+    @PreAuthorize("hasRole('USER')")
+    @DeleteMapping("/{reviewId}")
+    public ResponseEntity<?> deleteReview(@PathVariable Long reviewId) {
+        return reviewService.deleteReview(reviewId);
     }
 
-    // TODO: Методы для получения отзывов пользователя, популярных отзывов, модерации и т.д.
+    // Эндпоинты для администраторов
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/pending")
+    public ResponseEntity<?> getPendingReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return reviewService.getPendingReviews(page, size);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{reviewId}/moderate")
+    public ResponseEntity<?> moderateReview(
+            @PathVariable Long reviewId,
+            @RequestParam boolean approved) {
+        return reviewService.moderateReview(reviewId, approved);
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/reported")
+    public ResponseEntity<?> getReportedReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return reviewService.getReportedReviews(page, size);
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/{reviewId}/report")
+    public ResponseEntity<?> reportReview(
+            @PathVariable Long reviewId,
+            @RequestParam String reason) {
+        return reviewService.reportReview(reviewId, reason);
+    }
 } 

@@ -2,58 +2,48 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @Entity
-@Table(name = "reviews",
-    uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "product_id"})
-)
+@Table(name = "reviews")
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 1000)
     private String comment;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    @Column(name = "is_verified_purchase")
+    private boolean verifiedPurchase;
 
-    @Column
-    private Integer likes = 0;
+    @Column(name = "is_moderated")
+    private boolean moderated = false;
 
-    @Column
-    private Integer dislikes = 0;
+    @Column(name = "is_approved")
+    private Boolean approved;
 
-    @Column
-    private Boolean approved = false;
+    @Column(name = "report_count")
+    private Integer reportCount = 0;
 
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
     }
 
     // TODO: Добавить метод для проверки возможности редактирования

@@ -198,6 +198,31 @@ public class EmailService {
         );
     }
 
+    public void sendVerificationEmail(User user, String siteURL) throws MessagingException {
+        String toAddress = user.getEmail();
+        String subject = "Подтверждение регистрации";
+        String content = "Уважаемый [[name]],<br>"
+                + "Пожалуйста, перейдите по ссылке ниже для подтверждения регистрации:<br>"
+                + "<h3><a href=\"[[URL]]\" target=\"_self\">ПОДТВЕРДИТЬ</a></h3>"
+                + "Спасибо,<br>"
+                + "PC Maker.";
+
+        Context context = new Context();
+        context.setVariable("name", user.getUsername());
+        context.setVariable("URL", siteURL + "/api/auth/verify?code=" + user.getVerificationCode());
+
+        String htmlContent = templateEngine.process("verification-email", context);
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+        
+        helper.setTo(toAddress);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(message);
+    }
+
     private void sendHtmlEmail(String to, String subject, String htmlContent) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

@@ -1,5 +1,6 @@
 package ru.compshp.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.Category;
@@ -9,95 +10,90 @@ import ru.compshp.repository.ProductRepository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ArrayList;
 
+/**
+ * Сервис для управления категориями
+ * Основные функции:
+ * - Управление категориями (CRUD)
+ * - Получение продуктов по категории
+ * - Управление иерархией категорий
+ */
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
 
-    public CategoryService(CategoryRepository categoryRepository, ProductRepository productRepository) {
-        this.categoryRepository = categoryRepository;
-        this.productRepository = productRepository;
-    }
-
-    @Transactional(readOnly = true)
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
 
-    @Transactional(readOnly = true)
     public Optional<Category> getCategoryById(Long id) {
         return categoryRepository.findById(id);
     }
 
-    @Transactional(readOnly = true)
     public Optional<Category> getCategoryByName(String name) {
         return categoryRepository.findByName(name);
     }
 
+    public List<Category> getSubcategories(Long parentId) {
+        return categoryRepository.findByParentId(parentId);
+    }
+
+    public List<Product> getProductsByCategory(Long categoryId) {
+        return categoryRepository.findById(categoryId)
+            .map(productRepository::findByCategory)
+            .orElse(List.of());
+    }
+
     @Transactional
-    public Category createCategory(String name, String description) {
-        Category category = new Category();
-        category.setName(name);
-        category.setDescription(description);
+    public Category createCategory(Category category) {
         return categoryRepository.save(category);
     }
 
     @Transactional
-    public Category updateCategory(Long id, String name, String description) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        category.setName(name);
-        category.setDescription(description);
-        return categoryRepository.save(category);
+    public Category updateCategory(Long id, Category category) {
+        return categoryRepository.findById(id)
+            .map(existingCategory -> {
+                existingCategory.setName(category.getName());
+                existingCategory.setDescription(category.getDescription());
+                existingCategory.setParent(category.getParent());
+                return categoryRepository.save(existingCategory);
+            })
+            .orElseThrow(() -> new RuntimeException("Category not found"));
     }
 
     @Transactional
     public void deleteCategory(Long id) {
-        Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        List<Product> products = productRepository.findByCategoryEntity(category);
-        if (!products.isEmpty()) {
-            throw new RuntimeException("Cannot delete category with existing products");
+        // Проверяем, есть ли подкатегории
+        if (!categoryRepository.findByParentId(id).isEmpty()) {
+            throw new RuntimeException("Cannot delete category with subcategories");
         }
-        categoryRepository.delete(category);
+        
+        // Проверяем, есть ли продукты в категории
+        if (!productRepository.findByCategoryId(id).isEmpty()) {
+            throw new RuntimeException("Cannot delete category with products");
+        }
+
+        categoryRepository.deleteById(id);
     }
 
-    @Transactional(readOnly = true)
-    public List<Product> getProductsByCategory(Long categoryId) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        return productRepository.findByCategoryEntity(category);
+    public List<Category> getMainCategories() {
+        return categoryRepository.findByParentIsNull();
     }
 
-    @Transactional(readOnly = true)
-    public List<Category> getSubcategories(Long parentId) {
-        Category parent = categoryRepository.findById(parentId)
-                .orElseThrow(() -> new RuntimeException("Parent category not found"));
-        return categoryRepository.findByParentCategory(parent);
-    }
-
-    @Transactional
-    public Category addSubcategory(Long parentId, String name, String description) {
-        Category parent = categoryRepository.findById(parentId)
-                .orElseThrow(() -> new RuntimeException("Parent category not found"));
-        Category subcategory = new Category();
-        subcategory.setName(name);
-        subcategory.setDescription(description);
-        subcategory.setParentCategory(parent);
-        return categoryRepository.save(subcategory);
-    }
-
-    @Transactional(readOnly = true)
     public List<Category> getCategoryPath(Long categoryId) {
-        Category category = categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
-        List<Category> path = new java.util.ArrayList<>();
-        Category current = category;
-        while (current != null) {
-            path.add(0, current);
-            current = current.getParentCategory();
-        }
-        return path;
+        return categoryRepository.findById(categoryId)
+            .map(category -> {
+                List<Category> path = new ArrayList<>();
+                Category current = category;
+                while (current != null) {
+                    path.add(0, current);
+                    current = current.getParent();
+                }
+                return path;
+            })
+            .orElse(List.of());
     }
 } 

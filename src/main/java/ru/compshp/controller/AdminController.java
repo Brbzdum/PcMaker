@@ -1,77 +1,78 @@
 package ru.compshp.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.service.UserService;
-import ru.compshp.service.ProductService;
-import ru.compshp.service.OrderService;
-import ru.compshp.service.SaleService;
+import ru.compshp.dto.ProductDTO;
+import ru.compshp.dto.UserDTO;
+import ru.compshp.service.AdminService;
 
 @RestController
 @RequestMapping("/api/admin")
-@CrossOrigin
+@PreAuthorize("hasRole('ADMIN')")
+@RequiredArgsConstructor
 public class AdminController {
-    private final UserService userService;
-    private final ProductService productService;
-    private final OrderService orderService;
-    private final SaleService saleService;
 
-    public AdminController(UserService userService, ProductService productService,
-                          OrderService orderService, SaleService saleService) {
-        this.userService = userService;
-        this.productService = productService;
-        this.orderService = orderService;
-        this.saleService = saleService;
+    private final AdminService adminService;
+
+    // Управление товарами
+    @PostMapping("/products")
+    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductDTO productDTO) {
+        return adminService.createProduct(productDTO);
     }
 
-    // TODO: Получить статистику для дашборда
-    @GetMapping("/dashboard")
-    public ResponseEntity<?> getDashboard() {
-        // TODO: Вернуть статистику
-        return ResponseEntity.ok(/* статистика */ null);
+    @PutMapping("/products/{id}")
+    public ResponseEntity<?> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductDTO productDTO) {
+        return adminService.updateProduct(id, productDTO);
     }
 
-    // TODO: Получить список пользователей
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
+        return adminService.deleteProduct(id);
+    }
+
+    // Управление пользователями
     @GetMapping("/users")
-    public ResponseEntity<?> listUsers() {
-        // TODO: Вернуть список пользователей
-        return ResponseEntity.ok(/* список пользователей */ null);
+    public ResponseEntity<?> getAllUsers() {
+        return adminService.getAllUsers();
     }
 
-    // TODO: Получить список товаров
-    @GetMapping("/products")
-    public ResponseEntity<?> listProducts() {
-        // TODO: Вернуть список товаров
-        return ResponseEntity.ok(/* список товаров */ null);
+    @GetMapping("/users/{id}")
+    public ResponseEntity<?> getUser(@PathVariable Long id) {
+        return adminService.getUser(id);
     }
 
-    // TODO: Получить список заказов
+    @PutMapping("/users/{id}")
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @Valid @RequestBody UserDTO userDTO) {
+        return adminService.updateUser(id, userDTO);
+    }
+
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        return adminService.deleteUser(id);
+    }
+
+    // Управление заказами
     @GetMapping("/orders")
-    public ResponseEntity<?> listOrders() {
-        // TODO: Вернуть список заказов
-        return ResponseEntity.ok(/* список заказов */ null);
+    public ResponseEntity<?> getAllOrders() {
+        return adminService.getAllOrders();
     }
 
-    // TODO: Получить статистику продаж
-    @GetMapping("/sales")
-    public ResponseEntity<?> showSales() {
-        // TODO: Вернуть статистику продаж
-        return ResponseEntity.ok(/* статистика */ null);
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<?> getOrder(@PathVariable Long id) {
+        return adminService.getOrder(id);
     }
 
-    // TODO: Получить список отзывов
-    @GetMapping("/reviews")
-    public ResponseEntity<?> listReviews() {
-        // TODO: Вернуть список отзывов
-        return ResponseEntity.ok(/* список отзывов */ null);
+    @PutMapping("/orders/{id}/status")
+    public ResponseEntity<?> updateOrderStatus(@PathVariable Long id, @RequestParam String status) {
+        return adminService.updateOrderStatus(id, status);
     }
 
-    // TODO: Получить список производителей
-    @GetMapping("/manufacturers")
-    public ResponseEntity<?> listManufacturers() {
-        // TODO: Вернуть список производителей
-        return ResponseEntity.ok(/* список производителей */ null);
+    // Статистика
+    @GetMapping("/statistics")
+    public ResponseEntity<?> getStatistics() {
+        return adminService.getStatistics();
     }
-
-    // TODO: Методы для управления пользователями, товарами, заказами, отзывами, производителями, скидками, акциями, конфигурациями и экспорта данных
 } 

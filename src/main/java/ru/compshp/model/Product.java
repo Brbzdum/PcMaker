@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import ru.compshp.model.enums.ProductCategory;
-import ru.compshp.model.enums.ComponentType;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @Entity
@@ -40,13 +40,9 @@ public class Product {
     @JoinColumn(name = "manufacturer_id", nullable = false)
     private Manufacturer manufacturer;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private ProductCategory productCategory;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "component_type")
-    private ComponentType componentType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
 
     @Column(columnDefinition = "jsonb", nullable = false)
     private String specs;
@@ -63,10 +59,6 @@ public class Product {
     @Column
     private Double rating;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
-
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
@@ -78,6 +70,12 @@ public class Product {
 
     @Column(name = "compatibility_specs", columnDefinition = "jsonb")
     private String compatibilitySpecs;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    private Set<Review> reviews = new HashSet<>();
+
+    @Column(name = "is_active")
+    private boolean active = true;
 
     @PrePersist
     protected void onCreate() {
@@ -95,4 +93,17 @@ public class Product {
     // TODO: Добавить методы для расчета рейтинга товара
     // TODO: Добавить методы для расчета цен и скидок
     // TODO: Реализовать проверку совместимости компонентов
+
+    public enum ProductType {
+        CPU,
+        MOTHERBOARD,
+        GPU,
+        RAM,
+        STORAGE,
+        PSU,
+        CASE,
+        COOLER,
+        PERIPHERAL,
+        READY_PC
+    }
 } 

@@ -3,6 +3,7 @@ package ru.compshp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 import ru.compshp.model.enums.UserRole;
 
@@ -14,8 +15,19 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
+    private String username;
+
+    private boolean enabled = false;
+
+    @Column(name = "verification_code", length = 64)
+    private String verificationCode;
 
     @Column(nullable = false, length = 50)
     private String name;
@@ -26,17 +38,18 @@ public class User {
     @Column(name = "activation_code")
     private String activationCode;
 
-    @Column(nullable = false, length = 1000)
-    private String password;
-
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @ElementCollection(targetClass = UserRole.class, fetch = FetchType.EAGER)
-    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Enumerated(EnumType.STRING)
-    @Column(name = "role")
-    private Set<UserRole> roles;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
+    private Set<Role> roles = new HashSet<>();
+
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
 
     // TODO: Добавить метод для проверки роли пользователя
     // TODO: Добавить метод для активации аккаунта

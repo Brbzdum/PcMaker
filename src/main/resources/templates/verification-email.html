@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Подтверждение регистрации</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Подтверждение регистрации</h2>
+        <p>Уважаемый <span th:text="${name}">Пользователь</span>,</p>
+        <p>Спасибо за регистрацию в PC Maker!</p>
+        <p>Для подтверждения вашей регистрации, пожалуйста, нажмите на кнопку ниже:</p>
+        <a th:href="${URL}" class="button">Подтвердить регистрацию</a>
+        <p>Если вы не регистрировались в PC Maker, просто проигнорируйте это письмо.</p>
+        <p>С уважением,<br>Команда PC Maker</p>
+    </div>
+</body>
+</html> 
