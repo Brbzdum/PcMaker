@@ -3,26 +3,32 @@ package ru.compshp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @Entity
 @Table(name = "config_components")
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConfigComponent {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @EmbeddedId
+    private ConfigComponentId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "configuration_id", nullable = false)
+    @MapsId("configId")
+    @JoinColumn(name = "config_id")
     private PCConfiguration configuration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @MapsId("productId")
+    @JoinColumn(name = "product_id")
     private Product product;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
+    private Integer quantity = 1;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

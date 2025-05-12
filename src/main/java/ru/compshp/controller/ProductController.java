@@ -1,91 +1,96 @@
 package ru.compshp.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.ProductDto;
+import ru.compshp.model.Product;
+import ru.compshp.model.enums.ComponentType;
 import ru.compshp.service.ProductService;
-import ru.compshp.service.ReviewService;
+import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
-@CrossOrigin
 public class ProductController {
     private final ProductService productService;
-    private final ReviewService reviewService;
 
-    // Получение списка товаров с фильтрацией
-    @GetMapping
-    public ResponseEntity<?> listProducts(
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String manufacturer,
-            @RequestParam(required = false) Double minPrice,
-            @RequestParam(required = false) Double maxPrice,
-            @RequestParam(required = false) String sortBy,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return productService.getProducts(category, manufacturer, minPrice, maxPrice, sortBy, page, size);
-    }
-
-    // Получение товара по ID
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getProduct(@PathVariable Long id) {
-        return productService.getProduct(id);
-    }
-
-    // Поиск товаров
-    @GetMapping("/search")
-    public ResponseEntity<?> searchProducts(
-            @RequestParam String query,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return productService.searchProducts(query, page, size);
-    }
-
-    // Популярные товары
-    @GetMapping("/popular")
-    public ResponseEntity<?> getPopularProducts() {
-        return productService.getPopularProducts();
-    }
-
-    // Новые поступления
-    @GetMapping("/new-arrivals")
-    public ResponseEntity<?> getNewArrivals() {
-        return productService.getNewArrivals();
-    }
-
-    // Товары по категории
-    @GetMapping("/category/{category}")
-    public ResponseEntity<?> getProductsByCategory(
-            @PathVariable String category,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return productService.getProductsByCategory(category, page, size);
-    }
-
-    // Товары по производителю
-    @GetMapping("/manufacturer/{manufacturerId}")
-    public ResponseEntity<?> getProductsByManufacturer(
-            @PathVariable Long manufacturerId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return productService.getProductsByManufacturer(manufacturerId, page, size);
-    }
-
-    // Административные эндпоинты
     @PostMapping
-    public ResponseEntity<?> createProduct(@RequestBody ProductDto productDto) {
-        return productService.createProduct(productDto);
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+        return ResponseEntity.ok(productService.createProduct(product));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getProductById(@PathVariable Long id) {
+        return productService.getProductById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<Page<Product>> getAllProducts(Pageable pageable) {
+        return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateProduct(@PathVariable Long id, @RequestBody ProductDto productDto) {
-        return productService.updateProduct(id, productDto);
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        product.setId(id);
+        return ResponseEntity.ok(productService.updateProduct(product));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
-        return productService.deleteProduct(id);
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/category/{categoryId}")
+    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long categoryId) {
+        return ResponseEntity.ok(productService.getProductsByCategory(categoryId));
+    }
+
+    @GetMapping("/manufacturer/{manufacturerId}")
+    public ResponseEntity<List<Product>> getProductsByManufacturer(@PathVariable Long manufacturerId) {
+        return ResponseEntity.ok(productService.getProductsByManufacturer(manufacturerId));
+    }
+
+    @GetMapping("/component-type/{componentType}")
+    public ResponseEntity<List<Product>> getProductsByComponentType(
+            @PathVariable ComponentType componentType) {
+        return ResponseEntity.ok(productService.getProductsByComponentType(componentType));
+    }
+
+    @GetMapping("/available")
+    public ResponseEntity<List<Product>> getAvailableProducts() {
+        return ResponseEntity.ok(productService.getAvailableProducts());
+    }
+
+    @GetMapping("/low-stock")
+    public ResponseEntity<List<Product>> getLowStockProducts(
+            @RequestParam(defaultValue = "5") Integer threshold) {
+        return ResponseEntity.ok(productService.getLowStockProducts(threshold));
+    }
+
+    @GetMapping("/highly-rated")
+    public ResponseEntity<List<Product>> getHighlyRatedProducts(
+            @RequestParam(defaultValue = "4.0") Double minRating) {
+        return ResponseEntity.ok(productService.getHighlyRatedProducts(minRating));
+    }
+
+    @PutMapping("/{id}/stock")
+    public ResponseEntity<Void> updateStock(
+            @PathVariable Long id,
+            @RequestParam Integer quantity) {
+        productService.updateStock(id, quantity);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{id}/available")
+    public ResponseEntity<Boolean> isProductAvailable(
+            @PathVariable Long id,
+            @RequestParam Integer quantity) {
+        return ResponseEntity.ok(productService.isProductAvailable(id, quantity));
     }
 } 

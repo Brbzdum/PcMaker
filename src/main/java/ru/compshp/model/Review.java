@@ -2,41 +2,47 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
 
 @Data
 @Entity
 @Table(name = "reviews")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Review {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     @Column(nullable = false)
     private Integer rating;
 
-    @Column(length = 1000)
     private String comment;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @Column(name = "is_verified_purchase")
-    private boolean verifiedPurchase;
+    private Boolean isVerifiedPurchase = false;
 
     @Column(name = "is_moderated")
-    private boolean moderated = false;
+    private Boolean isModerated = false;
 
     @Column(name = "is_approved")
-    private Boolean approved;
+    private Boolean isApproved;
 
     @Column(name = "report_count")
     private Integer reportCount = 0;
@@ -44,6 +50,12 @@ public class Review {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // TODO: Добавить метод для проверки возможности редактирования

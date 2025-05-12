@@ -1,7 +1,6 @@
 package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.Cart;
@@ -14,6 +13,7 @@ import ru.compshp.repository.UserRepository;
 import ru.compshp.util.SecurityUtils;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,19 +23,19 @@ public class CartService {
     private final UserRepository userRepository;
     private final ProductService productService;
 
-    public ResponseEntity<?> getCart() {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+    public Cart getOrCreateCart(Long userId) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Cart cart = cartRepository.findByUser(user)
             .orElseGet(() -> createNewCart(user));
         
-        return ResponseEntity.ok(cart);
+        return cart;
     }
 
     @Transactional
-    public ResponseEntity<?> addToCart(Long productId, Integer quantity) {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+    public Cart addItem(Long userId, Long productId, int quantity) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Product product = productService.getProduct(productId)
@@ -60,56 +60,33 @@ public class CartService {
         }
 
         cart = cartRepository.save(cart);
-        return ResponseEntity.ok(cart);
+        return cart;
     }
 
     @Transactional
-    public ResponseEntity<?> addConfigurationToCart(PCConfiguration configuration) {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+    public Cart removeItem(Long userId, Long productId) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Cart cart = cartRepository.findByUser(user)
-            .orElseGet(() -> createNewCart(user));
+            .orElseThrow(() -> new RuntimeException("Cart not found"));
 
-        // Добавляем CPU
-        addToCart(configuration.getCpu().getId(), 1);
-
-        // Добавляем материнскую плату
-        addToCart(configuration.getMotherboard().getId(), 1);
-
-        // Добавляем GPU
-        addToCart(configuration.getGpu().getId(), 1);
-
-        // Добавляем PSU
-        addToCart(configuration.getPsu().getId(), 1);
-
-        // Добавляем корпус
-        addToCart(configuration.getCase().getId(), 1);
-
-        // Добавляем RAM
-        for (Product ram : configuration.getRam()) {
-            addToCart(ram.getId(), 1);
-        }
-
-        // Добавляем накопители
-        for (Product storage : configuration.getStorage()) {
-            addToCart(storage.getId(), 1);
-        }
+        cart.getItems().removeIf(item -> item.getProduct().getId().equals(productId));
 
         cart = cartRepository.save(cart);
-        return ResponseEntity.ok(cart);
+        return cart;
     }
 
     @Transactional
-    public ResponseEntity<?> updateCartItem(Long itemId, Integer quantity) {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+    public Cart updateItemQuantity(Long userId, Long productId, int quantity) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Cart cart = cartRepository.findByUser(user)
             .orElseThrow(() -> new RuntimeException("Cart not found"));
 
         CartItem item = cart.getItems().stream()
-            .filter(i -> i.getId().equals(itemId))
+            .filter(i -> i.getProduct().getId().equals(productId))
             .findFirst()
             .orElseThrow(() -> new RuntimeException("Cart item not found"));
 
@@ -120,26 +97,12 @@ public class CartService {
         }
 
         cart = cartRepository.save(cart);
-        return ResponseEntity.ok(cart);
+        return cart;
     }
 
     @Transactional
-    public ResponseEntity<?> removeFromCart(Long itemId) {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
-            .orElseThrow(() -> new RuntimeException("User not found"));
-        
-        Cart cart = cartRepository.findByUser(user)
-            .orElseThrow(() -> new RuntimeException("Cart not found"));
-
-        cart.getItems().removeIf(item -> item.getId().equals(itemId));
-
-        cart = cartRepository.save(cart);
-        return ResponseEntity.ok(cart);
-    }
-
-    @Transactional
-    public ResponseEntity<?> clearCart() {
-        User user = userRepository.findByUsername(SecurityUtils.getCurrentUsername())
+    public Cart clearCart(Long userId) {
+        User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
         
         Cart cart = cartRepository.findByUser(user)
@@ -147,7 +110,42 @@ public class CartService {
 
         cart.getItems().clear();
         cart = cartRepository.save(cart);
-        return ResponseEntity.ok(cart);
+        return cart;
+    }
+
+    @Transactional
+    public void deleteCart(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Cart cart = cartRepository.findByUser(user)
+            .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        cartRepository.delete(cart);
+    }
+
+    public List<CartItem> getCartItems(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Cart cart = cartRepository.findByUser(user)
+            .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        return cart.getItems();
+    }
+
+    public double getCartTotal(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        Cart cart = cartRepository.findByUser(user)
+            .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        double total = 0.0;
+        for (CartItem item : cart.getItems()) {
+            total += item.getProduct().getPrice().doubleValue() * item.getQuantity();
+        }
+        return total;
     }
 
     private Cart createNewCart(User user) {

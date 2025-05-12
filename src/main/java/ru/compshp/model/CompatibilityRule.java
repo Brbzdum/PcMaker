@@ -3,13 +3,15 @@ package ru.compshp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 import ru.compshp.model.enums.ComponentType;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @Entity
 @Table(name = "compatibility_rules")
+@NoArgsConstructor
+@AllArgsConstructor
 public class CompatibilityRule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,10 +25,12 @@ public class CompatibilityRule {
     @Column(name = "target_type", nullable = false)
     private ComponentType targetType;
 
-    @Column(name = "check_condition", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "check_condition", columnDefinition = "jsonb", nullable = false)
     private String checkCondition;
 
-    @Column(name = "created_at", nullable = false)
+    private String description;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")

@@ -2,6 +2,10 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import ru.compshp.model.enums.ComponentType;
+import ru.compshp.model.enums.ProductCategory;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -10,28 +14,33 @@ import java.util.Set;
 @Data
 @Entity
 @Table(name = "products")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = false)
     private String title;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false)
     private String description;
 
-    @Column(nullable = false, precision = 15, scale = 2)
+    @Column(nullable = false)
     private BigDecimal price;
 
-    @Column(name = "purchase_price", nullable = false, precision = 15, scale = 2)
+    @Column(name = "purchase_price", nullable = false)
     private BigDecimal purchasePrice;
 
-    @Column(name = "image_path", length = 255)
+    @Column(name = "image_path")
     private String imagePath;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 
     @Column(nullable = false)
     private Integer stock;
@@ -44,26 +53,24 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "component_type")
+    private ComponentType componentType;
+
     @Column(columnDefinition = "jsonb", nullable = false)
     private String specs;
 
-    @Column(name = "average_rating", precision = 3, scale = 2)
+    @Column(name = "average_rating")
     private BigDecimal averageRating;
 
     @Column(name = "ratings_count")
-    private Integer ratingsCount;
+    private Integer ratingsCount = 0;
 
-    @Column
-    private BigDecimal discount;
-
-    @Column
-    private Double rating;
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
 
     @Column(name = "physical_specs", columnDefinition = "jsonb")
     private String physicalSpecs;
@@ -74,8 +81,11 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
     private Set<Review> reviews = new HashSet<>();
 
-    @Column(name = "is_active")
-    private boolean active = true;
+    @Column
+    private BigDecimal discount;
+
+    @Column
+    private Double rating;
 
     @PrePersist
     protected void onCreate() {

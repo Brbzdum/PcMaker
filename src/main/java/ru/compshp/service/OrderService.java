@@ -10,6 +10,7 @@ import ru.compshp.model.User;
 import ru.compshp.repository.OrderRepository;
 import ru.compshp.repository.ProductRepository;
 import ru.compshp.repository.UserRepository;
+import ru.compshp.model.enums.OrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

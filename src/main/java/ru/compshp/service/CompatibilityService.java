@@ -2,13 +2,11 @@ package ru.compshp.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import ru.compshp.model.CompatibilityCache;
-import ru.compshp.model.CompatibilityRule;
-import ru.compshp.model.Product;
-import ru.compshp.repository.CompatibilityCacheRepository;
+import org.springframework.transaction.annotation.Transactional;
+import ru.compshp.model.*;
 import ru.compshp.repository.CompatibilityRuleRepository;
+import ru.compshp.repository.ProductRepository;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -23,182 +21,117 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class CompatibilityService {
-    private final CompatibilityCacheRepository cacheRepository;
     private final CompatibilityRuleRepository ruleRepository;
+    private final ProductRepository productRepository;
     private final ObjectMapper objectMapper;
 
-    public ResponseEntity<?> checkCompatibility(Product cpu, Product motherboard, Product gpu, Product psu, Product pcCase) {
-        try {
-            // Генерируем ключ кэша
-            String cacheKey = generateCacheKey(cpu, motherboard, gpu, psu, pcCase);
-
-            // Проверяем кэш
-            Optional<CompatibilityCache> cachedResult = cacheRepository.findByCacheKey(cacheKey);
-            if (cachedResult.isPresent()) {
-                return ResponseEntity.ok(objectMapper.readValue(cachedResult.get().getResult(), Map.class));
-            }
-
-            Map<String, Object> result = new HashMap<>();
-            List<String> notes = new ArrayList<>();
-
-            // Проверяем совместимость CPU и материнской платы
-            if (cpu != null && motherboard != null) {
-                boolean cpuMoboCompatible = checkCpuMoboCompatibility(cpu, motherboard);
-                result.put("cpu_motherboard", cpuMoboCompatible);
-                if (!cpuMoboCompatible) {
-                    notes.add("CPU не совместим с материнской платой");
-                }
-            }
-
-            // Проверяем совместимость GPU и корпуса
-            if (gpu != null && pcCase != null) {
-                boolean gpuCaseCompatible = checkGpuCaseCompatibility(gpu, pcCase);
-                result.put("gpu_case", gpuCaseCompatible);
-                if (!gpuCaseCompatible) {
-                    notes.add("GPU не помещается в корпус");
-                }
-            }
-
-            // Проверяем совместимость PSU и энергопотребления
-            if (psu != null && cpu != null && gpu != null) {
-                boolean psuPowerCompatible = checkPsuPowerCompatibility(psu, cpu, gpu);
-                result.put("psu_power", psuPowerCompatible);
-                if (!psuPowerCompatible) {
-                    notes.add("Блок питания недостаточной мощности");
-                }
-            }
-
-            result.put("notes", notes);
-            result.put("compatible", !notes.isEmpty());
-
-            // Сохраняем результат в кэш
-            CompatibilityCache cache = new CompatibilityCache();
-            cache.setCacheKey(cacheKey);
-            cache.setResult(objectMapper.writeValueAsString(result));
-            cacheRepository.save(cache);
-
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error checking compatibility: " + e.getMessage());
-        }
+    public boolean checkCompatibility(Product product, List<Product> existingComponents) {
+        return existingComponents.stream()
+                .allMatch(existing -> isCompatible(product, existing));
     }
 
-    public ResponseEntity<?> calculatePowerRequirement(Product cpu, Product gpu, Set<Product> additionalComponents) {
-        try {
-            int totalPower = 0;
+    public Map<String, String> getCompatibilityIssues(PCConfiguration config) {
+        Map<String, String> issues = new HashMap<>();
+        List<Product> components = config.getComponents().stream()
+                .map(ConfigComponent::getProduct)
+                .collect(Collectors.toList());
 
-            // Добавляем энергопотребление CPU
-            if (cpu != null && cpu.getSpecifications() != null && cpu.getSpecifications().containsKey("tdp")) {
-                totalPower += Integer.parseInt(cpu.getSpecifications().get("tdp").toString());
-            }
+        // Проверка наличия обязательных компонентов
+        Set<ComponentType> requiredTypes = Set.of(ComponentType.CPU, ComponentType.MB, ComponentType.RAM, ComponentType.PSU);
+        Set<ComponentType> presentTypes = components.stream()
+                .map(Product::getComponentType)
+                .collect(Collectors.toSet());
 
-            // Добавляем энергопотребление GPU
-            if (gpu != null && gpu.getSpecifications() != null && gpu.getSpecifications().containsKey("powerConsumption")) {
-                totalPower += Integer.parseInt(gpu.getSpecifications().get("powerConsumption").toString());
-            }
+        requiredTypes.stream()
+                .filter(type -> !presentTypes.contains(type))
+                .forEach(type -> issues.put(type.name(), "Missing required component"));
 
-            // Добавляем энергопотребление дополнительных компонентов
-            for (Product component : additionalComponents) {
-                if (component.getSpecifications() != null && component.getSpecifications().containsKey("powerConsumption")) {
-                    totalPower += Integer.parseInt(component.getSpecifications().get("powerConsumption").toString());
+        // Проверка совместимости между компонентами
+        for (int i = 0; i < components.size(); i++) {
+            for (int j = i + 1; j < components.size(); j++) {
+                if (!isCompatible(components.get(i), components.get(j))) {
+                    issues.put(
+                        components.get(i).getComponentType() + " - " + components.get(j).getComponentType(),
+                        "Incompatible components"
+                    );
                 }
             }
-
-            // Добавляем 20% запаса
-            totalPower = (int) (totalPower * 1.2);
-
-            return ResponseEntity.ok(totalPower);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error calculating power requirement: " + e.getMessage());
         }
+
+        return issues;
     }
 
-    public boolean checkCpuMoboCompatibility(Product cpu, Product motherboard) {
+    public List<Product> getCompatibleComponents(Product baseComponent, ComponentType targetType) {
+        List<CompatibilityRule> rules = ruleRepository.findBySourceTypeAndTargetType(
+                baseComponent.getComponentType(), targetType);
+
+        return productRepository.findByComponentType(targetType).stream()
+                .filter(product -> isCompatibleWithRules(product, rules))
+                .collect(Collectors.toList());
+    }
+
+    public boolean isPowerSupplySufficient(PCConfiguration config) {
+        int totalPower = config.getComponents().stream()
+                .mapToInt(this::getComponentPowerConsumption)
+                .sum();
+
+        return config.getComponents().stream()
+                .filter(c -> c.getProduct().getComponentType() == ComponentType.PSU)
+                .mapToInt(this::getComponentPowerOutput)
+                .anyMatch(power -> power >= totalPower);
+    }
+
+    private boolean isCompatible(Product product1, Product product2) {
+        List<CompatibilityRule> rules = ruleRepository.findBySourceTypeAndTargetType(
+                product1.getComponentType(), product2.getComponentType());
+
+        return rules.stream()
+                .allMatch(rule -> checkRuleCompatibility(product1, product2, rule));
+    }
+
+    private boolean isCompatibleWithRules(Product product, List<CompatibilityRule> rules) {
+        return rules.stream()
+                .allMatch(rule -> checkRuleCompatibility(null, product, rule));
+    }
+
+    private boolean checkRuleCompatibility(Product source, Product target, CompatibilityRule rule) {
         try {
-            if (cpu.getSpecifications() == null || motherboard.getSpecifications() == null) {
-                return false;
-            }
+            Map<String, Object> sourceSpecs = source != null ? 
+                    objectMapper.readValue(source.getSpecs(), Map.class) : 
+                    new HashMap<>();
+            Map<String, Object> targetSpecs = objectMapper.readValue(target.getSpecs(), Map.class);
+            Map<String, Object> ruleConditions = objectMapper.readValue(rule.getCheckCondition(), Map.class);
 
-            // Проверяем совместимость сокетов
-            String cpuSocket = cpu.getSpecifications().get("socket").toString();
-            String moboSocket = motherboard.getSpecifications().get("socket").toString();
-            if (!cpuSocket.equals(moboSocket)) {
-                return false;
-            }
-
-            // Проверяем совместимость типов памяти
-            String cpuRamType = cpu.getSpecifications().get("ram_type").toString();
-            String moboRamType = motherboard.getSpecifications().get("ram_type").toString();
-            return cpuRamType.equals(moboRamType);
+            return ruleConditions.entrySet().stream()
+                    .allMatch(entry -> {
+                        Object sourceValue = sourceSpecs.get(entry.getKey());
+                        Object targetValue = targetSpecs.get(entry.getKey());
+                        return sourceValue != null && targetValue != null && 
+                               sourceValue.equals(entry.getValue()) && 
+                               targetValue.equals(entry.getValue());
+                    });
         } catch (Exception e) {
             return false;
         }
     }
 
-    public boolean checkGpuCaseCompatibility(Product gpu, Product pcCase) {
+    private int getComponentPowerConsumption(ConfigComponent component) {
         try {
-            if (gpu.getSpecifications() == null || pcCase.getSpecifications() == null) {
-                return false;
-            }
-
-            // Проверяем длину GPU и максимальную длину GPU в корпусе
-            double gpuLength = Double.parseDouble(gpu.getSpecifications().get("length").toString());
-            double maxGpuLength = Double.parseDouble(pcCase.getSpecifications().get("maxGpuLength").toString());
-            return gpuLength <= maxGpuLength;
+            Map<String, Object> specs = objectMapper.readValue(component.getProduct().getSpecs(), Map.class);
+            return (int) specs.getOrDefault("power_consumption", 0) * component.getQuantity();
         } catch (Exception e) {
-            return false;
+            return 0;
         }
     }
 
-    public boolean checkPsuPowerCompatibility(Product psu, Product cpu, Product gpu) {
+    private int getComponentPowerOutput(ConfigComponent component) {
         try {
-            if (psu.getSpecifications() == null || cpu.getSpecifications() == null || gpu.getSpecifications() == null) {
-                return false;
-            }
-
-            // Получаем мощность блока питания
-            int psuWattage = Integer.parseInt(psu.getSpecifications().get("wattage").toString());
-
-            // Рассчитываем требуемую мощность
-            int requiredPower = 0;
-            requiredPower += Integer.parseInt(cpu.getSpecifications().get("tdp").toString());
-            requiredPower += Integer.parseInt(gpu.getSpecifications().get("powerConsumption").toString());
-
-            // Добавляем 20% запаса
-            requiredPower = (int) (requiredPower * 1.2);
-
-            return psuWattage >= requiredPower;
+            Map<String, Object> specs = objectMapper.readValue(component.getProduct().getSpecs(), Map.class);
+            return (int) specs.getOrDefault("power_output", 0);
         } catch (Exception e) {
-            return false;
+            return 0;
         }
-    }
-
-    public List<CompatibilityRule> getRulesBySourceType(String sourceType) {
-        return ruleRepository.findBySourceType(sourceType);
-    }
-
-    public List<CompatibilityRule> getRulesByTargetType(String targetType) {
-        return ruleRepository.findByTargetType(targetType);
-    }
-
-    public Optional<CompatibilityRule> getRuleById(Long id) {
-        return ruleRepository.findById(id);
-    }
-
-    public CompatibilityRule saveRule(CompatibilityRule rule) {
-        return ruleRepository.save(rule);
-    }
-
-    public void deleteRule(Long id) {
-        ruleRepository.deleteById(id);
-    }
-
-    private String generateCacheKey(Product... components) {
-        return Arrays.stream(components)
-            .filter(Objects::nonNull)
-            .map(Product::getId)
-            .map(String::valueOf)
-            .collect(Collectors.joining("_"));
     }
 } 
