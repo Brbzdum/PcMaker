@@ -9,7 +9,7 @@ import ru.compshp.model.*;
 import ru.compshp.model.enums.ComponentType;
 import ru.compshp.repository.*;
 import ru.compshp.service.CompatibilityService;
-import ru.compshp.service.PCConfiguratorService;
+import ru.compshp.service.ConfiguratorService;
 import ru.compshp.service.PricingService;
 import ru.compshp.service.ProductService;
 
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class PCConfiguratorServiceImpl implements PCConfiguratorService {
+public class ConfiguratorServiceImpl implements ConfiguratorService {
     private final PCConfigurationRepository configRepository;
     private final UserRepository userRepository;
     private final ProductService productService;
@@ -93,7 +93,7 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
             throw new InsufficientStockException(productId, 1, 0);
         }
 
-        // Проверяем, нет ли уже компонента такого типа
+        // Check if component type already exists
         config.getComponents().stream()
             .filter(c -> c.getType() == product.getType())
             .findFirst()
@@ -103,7 +103,7 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
                 );
             });
 
-        // Проверяем совместимость с существующими компонентами
+        // Check compatibility with existing components
         for (Product existingComponent : config.getComponents()) {
             if (!compatibilityService.areComponentsCompatible(existingComponent, product)) {
                 throw new InvalidConfigurationException(
@@ -132,34 +132,21 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
 
     @Override
     @Transactional(readOnly = true)
-    public boolean checkCompatibility(Long configId) {
+    public Map<String, Object> getCompatibilityInfo(Long configId) {
         PCConfiguration config = configRepository.findById(configId)
             .orElseThrow(() -> new ConfigurationNotFoundException(configId));
 
-        List<Product> components = config.getComponents();
-        for (int i = 0; i < components.size(); i++) {
-            for (int j = i + 1; j < components.size(); j++) {
-                if (!compatibilityService.areComponentsCompatible(components.get(i), components.get(j))) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<String> getCompatibilityIssues(Long configId) {
-        PCConfiguration config = configRepository.findById(configId)
-            .orElseThrow(() -> new ConfigurationNotFoundException(configId));
-
+        Map<String, Object> info = new HashMap<>();
         List<String> issues = new ArrayList<>();
+        boolean isCompatible = true;
+
         List<Product> components = config.getComponents();
         for (int i = 0; i < components.size(); i++) {
             for (int j = i + 1; j < components.size(); j++) {
                 Product comp1 = components.get(i);
                 Product comp2 = components.get(j);
                 if (!compatibilityService.areComponentsCompatible(comp1, comp2)) {
+                    isCompatible = false;
                     issues.add(String.format("%s and %s: %s",
                         comp1.getName(),
                         comp2.getName(),
@@ -168,7 +155,10 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
                 }
             }
         }
-        return issues;
+
+        info.put("isCompatible", isCompatible);
+        info.put("issues", issues);
+        return info;
     }
 
     @Override
@@ -257,7 +247,7 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
         try {
             return objectMapper.writeValueAsString(config);
         } catch (Exception e) {
-            throw new BusinessException("EXPORT_ERROR", "Failed to export configuration: " + e.getMessage());
+            throw new ConfigurationExportException(configId, e);
         }
     }
 
@@ -266,14 +256,17 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
     public PCConfiguration importConfiguration(Long userId, String jsonConfig) {
         try {
             PCConfiguration config = objectMapper.readValue(jsonConfig, PCConfiguration.class);
-            config.setId(null);
-            config.setUser(userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId)));
+            User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException(userId));
+            
+            config.setId(null); // Reset ID to create new configuration
+            config.setUser(user);
             config.setCreatedAt(LocalDateTime.now());
             config.setUpdatedAt(LocalDateTime.now());
+            
             return configRepository.save(config);
         } catch (Exception e) {
-            throw new BusinessException("IMPORT_ERROR", "Failed to import configuration: " + e.getMessage());
+            throw new ConfigurationImportException(e);
         }
     }
 
@@ -282,15 +275,16 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
     public PCConfiguration cloneConfiguration(Long configId, Long userId) {
         PCConfiguration original = configRepository.findById(configId)
             .orElseThrow(() -> new ConfigurationNotFoundException(configId));
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserNotFoundException(userId));
 
         PCConfiguration clone = new PCConfiguration();
-        clone.setUser(userRepository.findById(userId)
-            .orElseThrow(() -> new UserNotFoundException(userId)));
+        clone.setUser(user);
         clone.setName(original.getName() + " (Copy)");
         clone.setDescription(original.getDescription());
-        clone.setComponents(new ArrayList<>(original.getComponents()));
         clone.setCreatedAt(LocalDateTime.now());
         clone.setUpdatedAt(LocalDateTime.now());
+        clone.setComponents(new ArrayList<>(original.getComponents()));
 
         return configRepository.save(clone);
     }
@@ -314,5 +308,41 @@ public class PCConfiguratorServiceImpl implements PCConfiguratorService {
         return config.getComponents().stream()
             .filter(product -> product.getStock() <= 0)
             .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PCConfiguration> getSavedConfigurations() {
+        return configRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public void addConfigurationToCart(Long configId) {
+        PCConfiguration config = configRepository.findById(configId)
+            .orElseThrow(() -> new ConfigurationNotFoundException(configId));
+
+        if (!checkComponentsAvailability(configId)) {
+            throw new InsufficientStockException("Some components are out of stock");
+        }
+
+        // TODO: Implement cart integration
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PCConfiguration> getPopularConfigurations() {
+        // TODO: Implement popularity tracking and sorting
+        return configRepository.findAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<String, Object> getConfiguratorStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalConfigurations", configRepository.count());
+        stats.put("totalUsers", userRepository.count());
+        // TODO: Add more statistics
+        return stats;
     }
 } 

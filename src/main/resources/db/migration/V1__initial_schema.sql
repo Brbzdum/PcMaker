@@ -13,19 +13,14 @@ DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS manufacturers CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
-DROP TABLE IF EXISTS compatibility_rules CASCADE;
 DROP TABLE IF EXISTS sales CASCADE;
-DROP TABLE IF EXISTS discounts CASCADE;
 DROP TABLE IF EXISTS promotions CASCADE;
 DROP TABLE IF EXISTS promotion_products CASCADE;
-DROP TABLE IF EXISTS recommended_configs CASCADE;
-DROP TABLE IF EXISTS recommended_config_components CASCADE;
 
 DROP TYPE IF EXISTS user_role CASCADE;
 DROP TYPE IF EXISTS component_type CASCADE;
 DROP TYPE IF EXISTS product_category CASCADE;
 DROP TYPE IF EXISTS order_status CASCADE;
-DROP TYPE IF EXISTS discount_type CASCADE;
 DROP TYPE IF EXISTS promotion_type CASCADE;
 
 -- Создание типов данных
@@ -41,9 +36,6 @@ CREATE TYPE product_category AS ENUM (
 CREATE TYPE order_status AS ENUM (
     'PENDING', 'PROCESSING', 
     'SHIPPED', 'DELIVERED', 'CANCELLED'
-);
-CREATE TYPE discount_type AS ENUM (
-    'PERCENTAGE', 'FIXED_AMOUNT', 'BUNDLE'
 );
 CREATE TYPE promotion_type AS ENUM (
     'SEASONAL', 'FLASH_SALE', 'BUNDLE', 'LOYALTY', 'FIRST_PURCHASE'
@@ -118,17 +110,6 @@ CREATE TABLE products (
         (component_type IS NOT NULL AND category_id IN (SELECT id FROM categories WHERE name = 'PC_COMPONENT')) OR
         (component_type IS NULL AND category_id NOT IN (SELECT id FROM categories WHERE name = 'PC_COMPONENT'))
     )
-);
-
-CREATE TABLE compatibility_rules (
-    id BIGSERIAL PRIMARY KEY,
-    source_type component_type NOT NULL,
-    target_type component_type NOT NULL,
-    check_condition JSONB NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (source_type != target_type)
 );
 
 CREATE TABLE carts (
@@ -223,84 +204,6 @@ CREATE TABLE reviews (
     UNIQUE (user_id, product_id)
 );
 
--- Добавление новых таблиц для скидок и акций
-CREATE TABLE discounts (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    discount_type discount_type NOT NULL,
-    value DECIMAL(10,2) NOT NULL,
-    min_purchase_amount DECIMAL(15,2),
-    max_discount_amount DECIMAL(15,2),
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (end_date > start_date),
-    CHECK (value > 0)
-);
-
-CREATE TABLE promotions (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    promotion_type promotion_type NOT NULL,
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    priority INTEGER DEFAULT 0,
-    conditions JSONB,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (end_date > start_date)
-);
-
-CREATE TABLE promotion_products (
-    promotion_id BIGINT NOT NULL REFERENCES promotions(id) ON DELETE CASCADE,
-    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    discount_percentage DECIMAL(5,2),
-    discount_amount DECIMAL(10,2),
-    min_quantity INTEGER DEFAULT 1,
-    max_quantity INTEGER,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (promotion_id, product_id),
-    CHECK (
-        (discount_percentage IS NOT NULL AND discount_amount IS NULL) OR
-        (discount_percentage IS NULL AND discount_amount IS NOT NULL)
-    ),
-    CHECK (discount_percentage > 0 AND discount_percentage <= 100),
-    CHECK (discount_amount > 0),
-    CHECK (min_quantity > 0),
-    CHECK (max_quantity IS NULL OR max_quantity >= min_quantity)
-);
-
--- Добавление таблиц для рекомендованных конфигураций
-CREATE TABLE recommended_configs (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    target_usage VARCHAR(50) NOT NULL,
-    price_range_min DECIMAL(15,2),
-    price_range_max DECIMAL(15,2),
-    performance_score INTEGER,
-    is_featured BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CHECK (price_range_max > price_range_min)
-);
-
-CREATE TABLE recommended_config_components (
-    config_id BIGINT NOT NULL REFERENCES recommended_configs(id) ON DELETE CASCADE,
-    component_type component_type NOT NULL,
-    specs_requirements JSONB NOT NULL,
-    priority INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (config_id, component_type)
-);
-
 -- Оптимизированные индексы
 CREATE INDEX idx_products_component_type ON products(component_type);
 CREATE INDEX idx_products_category ON products(category_id);
@@ -313,19 +216,7 @@ CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 CREATE INDEX idx_pc_configurations_user ON pc_configurations(user_id);
 CREATE INDEX idx_config_components_config ON config_components(config_id);
-CREATE INDEX idx_compatibility_rules_types ON compatibility_rules(source_type, target_type);
 CREATE INDEX idx_sales_date ON sales(sale_date);
-
--- Добавление индексов для новых таблиц
-CREATE INDEX idx_discounts_dates ON discounts(start_date, end_date);
-CREATE INDEX idx_discounts_active ON discounts(is_active);
-CREATE INDEX idx_promotions_dates ON promotions(start_date, end_date);
-CREATE INDEX idx_promotions_active ON promotions(is_active);
-CREATE INDEX idx_promotions_type ON promotions(promotion_type);
-CREATE INDEX idx_promotion_products_product ON promotion_products(product_id);
-CREATE INDEX idx_recommended_configs_usage ON recommended_configs(target_usage);
-CREATE INDEX idx_recommended_configs_price ON recommended_configs(price_range_min, price_range_max);
-CREATE INDEX idx_recommended_configs_featured ON recommended_configs(is_featured);
 
 -- Создание функций и триггеров
 CREATE OR REPLACE FUNCTION update_timestamp()
@@ -489,27 +380,12 @@ CREATE TRIGGER trg_adjust_stock
 
 -- Добавление триггеров для новых таблиц
 CREATE TRIGGER trg_update_timestamp
-    BEFORE UPDATE ON discounts
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER trg_update_timestamp
     BEFORE UPDATE ON promotions
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
 
 CREATE TRIGGER trg_update_timestamp
     BEFORE UPDATE ON promotion_products
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER trg_update_timestamp
-    BEFORE UPDATE ON recommended_configs
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER trg_update_timestamp
-    BEFORE UPDATE ON recommended_config_components
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
 

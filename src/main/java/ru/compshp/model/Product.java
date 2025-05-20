@@ -87,10 +87,24 @@ public class Product {
     @Column
     private Double rating;
 
+    @Column(name = "power_consumption")
+    private Integer powerConsumption;
+
+    @Column(name = "performance_score")
+    private Double performanceScore;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (stock == null) stock = 0;
+        if (ratingsCount == null) ratingsCount = 0;
+        if (averageRating == null) averageRating = BigDecimal.ZERO;
+        if (isActive == null) isActive = true;
+        if (discount == null) discount = BigDecimal.ZERO;
+        if (rating == null) rating = 0.0;
+        if (powerConsumption == null) powerConsumption = 0;
+        if (performanceScore == null) performanceScore = 0.0;
     }
 
     @PreUpdate
@@ -98,11 +112,60 @@ public class Product {
         updatedAt = LocalDateTime.now();
     }
 
-    // TODO: Реализовать валидацию типа компонента в зависимости от категории товара
-    // TODO: Добавить методы для управления складом (увеличение/уменьшение количества)
-    // TODO: Добавить методы для расчета рейтинга товара
-    // TODO: Добавить методы для расчета цен и скидок
-    // TODO: Реализовать проверку совместимости компонентов
+    public void increaseStock(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0");
+        }
+        stock += amount;
+    }
+
+    public void decreaseStock(int amount) {
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Amount must be greater than 0");
+        }
+        if (stock < amount) {
+            throw new InsufficientStockException(id, amount, stock);
+        }
+        stock -= amount;
+    }
+
+    public void updateRating(Double newRating) {
+        if (newRating < 0 || newRating > 5) {
+            throw new IllegalArgumentException("Rating must be between 0 and 5");
+        }
+        double totalRating = (rating * ratingsCount) + newRating;
+        ratingsCount++;
+        rating = totalRating / ratingsCount;
+    }
+
+    public BigDecimal getDiscountedPrice() {
+        if (discount == null || discount.compareTo(BigDecimal.ZERO) == 0) {
+            return price;
+        }
+        return price.multiply(BigDecimal.ONE.subtract(discount.divide(new BigDecimal("100"))));
+    }
+
+    public boolean isInStock() {
+        return stock > 0;
+    }
+
+    public boolean isCompatibleWith(Product other) {
+        if (componentType == null || other.getComponentType() == null) {
+            return true; // Non-component products are always compatible
+        }
+        // TODO: Implement actual compatibility check based on specs
+        return true;
+    }
+
+    public void validateComponentType() {
+        if (componentType == null) {
+            return; // Not a component
+        }
+        if (category == null) {
+            throw new IllegalStateException("Category must be set for components");
+        }
+        // TODO: Implement validation logic based on category
+    }
 
     public enum ProductType {
         CPU,

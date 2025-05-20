@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -43,6 +44,36 @@ public class ConfigComponent {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public BigDecimal getTotalPrice() {
+        return product.getPrice().multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public int getTotalPowerConsumption() {
+        return product.getPowerConsumption() * quantity;
+    }
+
+    public double getTotalPerformanceScore() {
+        return product.getPerformanceScore() * quantity;
+    }
+
+    public boolean isInStock() {
+        return product.getStock() >= quantity;
+    }
+
+    public void updateQuantity(int newQuantity) {
+        if (newQuantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+        if (newQuantity > product.getStock()) {
+            throw new InsufficientStockException(product.getId(), newQuantity, product.getStock());
+        }
+        quantity = newQuantity;
+    }
+
+    public boolean isCompatibleWith(ConfigComponent other) {
+        return product.isCompatibleWith(other.getProduct());
     }
 
     // TODO: Добавить метод для проверки совместимости с другими компонентами
