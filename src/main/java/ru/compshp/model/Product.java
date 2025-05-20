@@ -78,7 +78,7 @@ public class Product {
     @Column(name = "compatibility_specs", columnDefinition = "jsonb")
     private String compatibilitySpecs;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "product")
     private Set<Review> reviews = new HashSet<>();
 
     @Column
@@ -124,7 +124,7 @@ public class Product {
             throw new IllegalArgumentException("Amount must be greater than 0");
         }
         if (stock < amount) {
-            throw new InsufficientStockException(id, amount, stock);
+            throw new IllegalStateException("Insufficient stock");
         }
         stock -= amount;
     }

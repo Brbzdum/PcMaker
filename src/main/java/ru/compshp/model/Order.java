@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 import ru.compshp.model.enums.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.Set;
 
 @Data
@@ -50,7 +51,7 @@ public class Order {
     private PCConfiguration pcConfiguration;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<OrderItem> items;
+    private Set<OrderItem> items = new HashSet<>();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<OrderStatusHistory> statusHistory;

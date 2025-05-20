@@ -26,7 +26,7 @@ public class CartItem {
     private Product product;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer quantity = 1;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

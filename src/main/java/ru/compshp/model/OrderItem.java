@@ -27,17 +27,26 @@ public class OrderItem {
     private Product product;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer quantity = 1;
 
-    @Column(nullable = false)
-    private BigDecimal price;
+    @Column(name = "price_at_time", nullable = false)
+    private BigDecimal priceAtTime;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
     }
 
     // TODO: Добавить метод для расчета стоимости позиции

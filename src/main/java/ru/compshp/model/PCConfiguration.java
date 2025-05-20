@@ -6,8 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -46,7 +45,7 @@ public class PCConfiguration {
     private String compatibilityNotes;
 
     @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<ConfigComponent> components;
+    private Set<ConfigComponent> components = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -86,29 +85,18 @@ public class PCConfiguration {
         component.setConfiguration(this);
         component.setProduct(product);
         components.add(component);
-        updateConfigurationStats();
+        updateTotalPrice();
     }
 
     public void removeComponent(Product product) {
         components.removeIf(c -> c.getProduct().equals(product));
-        updateConfigurationStats();
+        updateTotalPrice();
     }
 
-    private void updateConfigurationStats() {
-        // Update total price
+    private void updateTotalPrice() {
         totalPrice = components.stream()
-            .map(c -> c.getProduct().getPrice())
+            .map(c -> c.getProduct().getPrice().multiply(BigDecimal.valueOf(c.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        // Update power requirement
-        powerRequirement = components.stream()
-            .mapToInt(c -> c.getProduct().getPowerConsumption())
-            .sum();
-
-        // Update performance score
-        performanceScore = components.stream()
-            .mapToDouble(c -> c.getProduct().getPerformanceScore())
-            .sum();
     }
 
     public boolean isComplete() {

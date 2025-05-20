@@ -1,33 +1,8 @@
--- Удаление существующих таблиц и типов
-DROP TABLE IF EXISTS config_components CASCADE;
-DROP TABLE IF EXISTS pc_configurations CASCADE;
-DROP TABLE IF EXISTS order_status_history CASCADE;
-DROP TABLE IF EXISTS order_items CASCADE;
-DROP TABLE IF EXISTS orders CASCADE;
-DROP TABLE IF EXISTS cart_items CASCADE;
-DROP TABLE IF EXISTS carts CASCADE;
-DROP TABLE IF EXISTS reviews CASCADE;
-DROP TABLE IF EXISTS user_roles CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS products CASCADE;
-DROP TABLE IF EXISTS manufacturers CASCADE;
-DROP TABLE IF EXISTS categories CASCADE;
-DROP TABLE IF EXISTS sales CASCADE;
-DROP TABLE IF EXISTS promotions CASCADE;
-DROP TABLE IF EXISTS promotion_products CASCADE;
-
-DROP TYPE IF EXISTS user_role CASCADE;
-DROP TYPE IF EXISTS component_type CASCADE;
-DROP TYPE IF EXISTS product_category CASCADE;
-DROP TYPE IF EXISTS order_status CASCADE;
-DROP TYPE IF EXISTS promotion_type CASCADE;
-
 -- Создание типов данных
-CREATE TYPE user_role AS ENUM ('USER', 'ADMIN', 'MANAGER');
+CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
 CREATE TYPE component_type AS ENUM (
     'CPU', 'GPU', 'MB', 'RAM', 'PSU', 
-    'CASE', 'COOLER', 'STORAGE', 'SSD', 'HDD'
+    'CASE', 'COOLER', 'STORAGE'
 );
 CREATE TYPE product_category AS ENUM (
     'PC_COMPONENT', 'LAPTOP', 'MONITOR',
@@ -36,9 +11,6 @@ CREATE TYPE product_category AS ENUM (
 CREATE TYPE order_status AS ENUM (
     'PENDING', 'PROCESSING', 
     'SHIPPED', 'DELIVERED', 'CANCELLED'
-);
-CREATE TYPE promotion_type AS ENUM (
-    'SEASONAL', 'FLASH_SALE', 'BUNDLE', 'LOYALTY', 'FIRST_PURCHASE'
 );
 
 -- Создание таблиц
@@ -49,9 +21,6 @@ CREATE TABLE users (
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(1000) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
-    enabled BOOLEAN DEFAULT FALSE,
-    activation_code VARCHAR(255),
-    verification_code VARCHAR(64),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -82,9 +51,6 @@ CREATE TABLE manufacturers (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,
     description TEXT,
-    website VARCHAR(255),
-    logo VARCHAR(255),
-    rating DECIMAL(3,2),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -94,7 +60,6 @@ CREATE TABLE products (
     title VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     price DECIMAL(15,2) NOT NULL,
-    purchase_price DECIMAL(15,2) NOT NULL,
     image_path VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -103,8 +68,6 @@ CREATE TABLE products (
     category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
     component_type component_type,
     specs JSONB NOT NULL,
-    average_rating DECIMAL(3,2),
-    ratings_count INTEGER DEFAULT 0,
     is_active BOOLEAN DEFAULT TRUE,
     CHECK (
         (component_type IS NOT NULL AND category_id IN (SELECT id FROM categories WHERE name = 'PC_COMPONENT')) OR
@@ -134,9 +97,7 @@ CREATE TABLE pc_configurations (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     total_price DECIMAL(15,2),
-    power_requirement INTEGER,
     is_compatible BOOLEAN,
-    compatibility_notes JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -156,10 +117,6 @@ CREATE TABLE orders (
     total_price DECIMAL(15,2) NOT NULL,
     status order_status NOT NULL DEFAULT 'PENDING',
     delivery_address JSONB,
-    delivery_method VARCHAR(50),
-    tracking_number VARCHAR(100),
-    return_status VARCHAR(50),
-    return_reason TEXT,
     pc_configuration_id BIGINT REFERENCES pc_configurations(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -174,21 +131,6 @@ CREATE TABLE order_items (
     PRIMARY KEY (order_id, product_id)
 );
 
-CREATE TABLE order_status_history (
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    status order_status NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    comment TEXT
-);
-
-CREATE TABLE sales (
-    id BIGSERIAL PRIMARY KEY,
-    order_id BIGINT NOT NULL UNIQUE REFERENCES orders(id) ON DELETE CASCADE,
-    sale_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    total_profit DECIMAL(15,2) NOT NULL
-);
-
 CREATE TABLE reviews (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -197,10 +139,6 @@ CREATE TABLE reviews (
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_verified_purchase BOOLEAN DEFAULT FALSE,
-    is_moderated BOOLEAN DEFAULT FALSE,
-    is_approved BOOLEAN,
-    report_count INTEGER DEFAULT 0,
     UNIQUE (user_id, product_id)
 );
 
@@ -216,62 +154,12 @@ CREATE INDEX idx_cart_items_cart ON cart_items(cart_id);
 CREATE INDEX idx_order_items_order ON order_items(order_id);
 CREATE INDEX idx_pc_configurations_user ON pc_configurations(user_id);
 CREATE INDEX idx_config_components_config ON config_components(config_id);
-CREATE INDEX idx_sales_date ON sales(sale_date);
 
 -- Создание функций и триггеров
 CREATE OR REPLACE FUNCTION update_timestamp()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION update_product_ratings()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF (TG_OP = 'DELETE') THEN
-        UPDATE products
-        SET 
-            average_rating = (
-                SELECT AVG(rating) 
-                FROM reviews 
-                WHERE product_id = OLD.product_id
-            ),
-            ratings_count = (
-                SELECT COUNT(*) 
-                FROM reviews 
-                WHERE product_id = OLD.product_id
-            )
-        WHERE id = OLD.product_id;
-    ELSE
-        UPDATE products
-        SET 
-            average_rating = (
-                SELECT AVG(rating) 
-                FROM reviews 
-                WHERE product_id = NEW.product_id
-            ),
-            ratings_count = (
-                SELECT COUNT(*) 
-                FROM reviews 
-                WHERE product_id = NEW.product_id
-            )
-        WHERE id = NEW.product_id;
-    END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION calculate_sale_profit()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.total_profit = (
-        SELECT SUM((oi.price - p.purchase_price) * oi.quantity)
-        FROM order_items oi
-        JOIN products p ON oi.product_id = p.id
-        WHERE oi.order_id = NEW.order_id
-    );
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
@@ -353,16 +241,6 @@ CREATE TRIGGER trg_update_timestamp
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
 
-CREATE TRIGGER trg_review_ratings
-    AFTER INSERT OR UPDATE OR DELETE ON reviews
-    FOR EACH ROW
-    EXECUTE FUNCTION update_product_ratings();
-
-CREATE TRIGGER trg_sale_profit
-    BEFORE INSERT ON sales
-    FOR EACH ROW
-    EXECUTE FUNCTION calculate_sale_profit();
-
 CREATE TRIGGER trg_reduce_stock
     AFTER INSERT ON order_items
     FOR EACH ROW
@@ -376,82 +254,4 @@ CREATE TRIGGER trg_restore_stock
 CREATE TRIGGER trg_adjust_stock
     AFTER UPDATE ON order_items
     FOR EACH ROW
-    EXECUTE FUNCTION adjust_stock_on_update();
-
--- Добавление триггеров для новых таблиц
-CREATE TRIGGER trg_update_timestamp
-    BEFORE UPDATE ON promotions
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
-CREATE TRIGGER trg_update_timestamp
-    BEFORE UPDATE ON promotion_products
-    FOR EACH ROW
-    EXECUTE FUNCTION update_timestamp();
-
--- Добавление констрейнтов для проверки спецификаций компонентов
-ALTER TABLE products ADD CONSTRAINT check_cpu_specs 
-CHECK (
-    (component_type != 'CPU') OR 
-    (specs ? 'socket' AND specs ? 'tdp' AND specs ? 'ram_type' AND
-     specs ? 'cores' AND specs ? 'threads' AND specs ? 'base_clock' AND
-     specs ? 'boost_clock' AND specs ? 'l3_cache')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_motherboard_specs 
-CHECK (
-    (component_type != 'MB') OR 
-    (specs ? 'socket' AND specs ? 'formFactor' AND specs ? 'ram_slots' AND 
-     specs ? 'm2Slots' AND specs ? 'pcie_slots' AND specs ? 'sata_ports' AND
-     specs ? 'max_ram' AND specs ? 'ram_type' AND specs ? 'chipset')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_gpu_specs 
-CHECK (
-    (component_type != 'GPU') OR 
-    (specs ? 'powerConsumption' AND specs ? 'length' AND specs ? 'pcie_version' AND
-     specs ? 'memory_size' AND specs ? 'memory_type' AND specs ? 'boost_clock' AND
-     specs ? 'base_clock' AND specs ? 'tdp')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_psu_specs 
-CHECK (
-    (component_type != 'PSU') OR 
-    (specs ? 'wattage' AND specs ? 'efficiency' AND specs ? 'modular' AND
-     specs ? 'pcie_connectors' AND specs ? 'sata_connectors' AND
-     specs ? 'atx_connector' AND specs ? 'eps_connector')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_case_specs 
-CHECK (
-    (component_type != 'CASE') OR 
-    (specs ? 'formFactor' AND specs ? 'maxGpuLength' AND specs ? 'maxCpuCoolerHeight' AND
-     specs ? 'maxPsuLength' AND specs ? 'expansionSlots' AND specs ? 'fanMounts' AND
-     specs ? 'includedFans' AND specs ? 'usbPorts')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_ram_specs 
-CHECK (
-    (component_type != 'RAM') OR 
-    (specs ? 'type' AND specs ? 'speed' AND specs ? 'capacity' AND
-     specs ? 'modules' AND specs ? 'timing' AND specs ? 'voltage' AND
-     specs ? 'height')
-);
-
-ALTER TABLE products ADD CONSTRAINT check_storage_specs 
-CHECK (
-    (component_type != 'STORAGE') OR 
-    (specs ? 'type' AND specs ? 'capacity' AND specs ? 'isM2' AND
-     specs ? 'interface' AND specs ? 'read_speed' AND specs ? 'write_speed' AND
-     specs ? 'form_factor')
-);
-
--- Добавление констрейнтов для проверки значений
-ALTER TABLE products ADD CONSTRAINT check_positive_values
-CHECK (
-    (component_type != 'CPU' OR (specs->>'tdp')::integer > 0) AND
-    (component_type != 'GPU' OR (specs->>'powerConsumption')::integer > 0) AND
-    (component_type != 'PSU' OR (specs->>'wattage')::integer > 0) AND
-    (component_type != 'RAM' OR (specs->>'capacity')::integer > 0) AND
-    (component_type != 'STORAGE' OR (specs->>'capacity')::integer > 0)
-); 
+    EXECUTE FUNCTION adjust_stock_on_update(); 

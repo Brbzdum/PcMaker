@@ -5,7 +5,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
@@ -27,7 +28,7 @@ public class Category {
     private Category parent;
 
     @OneToMany(mappedBy = "parent")
-    private Set<Category> subcategories;
+    private List<Category> children = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

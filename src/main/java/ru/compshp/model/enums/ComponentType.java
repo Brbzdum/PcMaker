@@ -2,16 +2,16 @@ package ru.compshp.model.enums;
 
 public enum ComponentType {
     // Core Components
-    CPU("Central Processing Unit"),
-    GPU("Graphics Processing Unit"),
-    MOTHERBOARD("Motherboard"),
-    RAM("Random Access Memory"),
-    PSU("Power Supply Unit"),
-    CASE("Computer Case"),
-    COOLER("CPU Cooler"),
+    CPU,
+    GPU,
+    MB,
+    RAM,
+    PSU,
+    CASE,
+    COOLER,
 
     // Storage
-    STORAGE("Storage Device"),
+    STORAGE,
     SSD("Solid State Drive"),
     HDD("Hard Disk Drive"),
     M2("M.2 SSD"),
@@ -36,12 +36,16 @@ public enum ComponentType {
         this.description = description;
     }
 
+    ComponentType() {
+        this.description = null;
+    }
+
     public String getDescription() {
         return description;
     }
 
     public boolean isRequired() {
-        return this == CPU || this == MOTHERBOARD || this == RAM || this == PSU || this == CASE;
+        return this == CPU || this == MB || this == RAM || this == PSU || this == CASE;
     }
 
     public boolean isStorage() {

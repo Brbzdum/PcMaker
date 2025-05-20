@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import ru.compshp.model.enums.UserRole;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,7 +18,8 @@ public class Role {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String name;
+    @Enumerated(EnumType.STRING)
+    private UserRole name;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
