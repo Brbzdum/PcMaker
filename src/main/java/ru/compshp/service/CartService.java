@@ -2,21 +2,19 @@ package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final ProductService productService;
 
     public Cart getCartByUserId(Long userId) {
         return cartRepository.findByUserId(userId);
@@ -34,13 +32,12 @@ public class CartService {
         return cart;
     }
 
-    @Transactional
     public CartItem addToCart(Long userId, Long productId, Integer quantity) {
         Cart cart = getOrCreateCart(userId);
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        if (product.getStock() < quantity) {
+        if (!product.isInStock(quantity)) {
             throw new RuntimeException("Not enough stock");
         }
 
@@ -61,7 +58,6 @@ public class CartService {
         return cartItemRepository.save(cartItem);
     }
 
-    @Transactional
     public void removeFromCart(Long userId, Long productId) {
         Cart cart = getCartByUserId(userId);
         if (cart != null) {
@@ -72,7 +68,6 @@ public class CartService {
         }
     }
 
-    @Transactional
     public void updateQuantity(Long userId, Long productId, Integer quantity) {
         Cart cart = getCartByUserId(userId);
         if (cart != null) {
@@ -82,7 +77,7 @@ public class CartService {
 
             cartItemRepository.findById(cartItemId).ifPresent(cartItem -> {
                 Product product = cartItem.getProduct();
-                if (product.getStock() < quantity) {
+                if (!product.isInStock(quantity)) {
                     throw new RuntimeException("Not enough stock");
                 }
                 cartItem.setQuantity(quantity);
@@ -91,7 +86,6 @@ public class CartService {
         }
     }
 
-    @Transactional
     public void clearCart(Long userId) {
         Cart cart = getCartByUserId(userId);
         if (cart != null) {
@@ -107,12 +101,22 @@ public class CartService {
         }
 
         return cart.getItems().stream()
-            .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .map(item -> item.getProduct().getDiscountedPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public List<CartItem> getCartItems(Long userId) {
         Cart cart = getCartByUserId(userId);
         return cart != null ? List.copyOf(cart.getItems()) : List.of();
+    }
+
+    public boolean isCartEmpty(Long userId) {
+        Cart cart = getCartByUserId(userId);
+        return cart == null || cart.getItems().isEmpty();
+    }
+
+    public int getCartItemsCount(Long userId) {
+        Cart cart = getCartByUserId(userId);
+        return cart != null ? cart.getItems().size() : 0;
     }
 } 

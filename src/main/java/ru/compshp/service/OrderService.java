@@ -2,7 +2,6 @@ package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
 import ru.compshp.model.enums.OrderStatus;
@@ -20,7 +19,6 @@ import java.util.List;
  */
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
@@ -28,6 +26,7 @@ public class OrderService {
     private final UserRepository userRepository;
     private final CartService cartService;
     private final PCConfigurationRepository pcConfigurationRepository;
+    private final ProductService productService;
 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUserId(userId);
@@ -37,7 +36,6 @@ public class OrderService {
         return orderRepository.findByStatus(status);
     }
 
-    @Transactional
     public Order createOrder(Long userId, String deliveryAddress, String deliveryMethod) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
@@ -45,6 +43,13 @@ public class OrderService {
         Cart cart = cartService.getCartByUserId(userId);
         if (cart == null || cart.getItems().isEmpty()) {
             throw new RuntimeException("Cart is empty");
+        }
+
+        // Check stock for all items
+        for (CartItem cartItem : cart.getItems()) {
+            if (!cartItem.getProduct().isInStock(cartItem.getQuantity())) {
+                throw new RuntimeException("Not enough stock for product: " + cartItem.getProduct().getTitle());
+            }
         }
 
         Order order = new Order();
@@ -67,26 +72,30 @@ public class OrderService {
             orderItem.setOrder(order);
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPriceAtTime(cartItem.getProduct().getPrice());
+            orderItem.setPriceAtTime(cartItem.getProduct().getDiscountedPrice());
             orderItemRepository.save(orderItem);
 
             // Update product stock
-            Product product = cartItem.getProduct();
-            product.setStock(product.getStock() - cartItem.getQuantity());
-            productRepository.save(product);
+            productService.decreaseStock(cartItem.getProduct().getId(), cartItem.getQuantity());
         }
 
         cartService.clearCart(userId);
         return order;
     }
 
-    @Transactional
     public Order createOrderFromConfiguration(Long userId, Long configId, String deliveryAddress, String deliveryMethod) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
         PCConfiguration config = pcConfigurationRepository.findById(configId)
             .orElseThrow(() -> new RuntimeException("Configuration not found"));
+
+        // Check stock for all components
+        for (ConfigComponent component : config.getComponents()) {
+            if (!component.getProduct().isInStock(component.getQuantity())) {
+                throw new RuntimeException("Not enough stock for component: " + component.getProduct().getTitle());
+            }
+        }
 
         Order order = new Order();
         order.setUser(user);
@@ -109,19 +118,16 @@ public class OrderService {
             orderItem.setOrder(order);
             orderItem.setProduct(component.getProduct());
             orderItem.setQuantity(component.getQuantity());
-            orderItem.setPriceAtTime(component.getProduct().getPrice());
+            orderItem.setPriceAtTime(component.getProduct().getDiscountedPrice());
             orderItemRepository.save(orderItem);
 
             // Update product stock
-            Product product = component.getProduct();
-            product.setStock(product.getStock() - component.getQuantity());
-            productRepository.save(product);
+            productService.decreaseStock(component.getProduct().getId(), component.getQuantity());
         }
 
         return order;
     }
 
-    @Transactional
     public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found"));
@@ -138,5 +144,11 @@ public class OrderService {
 
     public List<Order> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return orderRepository.findByDateRange(startDate, endDate);
+    }
+
+    public BigDecimal calculateOrderTotal(Order order) {
+        return order.getItems().stream()
+            .map(item -> item.getPriceAtTime().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 } 
