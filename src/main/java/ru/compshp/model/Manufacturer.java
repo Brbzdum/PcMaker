@@ -24,12 +24,6 @@ public class Manufacturer {
 
     private String description;
 
-    private String website;
-
-    private String logo;
-
-    private BigDecimal rating;
-
     @OneToMany(mappedBy = "manufacturer")
     private List<Product> products = new ArrayList<>();
 
@@ -50,11 +44,5 @@ public class Manufacturer {
         updatedAt = LocalDateTime.now();
     }
 
-    // TODO: Добавить метод для получения всех продуктов производителя
-    // TODO: Добавить метод для получения статистики продаж
-    // TODO: Добавить метод для получения рейтинга производителя
-    // TODO: Добавить метод для получения популярных продуктов
-    // TODO: Добавить метод для валидации данных производителя
-    // TODO: Добавить метод для получения категорий продуктов
-    // TODO: Добавить метод для получения общей прибыли
+
 } 

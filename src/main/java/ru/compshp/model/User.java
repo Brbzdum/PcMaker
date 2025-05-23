@@ -36,9 +36,6 @@ public class User {
     @Column(name = "activation_code")
     private String activationCode;
 
-    @Column(name = "verification_code")
-    private String verificationCode;
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "user_roles",
@@ -63,16 +60,4 @@ public class User {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    public void addRole(Role role) {
-        this.roles.add(role);
-    }
-
-    // TODO: Добавить метод для проверки роли пользователя
-    // TODO: Добавить метод для активации аккаунта
-    // TODO: Добавить метод для смены пароля
-    // TODO: Добавить метод для получения заказов пользователя
-    // TODO: Добавить метод для получения корзины пользователя
-    // TODO: Добавить метод для получения конфигураций ПК пользователя
-    // TODO: Добавить метод для проверки прав доступа
 } 

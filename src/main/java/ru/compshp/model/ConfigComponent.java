@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import ru.compshp.exception.InsufficientStockException;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -76,8 +78,5 @@ public class ConfigComponent {
         return product.isCompatibleWith(other.getProduct());
     }
 
-    // TODO: Добавить метод для проверки совместимости с другими компонентами
-    // TODO: Добавить метод для расчета стоимости компонента с учетом количества
-    // TODO: Добавить метод для проверки наличия компонента на складе
-    // TODO: Добавить метод для обновления количества компонента
+
 } 

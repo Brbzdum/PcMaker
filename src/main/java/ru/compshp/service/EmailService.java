@@ -209,7 +209,7 @@ public class EmailService {
 
         Context context = new Context();
         context.setVariable("name", user.getUsername());
-        context.setVariable("URL", siteURL + "/api/auth/verify?code=" + user.getVerificationCode());
+        context.setVariable("URL", siteURL + "/api/auth/verify?code=" + user.getActivationCode());
 
         String htmlContent = templateEngine.process("verification-email", context);
 

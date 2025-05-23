@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
@@ -51,9 +53,3 @@ public class CartItem {
     // TODO: Добавить метод для проверки максимального количества
 }
 
-@Embeddable
-@Data
-class CartItemId implements Serializable {
-    private Long cartId;
-    private Long productId;
-} 

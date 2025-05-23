@@ -34,18 +34,6 @@ public class Order {
     @Column(name = "delivery_address", columnDefinition = "jsonb")
     private String deliveryAddress;
 
-    @Column(name = "delivery_method")
-    private String deliveryMethod;
-
-    @Column(name = "tracking_number")
-    private String trackingNumber;
-
-    @Column(name = "return_status")
-    private String returnStatus;
-
-    @Column(name = "return_reason")
-    private String returnReason;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pc_configuration_id")
     private PCConfiguration pcConfiguration;
@@ -72,12 +60,4 @@ public class Order {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    // TODO: Добавить метод для расчета общей стоимости заказа
-    // TODO: Добавить метод для изменения статуса
-    // TODO: Добавить метод для добавления товаров в заказ
-    // TODO: Добавить метод для отмены заказа
-    // TODO: Добавить метод для проверки возможности отмены
-    // TODO: Добавить метод для получения истории статусов
-    // TODO: Добавить метод для расчета скидок
 } 
