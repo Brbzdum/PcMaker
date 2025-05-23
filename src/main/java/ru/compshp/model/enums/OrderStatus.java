@@ -1,13 +1,21 @@
 package ru.compshp.model.enums;
 
 public enum OrderStatus {
-    PENDING,
-    CONFIRMED,
-    PROCESSING,
-    SHIPPED,
-    DELIVERED,
-    COMPLETED,
-    CANCELLED,
-    RETURNED,
-    REFUNDED
+    PENDING("Ожидает подтверждения"),
+    CONFIRMED("Подтвержден"),
+    PROCESSING("В обработке"),
+    SHIPPED("Отправлен"),
+    DELIVERED("Доставлен"),
+    CANCELLED("Отменен"),
+    REFUNDED("Возвращен");
+
+    private final String description;
+
+    OrderStatus(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
 } 

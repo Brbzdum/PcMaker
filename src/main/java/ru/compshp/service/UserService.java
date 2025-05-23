@@ -1,42 +1,22 @@
 package ru.compshp.service;
 
-import org.springframework.stereotype.Service;
 import ru.compshp.model.User;
-import ru.compshp.repository.UserRepository;
 import java.util.List;
 import java.util.Optional;
 
-@Service
-public class UserService {
-    private final UserRepository userRepository;
-
-    public UserService(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    public List<User> getAll() {
-        return userRepository.findAll();
-    }
-
-    public Optional<User> getById(Long id) {
-        return userRepository.findById(id);
-    }
-
-    public Optional<User> getByEmail(String email) {
-        return userRepository.findByEmail(email);
-    }
-
-    public List<User> getByActive(boolean active) {
-        return userRepository.findByActive(active);
-    }
-
-    public User save(User user) {
-        return userRepository.save(user);
-    }
-
-    public void delete(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    // TODO: Добавить методы для смены пароля, активации аккаунта, проверки ролей и т.д.
+public interface UserService {
+    User createUser(User user);
+    User updateUser(User user);
+    void deleteUser(Long id);
+    Optional<User> getUserById(Long id);
+    Optional<User> getUserByEmail(String email);
+    Optional<User> getUserByUsername(String username);
+    List<User> getAllUsers();
+    List<User> getActiveUsers();
+    boolean existsByEmail(String email);
+    boolean existsByUsername(String username);
+    void activateUser(String activationCode);
+    void changePassword(Long userId, String newPassword);
+    void addRoleToUser(Long userId, String roleName);
+    void removeRoleFromUser(Long userId, String roleName);
 } 

@@ -3,26 +3,35 @@ package ru.compshp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import ru.compshp.exception.InsufficientStockException;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@NoArgsConstructor
 @Entity
 @Table(name = "config_components")
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConfigComponent {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @EmbeddedId
+    private ConfigComponentId id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "configuration_id", nullable = false)
+    @MapsId("configId")
+    @JoinColumn(name = "config_id")
     private PCConfiguration configuration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
+    @MapsId("productId")
+    @JoinColumn(name = "product_id")
     private Product product;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(nullable = false)
+    private Integer quantity = 1;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -39,8 +48,35 @@ public class ConfigComponent {
         updatedAt = LocalDateTime.now();
     }
 
-    // TODO: Добавить метод для проверки совместимости с другими компонентами
-    // TODO: Добавить метод для расчета стоимости компонента с учетом количества
-    // TODO: Добавить метод для проверки наличия компонента на складе
-    // TODO: Добавить метод для обновления количества компонента
+    public BigDecimal getTotalPrice() {
+        return product.getPrice().multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public int getTotalPowerConsumption() {
+        return product.getPowerConsumption() * quantity;
+    }
+
+    public double getTotalPerformanceScore() {
+        return product.getPerformanceScore() * quantity;
+    }
+
+    public boolean isInStock() {
+        return product.getStock() >= quantity;
+    }
+
+    public void updateQuantity(int newQuantity) {
+        if (newQuantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+        if (newQuantity > product.getStock()) {
+            throw new InsufficientStockException(product.getId(), newQuantity, product.getStock());
+        }
+        quantity = newQuantity;
+    }
+
+    public boolean isCompatibleWith(ConfigComponent other) {
+        return product.isCompatibleWith(other.getProduct());
+    }
+
+
 } 

@@ -2,33 +2,47 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import java.util.Set;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity
 @Table(name = "manufacturers")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Manufacturer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, unique = true)
     private String name;
 
-    @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(length = 255)
-    private String website;
-
     @OneToMany(mappedBy = "manufacturer")
-    private Set<Product> products;
+    private List<Product> products = new ArrayList<>();
 
-    // TODO: Добавить метод для получения всех продуктов производителя
-    // TODO: Добавить метод для получения статистики продаж
-    // TODO: Добавить метод для получения рейтинга производителя
-    // TODO: Добавить метод для получения популярных продуктов
-    // TODO: Добавить метод для валидации данных производителя
-    // TODO: Добавить метод для получения категорий продуктов
-    // TODO: Добавить метод для получения общей прибыли
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
+
+
 } 

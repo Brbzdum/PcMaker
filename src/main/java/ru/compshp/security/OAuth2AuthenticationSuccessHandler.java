@@ -42,7 +42,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             user = new User();
             user.setEmail(email);
             user.setUsername(name);
-            user.setEnabled(true);
+            user.setActive(true);
             userRepository.save(user);
         } else {
             user = userOpt.get();

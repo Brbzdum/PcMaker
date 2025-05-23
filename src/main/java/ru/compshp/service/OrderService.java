@@ -2,19 +2,12 @@ package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import ru.compshp.model.Order;
-import ru.compshp.model.OrderItem;
-import ru.compshp.model.Product;
-import ru.compshp.model.User;
-import ru.compshp.repository.OrderRepository;
-import ru.compshp.repository.ProductRepository;
-import ru.compshp.repository.UserRepository;
-
+import ru.compshp.model.*;
+import ru.compshp.repository.*;
+import ru.compshp.model.enums.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Сервис для управления заказами
@@ -28,94 +21,134 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
-    private final UserRepository userRepository;
+    private final OrderItemRepository orderItemRepository;
     private final ProductRepository productRepository;
+    private final UserRepository userRepository;
+    private final CartService cartService;
+    private final PCConfigurationRepository pcConfigurationRepository;
     private final ProductService productService;
 
-    public List<Order> getAllOrders() {
-        return orderRepository.findAll();
+    public List<Order> getOrdersByUserId(Long userId) {
+        return orderRepository.findByUserId(userId);
     }
 
-    public Optional<Order> getOrderById(Long id) {
-        return orderRepository.findById(id);
-    }
-
-    public List<Order> getOrdersByUser(User user) {
-        return orderRepository.findByUser(user);
-    }
-
-    public List<Order> getOrdersByStatus(String status) {
+    public List<Order> getOrdersByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status);
     }
 
-    @Transactional
-    public Order createOrder(User user, List<OrderItem> items) {
+    public Order createOrder(Long userId, String deliveryAddress, String deliveryMethod) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Cart cart = cartService.getCartByUserId(userId);
+        if (cart == null || cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        // Check stock for all items
+        for (CartItem cartItem : cart.getItems()) {
+            if (!cartItem.getProduct().isInStock(cartItem.getQuantity())) {
+                throw new RuntimeException("Not enough stock for product: " + cartItem.getProduct().getTitle());
+            }
+        }
+
         Order order = new Order();
         order.setUser(user);
-        order.setItems(items);
-        order.setStatus("PENDING");
+        order.setDeliveryAddress(deliveryAddress);
+        order.setDeliveryMethod(deliveryMethod);
+        order.setStatus(OrderStatus.PENDING);
+        order.setTotalPrice(cartService.calculateTotal(userId));
         order.setCreatedAt(LocalDateTime.now());
-        
-        // Рассчитываем общую стоимость
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (OrderItem item : items) {
-            totalAmount = totalAmount.add(item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
-        }
-        order.setTotalAmount(totalAmount);
+        order.setUpdatedAt(LocalDateTime.now());
 
-        // Обновляем количество товаров
-        for (OrderItem item : items) {
-            Product product = item.getProduct();
-            product.setStock(product.getStock() - item.getQuantity());
-            productRepository.save(product);
+        order = orderRepository.save(order);
+
+        for (CartItem cartItem : cart.getItems()) {
+            OrderItem orderItem = new OrderItem();
+            OrderItemId orderItemId = new OrderItemId();
+            orderItemId.setOrderId(order.getId());
+            orderItemId.setProductId(cartItem.getProduct().getId());
+            orderItem.setId(orderItemId);
+            orderItem.setOrder(order);
+            orderItem.setProduct(cartItem.getProduct());
+            orderItem.setQuantity(cartItem.getQuantity());
+            orderItem.setPriceAtTime(cartItem.getProduct().getDiscountedPrice());
+            orderItemRepository.save(orderItem);
+
+            // Update product stock
+            productService.decreaseStock(cartItem.getProduct().getId(), cartItem.getQuantity());
         }
 
+        cartService.clearCart(userId);
+        return order;
+    }
+
+    public Order createOrderFromConfiguration(Long userId, Long configId, String deliveryAddress, String deliveryMethod) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new RuntimeException("Configuration not found"));
+
+        // Check stock for all components
+        for (ConfigComponent component : config.getComponents()) {
+            if (!component.getProduct().isInStock(component.getQuantity())) {
+                throw new RuntimeException("Not enough stock for component: " + component.getProduct().getTitle());
+            }
+        }
+
+        Order order = new Order();
+        order.setUser(user);
+        order.setDeliveryAddress(deliveryAddress);
+        order.setDeliveryMethod(deliveryMethod);
+        order.setStatus(OrderStatus.PENDING);
+        order.setTotalPrice(config.getTotalPrice());
+        order.setPcConfiguration(config);
+        order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+
+        order = orderRepository.save(order);
+
+        for (ConfigComponent component : config.getComponents()) {
+            OrderItem orderItem = new OrderItem();
+            OrderItemId orderItemId = new OrderItemId();
+            orderItemId.setOrderId(order.getId());
+            orderItemId.setProductId(component.getProduct().getId());
+            orderItem.setId(orderItemId);
+            orderItem.setOrder(order);
+            orderItem.setProduct(component.getProduct());
+            orderItem.setQuantity(component.getQuantity());
+            orderItem.setPriceAtTime(component.getProduct().getDiscountedPrice());
+            orderItemRepository.save(orderItem);
+
+            // Update product stock
+            productService.decreaseStock(component.getProduct().getId(), component.getQuantity());
+        }
+
+        return order;
+    }
+
+    public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setStatus(newStatus);
+        order.setUpdatedAt(LocalDateTime.now());
         return orderRepository.save(order);
     }
 
-    @Transactional
-    public Order updateOrderStatus(Long id, String status) {
-        return orderRepository.findById(id)
-            .map(order -> {
-                order.setStatus(status);
-                if ("COMPLETED".equals(status)) {
-                    order.setCompletedAt(LocalDateTime.now());
-                }
-                return orderRepository.save(order);
-            })
+    public Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
             .orElseThrow(() -> new RuntimeException("Order not found"));
     }
 
-    @Transactional
-    public void cancelOrder(Long id) {
-        orderRepository.findById(id).ifPresent(order -> {
-            if ("PENDING".equals(order.getStatus())) {
-                // Возвращаем товары на склад
-                for (OrderItem item : order.getItems()) {
-                    Product product = item.getProduct();
-                    product.setStock(product.getStock() + item.getQuantity());
-                    productRepository.save(product);
-                }
-                order.setStatus("CANCELLED");
-                orderRepository.save(order);
-            }
-        });
+    public List<Order> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.findByDateRange(startDate, endDate);
     }
 
-    @Transactional
-    public void deleteOrder(Long id) {
-        orderRepository.deleteById(id);
-    }
-
-    public BigDecimal calculateOrderTotal(List<OrderItem> items) {
-        return items.stream()
-            .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+    public BigDecimal calculateOrderTotal(Order order) {
+        return order.getItems().stream()
+            .map(item -> item.getPriceAtTime().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public boolean validateOrderItems(List<OrderItem> items) {
-        return items.stream().allMatch(item -> 
-            productService.isInStock(item.getProduct().getId(), item.getQuantity())
-        );
     }
 } 

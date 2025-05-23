@@ -6,15 +6,75 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.compshp.dto.UserProfileDTO;
+import ru.compshp.model.User;
 import ru.compshp.service.UserService;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/user")
-@PreAuthorize("hasRole('USER')")
+@RequestMapping("/api/users")
 @RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<User> registerUser(@RequestBody User user) {
+        return ResponseEntity.ok(userService.createUser(user));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User user) {
+        user.setId(id);
+        return ResponseEntity.ok(userService.updateUser(user));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/activate")
+    public ResponseEntity<Void> activateUser(@PathVariable String activationCode) {
+        userService.activateUser(activationCode);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/change-password")
+    public ResponseEntity<Void> changePassword(
+            @PathVariable Long id,
+            @RequestParam String newPassword) {
+        userService.changePassword(id, newPassword);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{id}/roles/{roleName}")
+    public ResponseEntity<Void> addRoleToUser(
+            @PathVariable Long id,
+            @PathVariable String roleName) {
+        userService.addRoleToUser(id, roleName);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}/roles/{roleName}")
+    public ResponseEntity<Void> removeRoleFromUser(
+            @PathVariable Long id,
+            @PathVariable String roleName) {
+        userService.removeRoleFromUser(id, roleName);
+        return ResponseEntity.ok().build();
+    }
 
     // Профиль пользователя
     @GetMapping("/profile")

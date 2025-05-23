@@ -4,16 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
 import ru.compshp.model.enums.ComponentType;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Сервис для управления продуктами
@@ -26,15 +23,12 @@ import java.util.stream.Collectors;
  */
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ManufacturerRepository manufacturerRepository;
-    private final ReviewRepository reviewRepository;
-    private final CompatibilityRuleRepository ruleRepository;
 
-    // Product methods
+    // Basic CRUD operations
     public Page<Product> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
@@ -43,68 +37,79 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-    public List<Product> getProductsByCategory(String category) {
-        return productRepository.findByCategoryName(category);
-    }
-
-    public List<Product> getProductsByManufacturer(String manufacturer) {
-        return productRepository.findByManufacturerName(manufacturer);
-    }
-
-    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findByPriceBetween(minPrice, maxPrice);
-    }
-
-    public List<Product> getProductsByRating(Double minRating) {
-        return productRepository.findByRatingGreaterThanEqual(minRating);
-    }
-
-    public List<Product> searchProducts(String query) {
-        return productRepository.findByNameContainingIgnoreCase(query);
-    }
-
-    public List<Product> getPopularProducts() {
-        return productRepository.findTop10ByOrderByRatingDesc();
-    }
-
-    public List<Product> getNewArrivals() {
-        return productRepository.findTop10ByOrderByCreatedAtDesc();
-    }
-
-    @Transactional
     public Product saveProduct(Product product) {
         return productRepository.save(product);
     }
 
-    @Transactional
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
 
-    @Transactional
-    public void updateProductStock(Long id, int quantity) {
+    // Stock management
+    public void updateStock(Long id, int quantity) {
         productRepository.findById(id).ifPresent(product -> {
             product.setStock(quantity);
             productRepository.save(product);
         });
     }
 
-    @Transactional
-    public void updateProductRating(Long id) {
+    public void decreaseStock(Long id, int quantity) {
         productRepository.findById(id).ifPresent(product -> {
-            List<Review> reviews = reviewRepository.findByProduct(product);
-            if (!reviews.isEmpty()) {
-                double averageRating = reviews.stream()
-                    .mapToDouble(Review::getRating)
-                    .average()
-                    .orElse(0.0);
-                product.setRating(averageRating);
-                productRepository.save(product);
+            if (product.getStock() < quantity) {
+                throw new RuntimeException("Not enough stock");
             }
+            product.setStock(product.getStock() - quantity);
+            productRepository.save(product);
         });
     }
 
-    // Category methods
+    // Product search and filtering
+    public List<Product> getProductsByCategory(Long categoryId) {
+        return productRepository.findByCategoryId(categoryId);
+    }
+
+    public List<Product> getProductsByManufacturer(Long manufacturerId) {
+        return productRepository.findByManufacturerId(manufacturerId);
+    }
+
+    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
+        return productRepository.findByPriceRange(minPrice, maxPrice);
+    }
+
+    public List<Product> getAvailableProducts() {
+        return productRepository.findAvailableProducts();
+    }
+
+    public List<Product> getDiscountedProducts() {
+        return productRepository.findDiscountedProducts();
+    }
+
+    // Configurator specific methods
+    public List<Product> getCompatibleComponents(ComponentType type, Integer maxPower) {
+        return productRepository.findCompatibleComponents(type, maxPower);
+    }
+
+    public List<Product> getComponentsInBudget(ComponentType type, BigDecimal maxPrice) {
+        return productRepository.findComponentsInBudget(type, maxPrice);
+    }
+
+    public List<Product> getComponentsByMinPerformance(ComponentType type, Double minPerformance) {
+        return productRepository.findComponentsByMinPerformance(type, minPerformance);
+    }
+
+    public List<Product> getReadyPCs(Long categoryId) {
+        return productRepository.findReadyPCs(categoryId);
+    }
+
+    // Compatibility check
+    public boolean isCompatible(Product component1, Product component2) {
+        if (component1 == null || component2 == null) {
+            return false;
+        }
+        return component1.isCompatibleWith(component2);
+    }
+
+    // Category management
     public List<Category> getAllCategories() {
         return categoryRepository.findAll();
     }
@@ -113,21 +118,19 @@ public class ProductService {
         return categoryRepository.findById(id);
     }
 
-    public Optional<Category> getCategoryByName(String name) {
-        return categoryRepository.findByName(name);
+    public List<Category> getRootCategories() {
+        return categoryRepository.findRootCategories();
     }
 
-    @Transactional
+    public List<Category> getChildCategories(Long parentId) {
+        return categoryRepository.findChildCategories(parentId);
+    }
+
     public Category saveCategory(Category category) {
         return categoryRepository.save(category);
     }
 
-    @Transactional
-    public void deleteCategory(Long id) {
-        categoryRepository.deleteById(id);
-    }
-
-    // Manufacturer methods
+    // Manufacturer management
     public List<Manufacturer> getAllManufacturers() {
         return manufacturerRepository.findAll();
     }
@@ -136,122 +139,7 @@ public class ProductService {
         return manufacturerRepository.findById(id);
     }
 
-    public Optional<Manufacturer> getManufacturerByName(String name) {
-        return manufacturerRepository.findByName(name);
-    }
-
-    @Transactional
     public Manufacturer saveManufacturer(Manufacturer manufacturer) {
         return manufacturerRepository.save(manufacturer);
-    }
-
-    @Transactional
-    public void deleteManufacturer(Long id) {
-        manufacturerRepository.deleteById(id);
-    }
-
-    // Review methods
-    public List<Review> getReviewsByProduct(Product product) {
-        return reviewRepository.findByProduct(product);
-    }
-
-    public List<Review> getReviewsByUser(Long userId) {
-        return reviewRepository.findByUserId(userId);
-    }
-
-    @Transactional
-    public Review saveReview(Review review) {
-        Review savedReview = reviewRepository.save(review);
-        updateProductRating(review.getProduct().getId());
-        return savedReview;
-    }
-
-    @Transactional
-    public void deleteReview(Long id) {
-        reviewRepository.findById(id).ifPresent(review -> {
-            Long productId = review.getProduct().getId();
-            reviewRepository.deleteById(id);
-            updateProductRating(productId);
-        });
-    }
-
-    public List<Product> getAvailableProducts() {
-        return productRepository.findAll().stream()
-                .filter(p -> p.getStockQuantity() > 0)
-                .collect(Collectors.toList());
-    }
-
-    public List<Product> getProductsByCategory(Category category) {
-        return productRepository.findByCategory(category);
-    }
-
-    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findAll().stream()
-                .filter(p -> p.getPrice().compareTo(minPrice) >= 0 && p.getPrice().compareTo(maxPrice) <= 0)
-                .collect(Collectors.toList());
-    }
-
-    public List<Product> getProductsWithDiscount() {
-        return productRepository.findAll().stream()
-                .filter(p -> p.getDiscount() != null && p.getDiscount().compareTo(BigDecimal.ZERO) > 0)
-                .collect(Collectors.toList());
-    }
-
-    public List<Product> getProductsByRating(double minRating) {
-        return productRepository.findAll().stream()
-                .filter(p -> p.getRating() != null && p.getRating() >= minRating)
-                .collect(Collectors.toList());
-    }
-
-    public void updateProductRating(Product product) {
-        List<Review> reviews = reviewRepository.findByProductAndApprovedTrue(product);
-        if (!reviews.isEmpty()) {
-            double averageRating = reviews.stream()
-                    .mapToDouble(Review::getRating)
-                    .average()
-                    .orElse(0.0);
-            product.setRating(averageRating);
-            productRepository.save(product);
-        }
-    }
-
-    public List<Product> getCompatibleProducts(Product sourceProduct) {
-        return productRepository.findAll().stream()
-                .filter(p -> !p.equals(sourceProduct))
-                .collect(Collectors.toList());
-    }
-
-    public List<Product> getProductsByCategoryAndPriceRange(Category category, BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findByCategory(category).stream()
-                .filter(p -> p.getPrice().compareTo(minPrice) >= 0 && p.getPrice().compareTo(maxPrice) <= 0)
-                .collect(Collectors.toList());
-    }
-
-    public List<Product> getProductsWithDiscountByCategory(Category category) {
-        return productRepository.findByCategory(category).stream()
-                .filter(p -> p.getDiscount() != null && p.getDiscount().compareTo(BigDecimal.ZERO) > 0)
-                .collect(Collectors.toList());
-    }
-
-    public void updateProductStock(Product product, int quantity) {
-        product.setStockQuantity(product.getStockQuantity() - quantity);
-        productRepository.save(product);
-    }
-
-    public List<Product> getProductsByComponentType(ComponentType componentType) {
-        return productRepository.findByComponentType(componentType);
-    }
-
-    public boolean isInStock(Long productId, int quantity) {
-        return productRepository.findById(productId)
-                .map(product -> product.getStockQuantity() >= quantity)
-                .orElse(false);
-    }
-
-    public BigDecimal calculateDiscountedPrice(Product product) {
-        if (product.getDiscount() != null && product.getDiscount().compareTo(BigDecimal.ZERO) > 0) {
-            return product.getPrice().multiply(BigDecimal.ONE.subtract(product.getDiscount().divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP)));
-        }
-        return product.getPrice();
     }
 } 

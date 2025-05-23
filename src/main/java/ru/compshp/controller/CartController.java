@@ -2,54 +2,68 @@ package ru.compshp.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.compshp.model.Cart;
+import ru.compshp.model.CartItem;
 import ru.compshp.service.CartService;
+
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
-@CrossOrigin
+@Validated
 public class CartController {
+
     private final CartService cartService;
 
     @GetMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getCart() {
-        return cartService.getCart();
+    public ResponseEntity<Cart> getCart(
+            @RequestParam @NotNull Long userId) {
+        return ResponseEntity.ok(cartService.getOrCreateCart(userId));
     }
 
-    @PostMapping("/add")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> addToCart(
-            @RequestParam Long productId,
-            @RequestParam Integer quantity) {
-        return cartService.addToCart(productId, quantity);
+    @PostMapping("/items")
+    public ResponseEntity<Cart> addItem(
+            @RequestParam @NotNull Long userId,
+            @RequestParam @NotNull Long productId,
+            @RequestParam @Min(1) int quantity) {
+        return ResponseEntity.ok(cartService.addItem(userId, productId, quantity));
     }
 
-    @PutMapping("/update")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> updateCartItem(
-            @RequestParam Long itemId,
-            @RequestParam Integer quantity) {
-        return cartService.updateCartItem(itemId, quantity);
+    @DeleteMapping("/items/{productId}")
+    public ResponseEntity<Cart> removeItem(
+            @RequestParam @NotNull Long userId,
+            @PathVariable @NotNull Long productId) {
+        return ResponseEntity.ok(cartService.removeItem(userId, productId));
     }
 
-    @DeleteMapping("/remove")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> removeFromCart(@RequestParam Long itemId) {
-        return cartService.removeFromCart(itemId);
+    @PutMapping("/items/{productId}")
+    public ResponseEntity<Cart> updateItemQuantity(
+            @RequestParam @NotNull Long userId,
+            @PathVariable @NotNull Long productId,
+            @RequestParam @Min(0) int quantity) {
+        return ResponseEntity.ok(cartService.updateItemQuantity(userId, productId, quantity));
     }
 
-    @DeleteMapping("/clear")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> clearCart() {
-        return cartService.clearCart();
+    @DeleteMapping
+    public ResponseEntity<Cart> clearCart(
+            @RequestParam @NotNull Long userId) {
+        return ResponseEntity.ok(cartService.clearCart(userId));
     }
 
-    @PostMapping("/checkout")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> checkout() {
-        return cartService.checkout();
+    @GetMapping("/items")
+    public ResponseEntity<List<CartItem>> getCartItems(
+            @RequestParam @NotNull Long userId) {
+        return ResponseEntity.ok(cartService.getCartItems(userId));
+    }
+
+    @GetMapping("/total")
+    public ResponseEntity<Double> getCartTotal(
+            @RequestParam @NotNull Long userId) {
+        return ResponseEntity.ok(cartService.getCartTotal(userId));
     }
 } 

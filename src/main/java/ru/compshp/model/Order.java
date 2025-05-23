@@ -3,16 +3,18 @@ package ru.compshp.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import ru.compshp.model.enums.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import ru.compshp.model.enums.OrderStatus;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
-@NoArgsConstructor
 @Entity
 @Table(name = "orders")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,32 +24,27 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderItem> orderItems = new ArrayList<>();
-
     @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private OrderStatus status;
+    private OrderStatus status = OrderStatus.PENDING;
 
-    @Column(name = "delivery_address")
+    @Column(name = "delivery_address", columnDefinition = "jsonb")
     private String deliveryAddress;
 
-    @Column(name = "delivery_method")
-    private String deliveryMethod;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "pc_configuration_id")
+    private PCConfiguration pcConfiguration;
 
-    @Column(name = "tracking_number")
-    private String trackingNumber;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderItem> items = new HashSet<>();
 
-    @Column(name = "return_status")
-    private String returnStatus;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<OrderStatusHistory> statusHistory;
 
-    @Column(name = "return_reason")
-    private String returnReason;
-
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
@@ -63,12 +60,4 @@ public class Order {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
-    // TODO: Добавить метод для расчета общей стоимости заказа
-    // TODO: Добавить метод для изменения статуса заказа
-    // TODO: Добавить метод для добавления товаров в заказ
-    // TODO: Добавить метод для отмены заказа
-    // TODO: Добавить метод для проверки возможности отмены
-    // TODO: Добавить метод для получения истории статусов
-    // TODO: Добавить метод для расчета скидок
 } 

@@ -33,4 +33,17 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     @Query("SELECT COUNT(o) > 0 FROM Order o JOIN o.items i WHERE o.user.id = ?1 AND i.product.id = ?2")
     boolean hasUserPurchasedProduct(Long userId, Long productId);
+
+    List<Review> findByProductId(Long productId);
+    List<Review> findByUserId(Long userId);
+    List<Review> findByProductIdAndIsApproved(Long productId, Boolean isApproved);
+    
+    @Query("SELECT r FROM Review r WHERE r.rating >= ?1 AND r.isApproved = true")
+    List<Review> findHighlyRatedReviews(Integer minRating);
+    
+    @Query("SELECT r FROM Review r WHERE r.isVerifiedPurchase = true AND r.isApproved = true")
+    List<Review> findVerifiedReviews();
+    
+    @Query("SELECT r FROM Review r WHERE r.reportCount > ?1 AND r.isModerated = false")
+    List<Review> findReportedReviews(Integer threshold);
 } 
