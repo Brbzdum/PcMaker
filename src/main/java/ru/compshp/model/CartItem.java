@@ -7,6 +7,7 @@ import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 @Data
 @Entity
@@ -47,9 +48,28 @@ public class CartItem {
         updatedAt = LocalDateTime.now();
     }
 
-    // TODO: Добавить метод для расчета стоимости позиции
-    // TODO: Добавить метод для проверки наличия товара
-    // TODO: Добавить метод для обновления количества
-    // TODO: Добавить метод для проверки максимального количества
+    public BigDecimal calculateTotal() {
+        return product.getPrice().multiply(BigDecimal.valueOf(quantity));
+    }
+
+    public boolean isInStock() {
+        return product.getStock() >= quantity;
+    }
+
+    public void updateQuantity(int newQuantity) {
+        if (newQuantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than 0");
+        }
+        if (newQuantity > product.getStock()) {
+            throw new IllegalArgumentException("Not enough stock available");
+        }
+        this.quantity = newQuantity;
+    }
+
+    public boolean isMaxQuantityReached() {
+        return quantity >= product.getStock();
+    }
+
+
 }
 

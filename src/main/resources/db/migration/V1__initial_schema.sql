@@ -18,6 +18,7 @@ CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     name VARCHAR(50) NOT NULL,
+    activation_code VARCHAR(255),
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(1000) NOT NULL,
     active BOOLEAN NOT NULL DEFAULT TRUE,
@@ -137,9 +138,22 @@ CREATE TABLE reviews (
     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
     rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
+    is_approved BOOLEAN DEFAULT FALSE,
+    is_verified_purchase BOOLEAN DEFAULT FALSE,
+    report_count INTEGER DEFAULT 0,
+    is_moderated BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (user_id, product_id)
+);
+
+CREATE TABLE order_status_history (
+    id BIGSERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    status order_status NOT NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    changed_by VARCHAR(255),
+    comment TEXT
 );
 
 -- Оптимизированные индексы

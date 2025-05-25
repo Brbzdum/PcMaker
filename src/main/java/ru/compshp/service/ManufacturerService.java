@@ -53,8 +53,6 @@ public class ManufacturerService {
             .map(existingManufacturer -> {
                 existingManufacturer.setName(manufacturer.getName());
                 existingManufacturer.setDescription(manufacturer.getDescription());
-                existingManufacturer.setWebsite(manufacturer.getWebsite());
-                existingManufacturer.setLogo(manufacturer.getLogo());
                 return manufacturerRepository.save(existingManufacturer);
             })
             .orElseThrow(() -> new RuntimeException("Manufacturer not found"));

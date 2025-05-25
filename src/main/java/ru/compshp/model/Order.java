@@ -31,7 +31,7 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
-    @Column(name = "delivery_address", columnDefinition = "jsonb")
+    @Column(name = "delivery_address")
     private String deliveryAddress;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -42,7 +42,7 @@ public class Order {
     private Set<OrderItem> items = new HashSet<>();
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<OrderStatusHistory> statusHistory;
+    private Set<OrderStatusHistory> statusHistory = new HashSet<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

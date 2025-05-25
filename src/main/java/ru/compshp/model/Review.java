@@ -27,7 +27,20 @@ public class Review {
     @Column(nullable = false)
     private Integer rating;
 
+    @Column
     private String comment;
+
+    @Column(name = "is_approved")
+    private Boolean isApproved = false;
+
+    @Column(name = "is_verified_purchase")
+    private Boolean isVerifiedPurchase = false;
+
+    @Column(name = "report_count")
+    private Integer reportCount = 0;
+
+    @Column(name = "is_moderated")
+    private Boolean isModerated = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

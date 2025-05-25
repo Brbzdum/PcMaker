@@ -1,7 +1,6 @@
 package ru.compshp.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import ru.compshp.model.Order;
 import ru.compshp.model.User;
@@ -12,20 +11,25 @@ import java.util.List;
 // TODO: Репозиторий для заказов
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    // Поиск по пользователю
     List<Order> findByUserOrderByCreatedAtDesc(User user);
-    List<Order> findByUserAndStatusIn(User user, List<OrderStatus> statuses);
     List<Order> findByUser(User user);
+    List<Order> findByUser_Id(Long userId);
+    
+    // Поиск по статусу
     List<Order> findByStatus(OrderStatus status);
+    
+    // Комбинированный поиск по пользователю и статусу
     List<Order> findByUserAndStatus(User user, OrderStatus status);
-    List<Order> findByUserId(Long userId);
-    List<Order> findByUserIdAndStatus(Long userId, OrderStatus status);
+    List<Order> findByUserAndStatusIn(User user, List<OrderStatus> statuses);
+    List<Order> findByUser_IdAndStatus(Long userId, OrderStatus status);
     
-    @Query("SELECT o FROM Order o WHERE o.createdAt BETWEEN ?1 AND ?2")
-    List<Order> findByDateRange(LocalDateTime startDate, LocalDateTime endDate);
+    // Поиск по датам
+    List<Order> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query("SELECT o FROM Order o WHERE o.userId = ?1 AND o.createdAt BETWEEN ?2 AND ?3")
-    List<Order> findByUserIdAndDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate);
+    // Комбинированный поиск по пользователю и датам
+    List<Order> findByUser_IdAndCreatedAtBetween(Long userId, LocalDateTime startDate, LocalDateTime endDate);
     
-    @Query("SELECT o FROM Order o WHERE o.status = ?1 AND o.createdAt BETWEEN ?2 AND ?3")
-    List<Order> findByStatusAndDateRange(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    // Комбинированный поиск по статусу и датам
+    List<Order> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
 } 

@@ -29,8 +29,8 @@ public class OrderItem {
     @Column(nullable = false)
     private Integer quantity = 1;
 
-    @Column(name = "price_at_time", nullable = false)
-    private BigDecimal priceAtTime;
+    @Column(nullable = false)
+    private BigDecimal price;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
