@@ -26,7 +26,7 @@ public class OrderStatusHistory {
     @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(name = "changed_at", nullable = false, insertable = false, updatable = false)
+    @Column(name = "changed_at")
     private LocalDateTime changedAt;
 
     @Column(name = "changed_by")
@@ -34,4 +34,11 @@ public class OrderStatusHistory {
 
     @Column
     private String comment;
+    
+    @PrePersist
+    protected void onCreate() {
+        if (changedAt == null) {
+            changedAt = LocalDateTime.now();
+        }
+    }
 } 

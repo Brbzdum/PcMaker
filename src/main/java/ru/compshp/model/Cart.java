@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,5 +43,33 @@ public class Cart {
         updatedAt = LocalDateTime.now();
     }
 
+    public BigDecimal getTotalPrice() {
+        return items.stream()
+            .map(CartItem::calculateTotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
+    public int getItemsCount() {
+        return items.stream()
+            .mapToInt(CartItem::getQuantity)
+            .sum();
+    }
+
+    public boolean isEmpty() {
+        return items.isEmpty();
+    }
+
+    public void addItem(CartItem item) {
+        items.add(item);
+        item.setCart(this);
+    }
+
+    public void removeItem(CartItem item) {
+        items.remove(item);
+        item.setCart(null);
+    }
+
+    public void clear() {
+        items.clear();
+    }
 } 

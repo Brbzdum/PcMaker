@@ -9,6 +9,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.math.BigDecimal;
 
+/**
+ * Модель для товаров в корзине
+ */
 @Data
 @Entity
 @Table(name = "cart_items")
@@ -23,13 +26,13 @@ public class CartItem {
     @JoinColumn(name = "cart_id")
     private Cart cart;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
 
     @Column(nullable = false)
-    private Integer quantity = 1;
+    private Integer quantity;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -48,7 +51,13 @@ public class CartItem {
         updatedAt = LocalDateTime.now();
     }
 
+    /**
+     * Рассчитывает общую стоимость позиции в корзине
+     */
     public BigDecimal calculateTotal() {
+        if (product == null || product.getPrice() == null || quantity == null) {
+            return BigDecimal.ZERO;
+        }
         return product.getPrice().multiply(BigDecimal.valueOf(quantity));
     }
 
@@ -70,6 +79,21 @@ public class CartItem {
         return quantity >= product.getStock();
     }
 
-
+    /**
+     * Инициализирует составной ключ
+     */
+    @PrePersist
+    @PreUpdate
+    public void onSave() {
+        if (id == null) {
+            id = new CartItemId();
+        }
+        if (cart != null) {
+            id.setCartId(cart.getId());
+        }
+        if (product != null) {
+            id.setProductId(product.getId());
+        }
+    }
 }
 

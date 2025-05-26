@@ -1,112 +1,219 @@
 package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import ru.compshp.model.*;
-import ru.compshp.repository.*;
 import ru.compshp.model.enums.ComponentType;
-
+import ru.compshp.repository.*;
 import java.math.BigDecimal;
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import ru.compshp.exception.ResourceNotFoundException;
 
 /**
  * Сервис для управления продуктами
  * Основные функции:
  * - Управление продуктами (CRUD)
  * - Фильтрация и поиск продуктов
- * - Управление категориями
- * - Управление производителями
- * - Управление отзывами
+ * - Управление складом
+ * - Проверка совместимости компонентов
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
     private final ProductRepository productRepository;
+    private final ManufacturerService manufacturerService;
     private final CategoryRepository categoryRepository;
-    private final ManufacturerRepository manufacturerRepository;
+    private final ReviewRepository reviewRepository;
 
-    // Basic CRUD operations
-    public Page<Product> getAllProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+    @Value("${app.upload.dir}")
+    private String uploadDir;
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
     }
 
     public Optional<Product> getProductById(Long id) {
         return productRepository.findById(id);
     }
 
-    public Product saveProduct(Product product) {
-        return productRepository.save(product);
+    public List<Manufacturer> getAllManufacturers() {
+        return manufacturerService.getAllManufacturers();
     }
 
-    public void deleteProduct(Long id) {
-        productRepository.deleteById(id);
+    public List<Product> getProductsByManufacturerId(Long manufacturerId) {
+        log.info("Fetching products for manufacturerId: {}", manufacturerId);
+        List<Product> products = productRepository.findByManufacturerId(manufacturerId);
+        log.info("Found products: {}", products);
+        return products;
     }
 
-    // Stock management
-    public void updateStock(Long id, int quantity) {
-        productRepository.findById(id).ifPresent(product -> {
-            product.setStock(quantity);
-            productRepository.save(product);
-        });
-    }
-
-    public void decreaseStock(Long id, int quantity) {
-        productRepository.findById(id).ifPresent(product -> {
-            if (product.getStock() < quantity) {
-                throw new RuntimeException("Not enough stock");
-            }
-            product.setStock(product.getStock() - quantity);
-            productRepository.save(product);
-        });
-    }
-
-    // Product search and filtering
-    public List<Product> getProductsByCategory(Long categoryId) {
+    public List<Product> getProductsByCategoryId(Long categoryId) {
         return productRepository.findByCategoryId(categoryId);
-    }
-
-    public List<Product> getProductsByManufacturer(Long manufacturerId) {
-        return productRepository.findByManufacturerId(manufacturerId);
-    }
-
-    public List<Product> getProductsByPriceRange(BigDecimal minPrice, BigDecimal maxPrice) {
-        return productRepository.findByPriceRange(minPrice, maxPrice);
     }
 
     public List<Product> getAvailableProducts() {
         return productRepository.findAvailableProducts();
     }
 
-    public List<Product> getDiscountedProducts() {
-        return productRepository.findDiscountedProducts();
+    @Transactional
+    public void saveProductWithImage(Product product, MultipartFile mainImageFile) throws IOException {
+        try {
+            // Сохраняем продукт, чтобы он получил ID
+            Product savedProduct = productRepository.save(product);
+
+            if (mainImageFile != null && !mainImageFile.isEmpty()) {
+                // productId точно не null, т.к. уже сохранён
+                String imagePath = saveImageToFileSystem(mainImageFile, savedProduct.getId());
+                savedProduct.setImagePath(imagePath);
+
+                // Сохраняем ещё раз, чтоб обновить поле imagePath
+                productRepository.save(savedProduct);
+            }
+
+            log.info("Транзакция выполнена успешно (saveProductWithImage).");
+        } catch (Exception e) {
+            log.error("Ошибка: транзакция откатывается.", e);
+            throw e;
+        }
     }
 
-    // Configurator specific methods
-    public List<Product> getCompatibleComponents(ComponentType type, Integer maxPower) {
-        return productRepository.findCompatibleComponents(type, maxPower);
+    private String saveImageToFileSystem(MultipartFile file, Long productId) throws IOException {
+        File directory = new File(uploadDir); // что-то вроде "uploads/images/products"
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        String originalFilename = file.getOriginalFilename();
+        String extension = getFileExtension(originalFilename);
+        // Имя файла: product_17_timestamp.jpg
+        String fileName = "product_" + productId + "_" + System.currentTimeMillis() + "." + extension;
+        File destination = new File(directory, fileName);
+
+        file.transferTo(destination);
+
+        // Вернём относительный путь
+        return "/uploads/images/products/" + fileName;
     }
 
-    public List<Product> getComponentsInBudget(ComponentType type, BigDecimal maxPrice) {
-        return productRepository.findComponentsInBudget(type, maxPrice);
+    private String getFileExtension(String fileName) {
+        if (fileName == null || !fileName.contains(".")) {
+            return "jpg"; // Default extension
+        }
+        return fileName.substring(fileName.lastIndexOf('.') + 1);
     }
 
-    public List<Product> getComponentsByMinPerformance(ComponentType type, Double minPerformance) {
-        return productRepository.findComponentsByMinPerformance(type, minPerformance);
+    @Transactional
+    public void updateProductWithImage(Product product, MultipartFile mainImageFile) throws IOException {
+        try {
+            if (mainImageFile != null && !mainImageFile.isEmpty()) {
+                String imagePath = saveImageToFileSystem(mainImageFile, product.getId());
+                product.setImagePath(imagePath);
+            }
+            productRepository.save(product);
+            log.info("Транзакция обновления выполнена успешно.");
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении продукта: ", e);
+            throw e;
+        }
+    }
+
+    @Transactional
+    public void deleteProduct(Long id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        productRepository.delete(product);
+    }
+
+    @Transactional
+    public void updateStock(Long productId, int quantity) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+        int updatedStock = product.getStock() - quantity;
+        if (updatedStock < 0) {
+            throw new IllegalStateException("Недостаточно товара на складе");
+        }
+        product.setStock(updatedStock);
+        productRepository.save(product);
+    }
+
+    public List<Product> getProductsByPriceRange(Double minPrice, Double maxPrice) {
+        return productRepository.findByPriceRange(minPrice, maxPrice);
+    }
+
+    public List<Product> getProductsByMinRating(Double minRating) {
+        return productRepository.findByMinRating(minRating);
+    }
+
+    public List<Product> getProductsByMinDiscount(Integer minDiscount) {
+        return productRepository.findByMinDiscount(minDiscount);
     }
 
     public List<Product> getReadyPCs(Long categoryId) {
         return productRepository.findReadyPCs(categoryId);
     }
 
-    // Compatibility check
-    public boolean isCompatible(Product component1, Product component2) {
-        if (component1 == null || component2 == null) {
-            return false;
-        }
-        return component1.isCompatibleWith(component2);
+    public List<Product> findBySpecsContaining(String spec) {
+        return productRepository.findBySpecsContaining(spec);
+    }
+
+    public List<Product> getProductsByType(ComponentType type) {
+        return productRepository.findByComponentType(type);
+    }
+
+    public List<Product> getProductsBySpecs(Map<String, String> specs) {
+        return productRepository.findBySpecs(specs);
+    }
+
+    public List<Product> getActiveProducts() {
+        return productRepository.findByIsActiveTrue();
+    }
+
+    @Transactional
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public Product updateProduct(Long id, Product product) {
+        Product existingProduct = getProductById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        
+        existingProduct.setTitle(product.getTitle());
+        existingProduct.setDescription(product.getDescription());
+        existingProduct.setPrice(product.getPrice());
+        existingProduct.setCategory(product.getCategory());
+        existingProduct.setComponentType(product.getComponentType());
+        existingProduct.setSpecs(product.getSpecs());
+        existingProduct.setStock(product.getStock());
+        existingProduct.setIsActive(product.getIsActive());
+        
+        return productRepository.save(existingProduct);
+    }
+
+    public List<Review> getProductReviews(Long productId) {
+        return reviewRepository.findByProductId(productId);
+    }
+
+    public Double getProductRating(Long productId) {
+        return reviewRepository.calculateAverageRating(productId);
+    }
+
+    // Configurator specific methods
+    public List<Product> getComponentsInBudget(ComponentType type, BigDecimal maxPrice) {
+        return productRepository.findComponentsInBudget(type, maxPrice);
+    }
+
+    public List<Product> getComponentsByMinPerformance(ComponentType type, Double minPerformance) {
+        return productRepository.findComponentsByMinPerformance(type, minPerformance);
     }
 
     // Category management
@@ -131,15 +238,11 @@ public class ProductService {
     }
 
     // Manufacturer management
-    public List<Manufacturer> getAllManufacturers() {
-        return manufacturerRepository.findAll();
-    }
-
     public Optional<Manufacturer> getManufacturerById(Long id) {
-        return manufacturerRepository.findById(id);
+        return manufacturerService.getManufacturerById(id);
     }
 
     public Manufacturer saveManufacturer(Manufacturer manufacturer) {
-        return manufacturerRepository.save(manufacturer);
+        return manufacturerService.saveManufacturer(manufacturer);
     }
 } 

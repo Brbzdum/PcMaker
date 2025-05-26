@@ -24,6 +24,9 @@ public class Manufacturer {
 
     private String description;
 
+    @Column(name = "rating")
+    private Double rating = 0.0;
+
     @OneToMany(mappedBy = "manufacturer")
     private List<Product> products = new ArrayList<>();
 
@@ -37,6 +40,7 @@ public class Manufacturer {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
+        if (rating == null) rating = 0.0;
     }
 
     @PreUpdate

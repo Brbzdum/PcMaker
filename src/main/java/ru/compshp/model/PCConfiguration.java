@@ -31,6 +31,9 @@ public class PCConfiguration {
     @Column(name = "total_price")
     private BigDecimal totalPrice;
 
+    @Column(name = "total_performance")
+    private Double totalPerformance;
+
     @Column(name = "is_compatible")
     private Boolean isCompatible;
 
@@ -49,10 +52,30 @@ public class PCConfiguration {
         updatedAt = LocalDateTime.now();
         if (isCompatible == null) isCompatible = true;
         if (totalPrice == null) totalPrice = BigDecimal.ZERO;
+        if (totalPerformance == null) totalPerformance = 0.0;
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void updateTotalPerformance() {
+        this.totalPerformance = components.stream()
+            .mapToDouble(component -> {
+                String performanceStr = component.getProduct().getSpec("performance");
+                try {
+                    return Double.parseDouble(performanceStr);
+                } catch (NumberFormatException e) {
+                    return 0.0;
+                }
+            })
+            .sum();
+    }
+
+    public void updateTotalPrice() {
+        this.totalPrice = components.stream()
+            .map(component -> component.getProduct().getPrice())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 } 

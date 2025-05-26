@@ -8,7 +8,9 @@ import ru.compshp.model.enums.ComponentType;
 import ru.compshp.model.enums.ProductCategory;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Data
@@ -57,8 +59,12 @@ public class Product {
     @Column(name = "component_type")
     private ComponentType componentType;
 
-    @Column(columnDefinition = "jsonb", nullable = false)
-    private String specs;
+    @ElementCollection
+    @CollectionTable(name = "product_specs", 
+        joinColumns = @JoinColumn(name = "product_id"))
+    @MapKeyColumn(name = "spec_key")
+    @Column(name = "spec_value")
+    private Map<String, String> specs = new HashMap<>();
 
     @Column(name = "average_rating")
     private BigDecimal averageRating;
@@ -85,5 +91,13 @@ public class Product {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public String getSpec(String key) {
+        return specs.getOrDefault(key, "");
+    }
+
+    public void setSpec(String key, String value) {
+        specs.put(key, value);
     }
 } 

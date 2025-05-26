@@ -1,56 +1,63 @@
 package ru.compshp.controller;
 
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.model.Category;
-import ru.compshp.model.Product;
+import ru.compshp.dto.CategoryDTO;
+import ru.compshp.exception.CategoryNotFoundException;
+import ru.compshp.exception.DuplicateCategoryException;
 import ru.compshp.service.CategoryService;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/categories")
+@RequiredArgsConstructor
 public class CategoryController {
     private final CategoryService categoryService;
 
-    public CategoryController(CategoryService categoryService) {
-        this.categoryService = categoryService;
-    }
-
     @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
+    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Category> getCategory(@PathVariable Long id) {
-        return categoryService.getCategoryById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<CategoryDTO> getCategory(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(categoryService.getCategoryById(id));
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<Category> getCategoryByName(@PathVariable String name) {
-        return categoryService.getCategoryByName(name)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<CategoryDTO> getCategoryByName(@PathVariable String name) {
+        try {
+            return ResponseEntity.ok(categoryService.getCategoryByName(name));
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @PostMapping
-    public ResponseEntity<Category> createCategory(
-            @RequestParam String name,
-            @RequestParam String description) {
-        return ResponseEntity.ok(categoryService.createCategory(name, description));
+    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+        try {
+            return ResponseEntity.ok(categoryService.createCategory(categoryDTO));
+        } catch (DuplicateCategoryException e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Category> updateCategory(
+    public ResponseEntity<CategoryDTO> updateCategory(
             @PathVariable Long id,
-            @RequestParam String name,
-            @RequestParam String description) {
+            @Valid @RequestBody CategoryDTO categoryDTO) {
         try {
-            return ResponseEntity.ok(categoryService.updateCategory(id, name, description));
-        } catch (RuntimeException e) {
+            return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO));
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (DuplicateCategoryException e) {
             return ResponseEntity.badRequest().build();
         }
     }
@@ -60,47 +67,33 @@ public class CategoryController {
         try {
             categoryService.deleteCategory(id);
             return ResponseEntity.ok().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @GetMapping("/{id}/products")
-    public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(categoryService.getProductsByCategory(id));
-        } catch (RuntimeException e) {
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @GetMapping("/{id}/subcategories")
-    public ResponseEntity<List<Category>> getSubcategories(@PathVariable Long id) {
+    public ResponseEntity<List<CategoryDTO>> getSubcategories(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(categoryService.getSubcategories(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 
-    @PostMapping("/{id}/subcategories")
-    public ResponseEntity<Category> addSubcategory(
-            @PathVariable Long id,
-            @RequestParam String name,
-            @RequestParam String description) {
-        try {
-            return ResponseEntity.ok(categoryService.addSubcategory(id, name, description));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
-        }
+    @GetMapping("/root")
+    public ResponseEntity<List<CategoryDTO>> getRootCategories() {
+        return ResponseEntity.ok(categoryService.getRootCategories());
     }
 
     @GetMapping("/{id}/path")
-    public ResponseEntity<List<Category>> getCategoryPath(@PathVariable Long id) {
+    public ResponseEntity<List<CategoryDTO>> getCategoryPath(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(categoryService.getCategoryPath(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+        } catch (CategoryNotFoundException e) {
+            return ResponseEntity.notFound().build();
         }
     }
 } 

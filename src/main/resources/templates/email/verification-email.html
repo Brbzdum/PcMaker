@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>Добро пожаловать в PC Maker!</title>
+    <title>Подтверждение регистрации</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -33,19 +33,13 @@
     </style>
 </head>
 <body>
-    <h1>Добро пожаловать в PC Maker!</h1>
-    <p>Уважаемый <span th:text="${user.name}">пользователь</span>,</p>
-    <p>Мы рады приветствовать вас в нашем сервисе по подбору и покупке компьютерных комплектующих PC Maker!</p>
+    <h1>Подтверждение регистрации</h1>
+    <p>Уважаемый <span th:text="${name}">пользователь</span>,</p>
+    <p>Благодарим вас за регистрацию в PC Maker! Для завершения регистрации и активации аккаунта, пожалуйста, нажмите на кнопку ниже:</p>
     
-    <p>Теперь вы можете:</p>
-    <ul>
-        <li>Собрать собственную конфигурацию ПК</li>
-        <li>Получить рекомендации по выбору комплектующих</li>
-        <li>Приобрести готовые решения</li>
-        <li>Отслеживать статус заказов</li>
-    </ul>
+    <a th:href="${URL}" class="button" target="_self">Подтвердить регистрацию</a>
     
-    <a href="https://pcmaker.ru/catalog" class="button">Перейти в каталог</a>
+    <p>Если вы не регистрировались на нашем сайте, просто проигнорируйте это письмо.</p>
     
     <div class="footer">
         <p>С уважением,<br>Команда PC Maker</p>

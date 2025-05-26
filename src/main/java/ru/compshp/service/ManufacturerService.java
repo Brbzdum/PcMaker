@@ -1,8 +1,10 @@
 package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.compshp.exception.ResourceNotFoundException;
 import ru.compshp.model.Manufacturer;
 import ru.compshp.model.Product;
 import ru.compshp.repository.ManufacturerRepository;
@@ -24,29 +26,47 @@ public class ManufacturerService {
     private final ManufacturerRepository manufacturerRepository;
     private final ProductRepository productRepository;
 
+    /**
+     * Получить всех производителей
+     */
     public List<Manufacturer> getAllManufacturers() {
         return manufacturerRepository.findAll();
     }
 
+    /**
+     * Получить производителя по ID
+     */
     public Optional<Manufacturer> getManufacturerById(Long id) {
         return manufacturerRepository.findById(id);
     }
 
+    /**
+     * Получить производителя по имени
+     */
     public Optional<Manufacturer> getManufacturerByName(String name) {
         return manufacturerRepository.findByName(name);
     }
 
+    /**
+     * Получить продукты производителя
+     */
     public List<Product> getProductsByManufacturer(Long manufacturerId) {
         return manufacturerRepository.findById(manufacturerId)
             .map(productRepository::findByManufacturer)
             .orElse(List.of());
     }
 
+    /**
+     * Создать нового производителя
+     */
     @Transactional
     public Manufacturer createManufacturer(Manufacturer manufacturer) {
         return manufacturerRepository.save(manufacturer);
     }
 
+    /**
+     * Обновить производителя
+     */
     @Transactional
     public Manufacturer updateManufacturer(Long id, Manufacturer manufacturer) {
         return manufacturerRepository.findById(id)
@@ -55,23 +75,35 @@ public class ManufacturerService {
                 existingManufacturer.setDescription(manufacturer.getDescription());
                 return manufacturerRepository.save(existingManufacturer);
             })
-            .orElseThrow(() -> new RuntimeException("Manufacturer not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Manufacturer", "id", id));
     }
 
+    /**
+     * Удалить производителя
+     */
     @Transactional
     public void deleteManufacturer(Long id) {
         // Проверяем, есть ли продукты у производителя
         if (!productRepository.findByManufacturerId(id).isEmpty()) {
-            throw new RuntimeException("Cannot delete manufacturer with products");
+            throw new IllegalStateException("Cannot delete manufacturer with products");
         }
-
+        
+        manufacturerRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Manufacturer", "id", id));
         manufacturerRepository.deleteById(id);
     }
 
+    /**
+     * Получить топ производителей
+     */
     public List<Manufacturer> getTopManufacturers(int limit) {
-        return manufacturerRepository.findTopByProductCount(limit);
+        // Используем PageRequest для ограничения результатов
+        return manufacturerRepository.findTopByProductCount(PageRequest.of(0, limit));
     }
 
+    /**
+     * Рассчитать рейтинг производителя
+     */
     public double calculateManufacturerRating(Long manufacturerId) {
         return manufacturerRepository.findById(manufacturerId)
             .map(manufacturer -> {
@@ -80,13 +112,16 @@ public class ManufacturerService {
                     return 0.0;
                 }
                 return products.stream()
-                    .mapToDouble(Product::getRating)
+                    .mapToDouble(product -> product.getAverageRating().doubleValue())
                     .average()
                     .orElse(0.0);
             })
             .orElse(0.0);
     }
 
+    /**
+     * Обновить рейтинг производителя
+     */
     @Transactional
     public void updateManufacturerRating(Long manufacturerId) {
         manufacturerRepository.findById(manufacturerId).ifPresent(manufacturer -> {
@@ -94,5 +129,20 @@ public class ManufacturerService {
             manufacturer.setRating(rating);
             manufacturerRepository.save(manufacturer);
         });
+    }
+    
+    /**
+     * Сохранить производителя
+     */
+    @Transactional
+    public Manufacturer saveManufacturer(Manufacturer manufacturer) {
+        return manufacturerRepository.save(manufacturer);
+    }
+    
+    /**
+     * Проверить существование производителя по имени
+     */
+    public boolean existsByName(String name) {
+        return manufacturerRepository.findByName(name).isPresent();
     }
 } 

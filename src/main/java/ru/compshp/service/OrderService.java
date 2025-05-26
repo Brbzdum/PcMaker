@@ -1,13 +1,18 @@
 package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
 import ru.compshp.model.enums.OrderStatus;
+import ru.compshp.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Сервис для управления заказами
@@ -17,138 +22,162 @@ import java.util.List;
  * - Управление статусами заказов
  * - Расчет стоимости заказов
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final ProductRepository productRepository;
+    private final OrderStatusHistoryRepository orderStatusHistoryRepository;
     private final UserRepository userRepository;
     private final CartService cartService;
     private final PCConfigurationRepository pcConfigurationRepository;
     private final ProductService productService;
 
     public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+        return orderRepository.findByUser_Id(userId);
     }
 
     public List<Order> getOrdersByStatus(OrderStatus status) {
         return orderRepository.findByStatus(status);
     }
 
-    public Order createOrder(Long userId, String deliveryAddress, String deliveryMethod) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-        Cart cart = cartService.getCartByUserId(userId);
-        if (cart == null || cart.getItems().isEmpty()) {
-            throw new RuntimeException("Cart is empty");
-        }
-
-        // Check stock for all items
-        for (CartItem cartItem : cart.getItems()) {
-            if (!cartItem.getProduct().isInStock(cartItem.getQuantity())) {
-                throw new RuntimeException("Not enough stock for product: " + cartItem.getProduct().getTitle());
-            }
+    @Transactional
+    public Order createOrderFromCart(Long userId) {
+        final Cart cart = cartService.getCartByUserId(userId);
+        if (cart.getItems().isEmpty()) {
+            throw new IllegalStateException("Корзина пуста");
         }
 
         Order order = new Order();
-        order.setUser(user);
-        order.setDeliveryAddress(deliveryAddress);
-        order.setDeliveryMethod(deliveryMethod);
+        order.setUser(cart.getUser());
         order.setStatus(OrderStatus.PENDING);
-        order.setTotalPrice(cartService.calculateTotal(userId));
+        order.setTotalPrice(calculateCartTotal(cart));
         order.setCreatedAt(LocalDateTime.now());
-        order.setUpdatedAt(LocalDateTime.now());
-
         order = orderRepository.save(order);
 
-        for (CartItem cartItem : cart.getItems()) {
+        // Создаем элементы заказа из корзины
+        final Order finalOrder = order;
+        cart.getItems().forEach(cartItem -> {
             OrderItem orderItem = new OrderItem();
-            OrderItemId orderItemId = new OrderItemId();
-            orderItemId.setOrderId(order.getId());
-            orderItemId.setProductId(cartItem.getProduct().getId());
+            OrderItemId orderItemId = new OrderItemId(finalOrder.getId(), cartItem.getProduct().getId());
             orderItem.setId(orderItemId);
-            orderItem.setOrder(order);
+            orderItem.setOrder(finalOrder);
             orderItem.setProduct(cartItem.getProduct());
             orderItem.setQuantity(cartItem.getQuantity());
-            orderItem.setPriceAtTime(cartItem.getProduct().getDiscountedPrice());
+            orderItem.setPrice(cartItem.getProduct().getPrice());
             orderItemRepository.save(orderItem);
 
-            // Update product stock
-            productService.decreaseStock(cartItem.getProduct().getId(), cartItem.getQuantity());
-        }
+            // Уменьшаем количество товара на складе
+            productService.updateStock(cartItem.getProduct().getId(), cartItem.getQuantity());
+        });
 
+        // Очищаем корзину
         cartService.clearCart(userId);
+
+        // Создаем запись в истории статусов
+        createStatusHistory(order, OrderStatus.PENDING, "Заказ создан");
+
         return order;
     }
 
-    public Order createOrderFromConfiguration(Long userId, Long configId, String deliveryAddress, String deliveryMethod) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+    @Transactional
+    public Order createOrderFromConfiguration(Long userId, Long configId) {
+        final PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
 
-        PCConfiguration config = pcConfigurationRepository.findById(configId)
-            .orElseThrow(() -> new RuntimeException("Configuration not found"));
-
-        // Check stock for all components
-        for (ConfigComponent component : config.getComponents()) {
-            if (!component.getProduct().isInStock(component.getQuantity())) {
-                throw new RuntimeException("Not enough stock for component: " + component.getProduct().getTitle());
-            }
+        if (!config.getIsCompatible()) {
+            throw new IllegalStateException("Конфигурация несовместима");
         }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         Order order = new Order();
         order.setUser(user);
-        order.setDeliveryAddress(deliveryAddress);
-        order.setDeliveryMethod(deliveryMethod);
         order.setStatus(OrderStatus.PENDING);
         order.setTotalPrice(config.getTotalPrice());
-        order.setPcConfiguration(config);
         order.setCreatedAt(LocalDateTime.now());
-        order.setUpdatedAt(LocalDateTime.now());
-
         order = orderRepository.save(order);
 
-        for (ConfigComponent component : config.getComponents()) {
+        // Создаем элементы заказа из конфигурации
+        final Order finalOrder = order;
+        config.getComponents().forEach(component -> {
             OrderItem orderItem = new OrderItem();
-            OrderItemId orderItemId = new OrderItemId();
-            orderItemId.setOrderId(order.getId());
-            orderItemId.setProductId(component.getProduct().getId());
+            OrderItemId orderItemId = new OrderItemId(finalOrder.getId(), component.getProduct().getId());
             orderItem.setId(orderItemId);
-            orderItem.setOrder(order);
+            orderItem.setOrder(finalOrder);
             orderItem.setProduct(component.getProduct());
-            orderItem.setQuantity(component.getQuantity());
-            orderItem.setPriceAtTime(component.getProduct().getDiscountedPrice());
+            orderItem.setQuantity(1);
+            orderItem.setPrice(component.getProduct().getPrice());
             orderItemRepository.save(orderItem);
 
-            // Update product stock
-            productService.decreaseStock(component.getProduct().getId(), component.getQuantity());
-        }
+            // Уменьшаем количество товара на складе
+            productService.updateStock(component.getProduct().getId(), 1);
+        });
+
+        // Создаем запись в истории статусов
+        createStatusHistory(order, OrderStatus.PENDING, "Заказ создан из конфигурации");
 
         return order;
     }
 
-    public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
+    @Transactional
+    public Order updateOrderStatus(Long orderId, OrderStatus newStatus, String comment) {
         Order order = orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
 
         order.setStatus(newStatus);
-        order.setUpdatedAt(LocalDateTime.now());
-        return orderRepository.save(order);
+        order = orderRepository.save(order);
+
+        createStatusHistory(order, newStatus, comment);
+        return order;
     }
 
-    public Order getOrderById(Long orderId) {
+    private void createStatusHistory(Order order, OrderStatus status, String comment) {
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatus(status);
+        history.setComment(comment);
+        history.setChangedAt(LocalDateTime.now());
+        orderStatusHistoryRepository.save(history);
+    }
+
+    public List<Order> getUserOrders(Long userId) {
+        return orderRepository.findByUser_Id(userId);
+    }
+
+    public List<OrderStatusHistory> getOrderStatusHistory(Long orderId) {
+        return orderStatusHistoryRepository.findByOrderIdOrderByChangedAtDesc(orderId);
+    }
+
+    public Order getOrder(Long orderId) {
         return orderRepository.findById(orderId)
-            .orElseThrow(() -> new RuntimeException("Order not found"));
+            .orElseThrow(() -> new ResourceNotFoundException("Order", "id", orderId));
     }
 
     public List<Order> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return orderRepository.findByDateRange(startDate, endDate);
+        return orderRepository.findByCreatedAtBetween(startDate, endDate);
+    }
+
+    private BigDecimal calculateCartTotal(Cart cart) {
+        return cart.getItems().stream()
+            .map(item -> item.getProduct().getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     public BigDecimal calculateOrderTotal(Order order) {
         return order.getItems().stream()
-            .map(item -> item.getPriceAtTime().multiply(BigDecimal.valueOf(item.getQuantity())))
+            .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public Map<String, Object> getOrderStatistics() {
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalOrders", orderRepository.count());
+        stats.put("pendingOrders", orderRepository.countByStatus(OrderStatus.PENDING));
+        stats.put("completedOrders", orderRepository.countByStatus(OrderStatus.DELIVERED));
+        stats.put("cancelledOrders", orderRepository.countByStatus(OrderStatus.CANCELLED));
+        return stats;
     }
 } 

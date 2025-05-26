@@ -1,9 +1,17 @@
 package ru.compshp.exception;
 
+import lombok.Getter;
+
+@Getter
 public class InsufficientStockException extends BusinessException {
-    public InsufficientStockException(Long productId, int requested, int available) {
+    private final int available;
+    private final int requested;
+
+    public InsufficientStockException(Long productId, int available, int requested) {
         super("INSUFFICIENT_STOCK", 
-              "Insufficient stock for product %d. Requested: %d, Available: %d", 
-              productId, requested, available);
+            "Not enough stock for product %d. Available: %d, Requested: %d", 
+            productId, available, requested);
+        this.available = available;
+        this.requested = requested;
     }
 } 

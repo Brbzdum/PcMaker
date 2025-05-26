@@ -1,15 +1,18 @@
 package ru.compshp.model;
 
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.io.Serializable;
 
+/**
+ * Составной первичный ключ для CartItem
+ */
 @Data
-@Embeddable
 @NoArgsConstructor
 @AllArgsConstructor
+@Embeddable
 public class CartItemId implements Serializable {
     private Long cartId;
     private Long productId;

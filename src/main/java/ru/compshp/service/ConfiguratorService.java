@@ -2,128 +2,109 @@ package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.compshp.model.*;
 import ru.compshp.repository.*;
 import ru.compshp.model.enums.ComponentType;
-
+import ru.compshp.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
 public class ConfiguratorService {
     private final PCConfigurationRepository pcConfigurationRepository;
+    private final ConfigComponentRepository configComponentRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final ProductService productService;
 
+    @Transactional
     public PCConfiguration createConfiguration(Long userId) {
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
         PCConfiguration config = new PCConfiguration();
         config.setUser(user);
+        config.setTotalPrice(BigDecimal.ZERO);
+        config.setTotalPerformance(0.0);
+        config.setIsCompatible(true);
         return pcConfigurationRepository.save(config);
+    }
+
+    @Transactional
+    public PCConfiguration updateConfiguration(PCConfiguration config) {
+        return pcConfigurationRepository.save(config);
+    }
+
+    @Transactional
+    public PCConfiguration addComponent(Long configId, Long productId) {
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+
+        // Проверяем, нет ли уже компонента такого типа
+        if (configComponentRepository.existsByConfigurationIdAndProduct_ComponentType(
+            configId, product.getComponentType())) {
+            throw new IllegalStateException("Component of this type already exists in configuration");
+        }
+
+        // Проверяем совместимость с существующими компонентами
+        List<ConfigComponent> existingComponents = configComponentRepository.findByConfigurationId(configId);
+        for (ConfigComponent existing : existingComponents) {
+            if (!pcConfigurationRepository.checkCompatibility(existing.getProduct().getId(), productId)) {
+                throw new IllegalStateException("Component is not compatible with existing configuration");
+            }
+        }
+
+        ConfigComponent component = new ConfigComponent();
+        ConfigComponentId componentId = new ConfigComponentId(configId, productId);
+        component.setId(componentId);
+        component.setConfiguration(config);
+        component.setProduct(product);
+        configComponentRepository.save(component);
+
+        // Обновляем общую стоимость и производительность
+        config.setTotalPrice(config.getTotalPrice().add(product.getPrice()));
+        config.setTotalPerformance(config.getTotalPerformance() + 
+            Double.parseDouble(product.getSpec("performance")));
+        
+        // Проверяем совместимость всей конфигурации
+        config.setIsCompatible(validateConfiguration(config));
+        
+        return pcConfigurationRepository.save(config);
+    }
+
+    @Transactional
+    public PCConfiguration removeComponent(Long configId, Long productId) {
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        
+        ConfigComponentId componentId = new ConfigComponentId(configId, productId);
+        ConfigComponent component = configComponentRepository.findById(componentId)
+            .orElseThrow(() -> new ResourceNotFoundException("Component", "id", componentId));
+
+        // Обновляем общую стоимость и производительность
+        config.setTotalPrice(config.getTotalPrice().subtract(component.getProduct().getPrice()));
+        config.setTotalPerformance(config.getTotalPerformance() - 
+            Double.parseDouble(component.getProduct().getSpec("performance")));
+        
+        configComponentRepository.delete(component);
+        
+        // Проверяем совместимость оставшейся конфигурации
+        config.setIsCompatible(validateConfiguration(config));
+        
+        return pcConfigurationRepository.save(config);
+    }
+
+    public List<Product> getCompatibleComponents(Long configId, ComponentType type) {
+        return pcConfigurationRepository.findCompatibleComponents(type, configId);
     }
 
     public PCConfiguration getConfiguration(Long configId) {
         return pcConfigurationRepository.findById(configId)
-            .orElseThrow(() -> new RuntimeException("Configuration not found"));
-    }
-
-    public ConfigComponent addComponent(Long configId, Long productId, Integer quantity) {
-        PCConfiguration config = getConfiguration(configId);
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new RuntimeException("Product not found"));
-
-        // Check if component is already in configuration
-        Optional<ConfigComponent> existingComponent = config.getComponents().stream()
-            .filter(c -> c.getProduct().getComponentType() == product.getComponentType())
-            .findFirst();
-
-        if (existingComponent.isPresent()) {
-            throw new RuntimeException("Component of this type already exists in configuration");
-        }
-
-        // Check compatibility with existing components
-        for (ConfigComponent component : config.getComponents()) {
-            if (!productService.isCompatible(product, component.getProduct())) {
-                throw new RuntimeException("Component is not compatible with existing configuration");
-            }
-        }
-
-        ConfigComponent configComponent = new ConfigComponent();
-        configComponent.setConfiguration(config);
-        configComponent.setProduct(product);
-        configComponent.setQuantity(quantity);
-
-        config.getComponents().add(configComponent);
-        pcConfigurationRepository.save(config);
-
-        return configComponent;
-    }
-
-    public void removeComponent(Long configId, Long productId) {
-        PCConfiguration config = getConfiguration(configId);
-        config.getComponents().removeIf(c -> c.getProduct().getId().equals(productId));
-        pcConfigurationRepository.save(config);
-    }
-
-    public void updateComponentQuantity(Long configId, Long productId, Integer quantity) {
-        PCConfiguration config = getConfiguration(configId);
-        config.getComponents().stream()
-            .filter(c -> c.getProduct().getId().equals(productId))
-            .findFirst()
-            .ifPresent(component -> {
-                component.setQuantity(quantity);
-                pcConfigurationRepository.save(config);
-            });
-    }
-
-    public List<Product> getCompatibleComponents(Long configId, ComponentType type) {
-        PCConfiguration config = getConfiguration(configId);
-        return productRepository.findCompatibleComponents(type, config.getTotalPowerConsumption());
-    }
-
-    public List<Product> getComponentsInBudget(Long configId, ComponentType type, BigDecimal maxPrice) {
-        PCConfiguration config = getConfiguration(configId);
-        return productRepository.findComponentsInBudget(type, maxPrice);
-    }
-
-    public List<Product> getComponentsByMinPerformance(Long configId, ComponentType type, Double minPerformance) {
-        PCConfiguration config = getConfiguration(configId);
-        return productRepository.findComponentsByMinPerformance(type, minPerformance);
-    }
-
-    public boolean validateConfiguration(Long configId) {
-        PCConfiguration config = getConfiguration(configId);
-        
-        // Check if all required components are present
-        for (ComponentType type : ComponentType.values()) {
-            if (type.isRequired() && config.getComponents().stream()
-                .noneMatch(c -> c.getProduct().getComponentType() == type)) {
-                return false;
-            }
-        }
-
-        // Check compatibility between all components
-        for (ConfigComponent component1 : config.getComponents()) {
-            for (ConfigComponent component2 : config.getComponents()) {
-                if (component1 != component2 && 
-                    !productService.isCompatible(component1.getProduct(), component2.getProduct())) {
-                    return false;
-                }
-            }
-        }
-
-        // Check power consumption
-        if (config.getTotalPowerConsumption() > config.getPowerSupply().getPower()) {
-            return false;
-        }
-
-        return true;
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
     }
 
     public List<PCConfiguration> getUserConfigurations(Long userId) {
@@ -138,37 +119,45 @@ public class ConfiguratorService {
         return pcConfigurationRepository.findByMinPerformance(minPerformance);
     }
 
+    public List<PCConfiguration> getCompleteConfigurations() {
+        return pcConfigurationRepository.findCompleteConfigurations(ComponentType.values().length);
+    }
+
+    public List<PCConfiguration> getIncompleteConfigurations() {
+        return pcConfigurationRepository.findIncompleteConfigurations(ComponentType.values().length);
+    }
+
+    @Transactional
     public void deleteConfiguration(Long configId) {
-        pcConfigurationRepository.deleteById(configId);
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        pcConfigurationRepository.delete(config);
     }
 
-    public Map<String, Object> getCompatibilityInfo(Long configId) {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
-    }
+    private boolean validateConfiguration(PCConfiguration config) {
+        List<ConfigComponent> components = configComponentRepository.findByConfigurationId(config.getId());
+        
+        // Проверяем наличие всех необходимых компонентов
+        Set<ComponentType> requiredTypes = new HashSet<>(Arrays.asList(ComponentType.values()));
+        Set<ComponentType> presentTypes = components.stream()
+            .map(c -> c.getProduct().getComponentType())
+            .collect(HashSet::new, HashSet::add, HashSet::addAll);
+        
+        if (!presentTypes.containsAll(requiredTypes)) {
+            return false;
+        }
 
-    public List<Product> getMissingComponents(Long configId) {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
-    }
+        // Проверяем совместимость между всеми компонентами
+        for (int i = 0; i < components.size(); i++) {
+            for (int j = i + 1; j < components.size(); j++) {
+                if (!pcConfigurationRepository.checkCompatibility(
+                    components.get(i).getProduct().getId(),
+                    components.get(j).getProduct().getId())) {
+                    return false;
+                }
+            }
+        }
 
-    public List<PCConfiguration> getSavedConfigurations() {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
-    }
-
-    public void addConfigurationToCart(Long configId) {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
-    }
-
-    public List<PCConfiguration> getPopularConfigurations() {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
-    }
-
-    public Map<String, Object> getConfiguratorStatistics() {
-        // Implementation needed
-        throw new UnsupportedOperationException("Method not implemented");
+        return true;
     }
 } 

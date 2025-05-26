@@ -1,16 +1,21 @@
 package ru.compshp.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.compshp.dto.CategoryDTO;
+import ru.compshp.exception.CategoryNotFoundException;
+import ru.compshp.exception.DuplicateCategoryException;
+import ru.compshp.mapper.CategoryMapper;
 import ru.compshp.model.Category;
 import ru.compshp.model.Product;
 import ru.compshp.repository.CategoryRepository;
 import ru.compshp.repository.ProductRepository;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 /**
  * Сервис для управления категориями
@@ -24,76 +29,128 @@ import java.util.ArrayList;
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ProductRepository productRepository;
+    private final CategoryMapper categoryMapper;
 
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    @Cacheable(value = "categories", key = "'all'")
+    public List<CategoryDTO> getAllCategories() {
+        return categoryRepository.findAll().stream()
+                .map(categoryMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<Category> getCategoryById(Long id) {
-        return categoryRepository.findById(id);
+    @Cacheable(value = "categories", key = "#id")
+    public CategoryDTO getCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .map(categoryMapper::toDTO)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
     }
 
-    public Optional<Category> getCategoryByName(String name) {
-        return categoryRepository.findByName(name);
+    @Cacheable(value = "categories", key = "'name:' + #name")
+    public CategoryDTO getCategoryByName(String name) {
+        return categoryRepository.findByName(name)
+                .map(categoryMapper::toDTO)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with name: " + name));
     }
 
-    public List<Category> getSubcategories(Long parentId) {
-        return categoryRepository.findByParentId(parentId);
+    @Cacheable(value = "categories", key = "'subcategories:' + #parentId")
+    public List<CategoryDTO> getSubcategories(Long parentId) {
+        return categoryRepository.findByParentId(parentId).stream()
+                .map(categoryMapper::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Cacheable(value = "categories", key = "'root'")
+    public List<CategoryDTO> getRootCategories() {
+        return categoryRepository.findByParentIsNull().stream()
+                .map(categoryMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
     public List<Product> getProductsByCategory(Long categoryId) {
-        return categoryRepository.findById(categoryId)
-            .map(productRepository::findByCategory)
-            .orElse(List.of());
-    }
-
-    @Transactional
-    public Category createCategory(Category category) {
-        return categoryRepository.save(category);
-    }
-
-    @Transactional
-    public Category updateCategory(Long id, Category category) {
-        return categoryRepository.findById(id)
-            .map(existingCategory -> {
-                existingCategory.setName(category.getName());
-                existingCategory.setDescription(category.getDescription());
-                existingCategory.setParent(category.getParent());
-                return categoryRepository.save(existingCategory);
-            })
-            .orElseThrow(() -> new RuntimeException("Category not found"));
-    }
-
-    @Transactional
-    public void deleteCategory(Long id) {
-        // Проверяем, есть ли подкатегории
-        if (!categoryRepository.findByParentId(id).isEmpty()) {
-            throw new RuntimeException("Cannot delete category with subcategories");
+        if (!categoryRepository.existsById(categoryId)) {
+            throw new CategoryNotFoundException("Category not found with id: " + categoryId);
         }
+        return productRepository.findByCategoryId(categoryId);
+    }
+
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public CategoryDTO createCategory(CategoryDTO categoryDTO) {
+        if (categoryRepository.findByName(categoryDTO.getName()).isPresent()) {
+            throw new DuplicateCategoryException("Category with name " + categoryDTO.getName() + " already exists");
+        }
+
+        Category category = categoryMapper.toEntity(categoryDTO);
         
-        // Проверяем, есть ли продукты в категории
-        if (!productRepository.findByCategoryId(id).isEmpty()) {
-            throw new RuntimeException("Cannot delete category with products");
+        if (categoryDTO.getParentId() != null) {
+            Category parent = categoryRepository.findById(categoryDTO.getParentId())
+                    .orElseThrow(() -> new CategoryNotFoundException("Parent category not found"));
+            category.setParent(parent);
         }
 
-        categoryRepository.deleteById(id);
+        Category savedCategory = categoryRepository.save(category);
+        return categoryMapper.toDTO(savedCategory);
     }
 
-    public List<Category> getMainCategories() {
-        return categoryRepository.findByParentIsNull();
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public CategoryDTO updateCategory(Long id, CategoryDTO categoryDTO) {
+        Category existingCategory = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
+
+        if (!existingCategory.getName().equals(categoryDTO.getName()) &&
+            categoryRepository.findByName(categoryDTO.getName()).isPresent()) {
+            throw new DuplicateCategoryException("Category with name " + categoryDTO.getName() + " already exists");
+        }
+
+        existingCategory.setName(categoryDTO.getName());
+        existingCategory.setDescription(categoryDTO.getDescription());
+
+        if (categoryDTO.getParentId() != null) {
+            Category parent = categoryRepository.findById(categoryDTO.getParentId())
+                    .orElseThrow(() -> new CategoryNotFoundException("Parent category not found"));
+            existingCategory.setParent(parent);
+        } else {
+            existingCategory.setParent(null);
+        }
+
+        Category updatedCategory = categoryRepository.save(existingCategory);
+        return categoryMapper.toDTO(updatedCategory);
     }
 
-    public List<Category> getCategoryPath(Long categoryId) {
-        return categoryRepository.findById(categoryId)
-            .map(category -> {
-                List<Category> path = new ArrayList<>();
-                Category current = category;
-                while (current != null) {
-                    path.add(0, current);
-                    current = current.getParent();
-                }
-                return path;
-            })
-            .orElse(List.of());
+    @Transactional
+    @CacheEvict(value = "categories", allEntries = true)
+    public void deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + id));
+
+        if (!category.getChildren().isEmpty()) {
+            throw new IllegalStateException("Cannot delete category with subcategories");
+        }
+
+        if (!productRepository.findByCategoryId(id).isEmpty()) {
+            throw new IllegalStateException("Cannot delete category with associated products");
+        }
+
+        categoryRepository.delete(category);
+    }
+
+    @Cacheable(value = "categories", key = "'path:' + #categoryId")
+    public List<CategoryDTO> getCategoryPath(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with id: " + categoryId));
+
+        return category.getParent() != null ?
+                getCategoryPath(category.getParent().getId()).stream()
+                        .collect(Collectors.toList()) :
+                List.of(categoryMapper.toDTO(category));
+    }
+
+    public boolean existsById(Long id) {
+        return categoryRepository.existsById(id);
+    }
+
+    public boolean existsByName(String name) {
+        return categoryRepository.findByName(name).isPresent();
     }
 } 

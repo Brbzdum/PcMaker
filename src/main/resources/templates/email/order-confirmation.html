@@ -1,37 +1,90 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>Подтверждение заказа</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .total {
+            font-weight: bold;
+            text-align: right;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+    </style>
 </head>
 <body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2>Спасибо за ваш заказ!</h2>
-        <p>Здравствуйте, <span th:text="${user.name}">Имя</span>!</p>
-        <p>Мы получили ваш заказ #<span th:text="${order.id}">123</span>.</p>
-        
-        <h3>Детали заказа:</h3>
-        <table style="width: 100%; border-collapse: collapse;">
+    <h1>Подтверждение заказа</h1>
+    <p>Уважаемый <span th:text="${user.name}">пользователь</span>,</p>
+    <p>Спасибо за ваш заказ! Ниже приведены детали вашего заказа:</p>
+    
+    <div>
+        <h2>Заказ №<span th:text="${order.id}">12345</span></h2>
+        <p>Дата заказа: <span th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</span></p>
+        <p>Статус: <span th:text="${order.status}">Оформлен</span></p>
+    </div>
+    
+    <h2>Товары:</h2>
+    <table>
+        <thead>
             <tr>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Товар</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Количество</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Цена</th>
+                <th>Наименование</th>
+                <th>Количество</th>
+                <th>Цена</th>
+                <th>Сумма</th>
             </tr>
-            <tr th:each="item : ${order.orderItems}">
-                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.product.title}">Товар</td>
-                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.quantity}">1</td>
-                <td style="border: 1px solid #ddd; padding: 8px;" th:text="${item.price}">1000</td>
+        </thead>
+        <tbody>
+            <tr th:each="item : ${order.items}">
+                <td th:text="${item.product.title}">Название товара</td>
+                <td th:text="${item.quantity}">1</td>
+                <td th:text="${#numbers.formatDecimal(item.price, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</td>
+                <td th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</td>
             </tr>
-        </table>
-        
-        <p><strong>Общая сумма заказа:</strong> <span th:text="${order.totalPrice}">1000</span> руб.</p>
-        
-        <h3>Статус заказа:</h3>
-        <p th:text="${order.status}">PENDING</p>
-        
-        <p>Мы будем держать вас в курсе о статусе вашего заказа.</p>
-        
-        <p>С уважением,<br>Команда PcMaker</p>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="total">Итого:</td>
+                <td th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</td>
+            </tr>
+        </tfoot>
+    </table>
+    
+    <div th:if="${order.deliveryAddress != null}">
+        <h2>Адрес доставки:</h2>
+        <p th:text="${order.deliveryAddress}">Адрес доставки</p>
+    </div>
+    
+    <p>Мы обработаем ваш заказ в ближайшее время. Вы будете получать уведомления о статусе вашего заказа.</p>
+    
+    <div class="footer">
+        <p>С уважением,<br>Команда PC Maker</p>
     </div>
 </body>
 </html> 

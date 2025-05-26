@@ -1,6 +1,8 @@
 package ru.compshp.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.compshp.model.Order;
 import ru.compshp.model.User;
@@ -18,6 +20,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     // Поиск по статусу
     List<Order> findByStatus(OrderStatus status);
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
+    long countByStatus(@Param("status") OrderStatus status);
     
     // Комбинированный поиск по пользователю и статусу
     List<Order> findByUserAndStatus(User user, OrderStatus status);
@@ -32,4 +36,22 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     
     // Комбинированный поиск по статусу и датам
     List<Order> findByStatusAndCreatedAtBetween(OrderStatus status, LocalDateTime startDate, LocalDateTime endDate);
+    
+    // Проверка на покупку продукта пользователем
+    @Query("SELECT CASE WHEN COUNT(o) > 0 THEN true ELSE false END FROM Order o " +
+           "JOIN o.items i WHERE o.user.id = :userId AND i.product.id = :productId AND o.status = :status")
+    boolean existsByUserIdAndProductIdAndStatus(
+        @Param("userId") Long userId, 
+        @Param("productId") Long productId, 
+        @Param("status") OrderStatus status
+    );
+
+    @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
+    List<Order> findByUserIdOrderByCreatedAtDesc(@Param("userId") Long userId);
+    
+    @Query("SELECT o FROM Order o WHERE o.totalPrice BETWEEN :minPrice AND :maxPrice")
+    List<Order> findByTotalPriceBetween(@Param("minPrice") Double minPrice, @Param("maxPrice") Double maxPrice);
+    
+    @Query("SELECT o FROM Order o WHERE o.deliveryAddress LIKE %:address%")
+    List<Order> findByDeliveryAddressContaining(@Param("address") String address);
 } 
