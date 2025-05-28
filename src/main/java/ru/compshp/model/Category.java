@@ -1,19 +1,26 @@
 package ru.compshp.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+/**
+ * Модель категории товаров
+ */
 @Entity
 @Table(name = "categories")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Category {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -21,14 +28,18 @@ public class Category {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column
     private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "parent_id")
     private Category parent;
 
     @OneToMany(mappedBy = "parent")
     private List<Category> children = new ArrayList<>();
+
+    @OneToMany(mappedBy = "category")
+    private List<Product> products = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -36,14 +47,32 @@ public class Category {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+    /**
+     * Метод для совместимости с существующим кодом
+     * @param mapper функция преобразования
+     * @param <T> тип результата
+     * @return преобразованный объект
+     */
+    public <T> T map(java.util.function.Function<Category, T> mapper) {
+        return mapper.apply(this);
     }
 
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+    /**
+     * Проверяет, содержится ли категория с указанным ID в дереве дочерних категорий
+     * @param id ID категории
+     * @return true, если категория найдена
+     */
+    public boolean isPresent(Long id) {
+        if (this.id.equals(id)) {
+            return true;
+        }
+        
+        for (Category child : children) {
+            if (child.isPresent(id)) {
+                return true;
+            }
+        }
+        
+        return false;
     }
 } 

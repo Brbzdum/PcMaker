@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="admin/layout :: head(${pageTitle})"></head>
+<body class="bg-light">
+    <div th:replace="admin/layout :: navbar"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div th:replace="admin/layout :: sidebar"></div>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" th:text="${pageTitle}">Детали пользователя</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a th:href="@{/admin/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteUserModal">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Информация о пользователе -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Информация о пользователе</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">ID:</dt>
+                                    <dd class="col-sm-8" th:text="${user.id}">1</dd>
+                                    
+                                    <dt class="col-sm-4">Имя пользователя:</dt>
+                                    <dd class="col-sm-8" th:text="${user.username}">username</dd>
+                                    
+                                    <dt class="col-sm-4">Email:</dt>
+                                    <dd class="col-sm-8" th:text="${user.email}">email@example.com</dd>
+                                    
+                                    <dt class="col-sm-4">Имя:</dt>
+                                    <dd class="col-sm-8" th:text="${user.name}">User Name</dd>
+                                </dl>
+                            </div>
+                            <div class="col-md-6">
+                                <dl class="row">
+                                    <dt class="col-sm-4">Статус:</dt>
+                                    <dd class="col-sm-8">
+                                        <span th:if="${user.active}" class="badge bg-success">Активен</span>
+                                        <span th:unless="${user.active}" class="badge bg-danger">Неактивен</span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Роли:</dt>
+                                    <dd class="col-sm-8">
+                                        <span th:each="role, iterStat : ${user.roles}" 
+                                              th:text="${iterStat.last} ? ${role.name.name()} : ${role.name.name() + ', '}">
+                                            ROLE_USER
+                                        </span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-4">Дата регистрации:</dt>
+                                    <dd class="col-sm-8" th:text="${#temporals.format(user.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</dd>
+                                    
+                                    <dt class="col-sm-4">Последнее обновление:</dt>
+                                    <dd class="col-sm-8" th:text="${#temporals.format(user.updatedAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Форма изменения статуса активности -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Управление статусом</h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/admin/users/{id}/toggle-active(id=${user.id})}" method="post">
+                            <input type="hidden" name="isActive" th:value="${!user.active}">
+                            <button type="submit" th:class="${user.active ? 'btn btn-warning' : 'btn btn-success'}">
+                                <span th:text="${user.active ? 'Деактивировать' : 'Активировать'}">Изменить статус</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Модальное окно для подтверждения удаления -->
+                <div class="modal fade" id="deleteUserModal" tabindex="-1" aria-labelledby="deleteUserModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteUserModalLabel">Подтверждение удаления</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Вы уверены, что хотите удалить пользователя <strong th:text="${user.username}">username</strong>?
+                                Это действие нельзя будет отменить.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <form th:action="@{/admin/users/{id}/delete(id=${user.id})}" method="post">
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div th:replace="admin/layout :: scripts"></div>
+</body>
+</html> 

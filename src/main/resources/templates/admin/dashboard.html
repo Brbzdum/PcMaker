@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <th:block th:fragment="title">
+        <title>Дашборд - Админ-панель PC Maker</title>
+    </th:block>
+    <th:block th:fragment="styles">
+        <style>
+            .card-counter {
+                padding: 20px 10px;
+                margin: 5px;
+                border-radius: 5px;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+                transition: .3s linear all;
+            }
+            .card-counter.primary {
+                background-color: #007bff;
+                color: #FFF;
+            }
+            .card-counter.success {
+                background-color: #28a745;
+                color: #FFF;
+            }
+            .card-counter.info {
+                background-color: #17a2b8;
+                color: #FFF;
+            }
+            .card-counter.warning {
+                background-color: #ffc107;
+                color: #FFF;
+            }
+            .card-counter i {
+                font-size: 5em;
+                opacity: 0.2;
+            }
+            .card-counter .count-numbers {
+                position: absolute;
+                right: 35px;
+                top: 20px;
+                font-size: 32px;
+                display: block;
+            }
+            .card-counter .count-name {
+                position: absolute;
+                right: 35px;
+                top: 65px;
+                font-style: italic;
+                text-transform: capitalize;
+                opacity: 0.7;
+                display: block;
+            }
+        </style>
+    </th:block>
+</head>
+<body>
+    <th:block th:fragment="content">
+        <div class="container-fluid">
+            <h2 class="mb-4">Панель статистики</h2>
+            
+            <!-- Статистика: карточки -->
+            <div class="row">
+                <!-- Пользователи -->
+                <div class="col-md-3">
+                    <div class="card-counter primary">
+                        <i class="fa fa-users"></i>
+                        <span class="count-numbers" th:text="${stats.totalUsers}">0</span>
+                        <span class="count-name">Пользователей</span>
+                    </div>
+                </div>
+                
+                <!-- Продукты -->
+                <div class="col-md-3">
+                    <div class="card-counter success">
+                        <i class="fa fa-microchip"></i>
+                        <span class="count-numbers" th:text="${stats.totalProducts}">0</span>
+                        <span class="count-name">Продуктов</span>
+                    </div>
+                </div>
+                
+                <!-- Заказы -->
+                <div class="col-md-3">
+                    <div class="card-counter info">
+                        <i class="fa fa-shopping-cart"></i>
+                        <span class="count-numbers" th:text="${stats.totalOrders}">0</span>
+                        <span class="count-name">Заказов</span>
+                    </div>
+                </div>
+                
+                <!-- Конфигурации -->
+                <div class="col-md-3">
+                    <div class="card-counter warning">
+                        <i class="fa fa-desktop"></i>
+                        <span class="count-numbers" th:text="${stats.totalConfigurations}">0</span>
+                        <span class="count-name">Конфигураций</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Графики -->
+            <div class="row mt-4">
+                <!-- График заказов по статусам -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Заказы по статусам
+                        </div>
+                        <div class="card-body">
+                            <canvas id="orderStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- График доходов -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Доход
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Общий доход</h5>
+                                            <p class="card-text h3" th:text="${'₽' + stats.totalRevenue}">₽0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card bg-light mb-3">
+                                        <div class="card-body">
+                                            <h5 class="card-title">Доход за месяц</h5>
+                                            <p class="card-text h3" th:text="${'₽' + stats.revenueThisMonth}">₽0</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Последние заказы и Товары с низким запасом -->
+            <div class="row mt-4">
+                <!-- Последние заказы -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Последние заказы
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Пользователь</th>
+                                            <th>Статус</th>
+                                            <th>Сумма</th>
+                                            <th>Дата</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="order : ${stats.recentOrders}">
+                                            <td><a th:href="@{/admin/orders/{id}(id=${order.id})}" th:text="${order.id}">1</a></td>
+                                            <td th:text="${order.user.username}">user</td>
+                                            <td th:text="${order.status}">CREATED</td>
+                                            <td th:text="${'₽' + order.totalPrice}">₽1000</td>
+                                            <td th:text="${#temporals.format(order.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Товары с низким запасом -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            Товары с низким запасом
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Название</th>
+                                            <th>Тип</th>
+                                            <th>Запас</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="product : ${stats.lowStockProducts}">
+                                            <td><a th:href="@{/admin/products/{id}(id=${product.id})}" th:text="${product.id}">1</a></td>
+                                            <td th:text="${product.title}">Процессор</td>
+                                            <td th:text="${product.componentType}">CPU</td>
+                                            <td><span class="badge bg-danger" th:text="${product.stock}">2</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </th:block>
+    
+    <th:block th:fragment="scripts">
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+                // Данные для графика заказов по статусам
+                var orderStatusData = /*[[${stats.ordersByStatus}]]*/ {};
+                var orderLabels = Object.keys(orderStatusData);
+                var orderCounts = Object.values(orderStatusData);
+                
+                // График заказов по статусам
+                var ctxStatus = document.getElementById('orderStatusChart').getContext('2d');
+                var orderStatusChart = new Chart(ctxStatus, {
+                    type: 'pie',
+                    data: {
+                        labels: orderLabels,
+                        datasets: [{
+                            data: orderCounts,
+                            backgroundColor: [
+                                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'
+                            ]
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+    </th:block>
+</body>
+</html> 

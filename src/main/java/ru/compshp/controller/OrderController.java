@@ -16,6 +16,8 @@ import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.service.OrderService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -110,6 +112,16 @@ public class OrderController {
     }
 
     private OrderResponse mapToOrderResponse(Order order) {
+        List<Map<String, Object>> itemsList = new ArrayList<>();
+        order.getItems().forEach(item -> {
+            Map<String, Object> itemMap = new HashMap<>();
+            itemMap.put("productId", item.getProduct().getId());
+            itemMap.put("productName", item.getProduct().getTitle());
+            itemMap.put("quantity", item.getQuantity());
+            itemMap.put("price", item.getPrice());
+            itemsList.add(itemMap);
+        });
+        
         return OrderResponse.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
@@ -118,23 +130,16 @@ public class OrderController {
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
                 .deliveryAddress(order.getDeliveryAddress())
-                .items(order.getItems().stream()
-                        .map(item -> Map.of(
-                                "productId", item.getProduct().getId(),
-                                "productName", item.getProduct().getTitle(),
-                                "quantity", item.getQuantity(),
-                                "price", item.getPrice()
-                        ))
-                        .collect(Collectors.toList()))
+                .items(itemsList)
                 .build();
     }
 
     private Map<String, Object> mapToHistoryResponse(OrderStatusHistory history) {
-        return Map.of(
-                "id", history.getId(),
-                "status", history.getStatus(),
-                "comment", history.getComment() != null ? history.getComment() : "",
-                "changedAt", history.getChangedAt()
-        );
+        Map<String, Object> historyMap = new HashMap<>();
+        historyMap.put("id", history.getId());
+        historyMap.put("status", history.getStatus());
+        historyMap.put("comment", history.getComment() != null ? history.getComment() : "");
+        historyMap.put("changedAt", history.getChangedAt());
+        return historyMap;
     }
 } 

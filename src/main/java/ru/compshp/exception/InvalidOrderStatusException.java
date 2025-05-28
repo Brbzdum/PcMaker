@@ -1,6 +1,6 @@
 package ru.compshp.exception;
 
-import ru.compshp.model.OrderStatus;
+import ru.compshp.model.enums.OrderStatus;
 
 public class InvalidOrderStatusException extends BusinessException {
     public InvalidOrderStatusException(OrderStatus currentStatus, OrderStatus newStatus) {

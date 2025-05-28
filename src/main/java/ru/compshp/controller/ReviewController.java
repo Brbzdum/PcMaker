@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.ReviewDTO;
+import ru.compshp.dto.ReviewDto;
 import ru.compshp.service.ReviewService;
 
 @RestController
@@ -34,16 +34,16 @@ public class ReviewController {
     @PostMapping("/product/{productId}")
     public ResponseEntity<?> createReview(
             @PathVariable Long productId,
-            @Valid @RequestBody ReviewDTO reviewDTO) {
-        return reviewService.createReview(productId, reviewDTO);
+            @Valid @RequestBody ReviewDto reviewDto) {
+        return reviewService.createReview(productId, reviewDto);
     }
 
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/{reviewId}")
     public ResponseEntity<?> updateReview(
             @PathVariable Long reviewId,
-            @Valid @RequestBody ReviewDTO reviewDTO) {
-        return reviewService.updateReview(reviewId, reviewDTO);
+            @Valid @RequestBody ReviewDto reviewDto) {
+        return reviewService.updateReview(reviewId, reviewDto);
     }
 
     @PreAuthorize("hasRole('USER')")

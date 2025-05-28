@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.CategoryDTO;
+import ru.compshp.dto.CategoryDto;
 import ru.compshp.exception.CategoryNotFoundException;
 import ru.compshp.exception.DuplicateCategoryException;
 import ru.compshp.service.CategoryService;
@@ -18,12 +18,12 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
+    public ResponseEntity<List<CategoryDto>> getAllCategories() {
         return ResponseEntity.ok(categoryService.getAllCategories());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<CategoryDTO> getCategory(@PathVariable Long id) {
+    public ResponseEntity<CategoryDto> getCategory(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(categoryService.getCategoryById(id));
         } catch (CategoryNotFoundException e) {
@@ -32,7 +32,7 @@ public class CategoryController {
     }
 
     @GetMapping("/name/{name}")
-    public ResponseEntity<CategoryDTO> getCategoryByName(@PathVariable String name) {
+    public ResponseEntity<CategoryDto> getCategoryByName(@PathVariable String name) {
         try {
             return ResponseEntity.ok(categoryService.getCategoryByName(name));
         } catch (CategoryNotFoundException e) {
@@ -41,20 +41,20 @@ public class CategoryController {
     }
 
     @PostMapping
-    public ResponseEntity<CategoryDTO> createCategory(@Valid @RequestBody CategoryDTO categoryDTO) {
+    public ResponseEntity<CategoryDto> createCategory(@Valid @RequestBody CategoryDto CategoryDto) {
         try {
-            return ResponseEntity.ok(categoryService.createCategory(categoryDTO));
+            return ResponseEntity.ok(categoryService.createCategory(CategoryDto));
         } catch (DuplicateCategoryException e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CategoryDTO> updateCategory(
+    public ResponseEntity<CategoryDto> updateCategory(
             @PathVariable Long id,
-            @Valid @RequestBody CategoryDTO categoryDTO) {
+            @Valid @RequestBody CategoryDto CategoryDto) {
         try {
-            return ResponseEntity.ok(categoryService.updateCategory(id, categoryDTO));
+            return ResponseEntity.ok(categoryService.updateCategory(id, CategoryDto));
         } catch (CategoryNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (DuplicateCategoryException e) {
@@ -75,7 +75,7 @@ public class CategoryController {
     }
 
     @GetMapping("/{id}/subcategories")
-    public ResponseEntity<List<CategoryDTO>> getSubcategories(@PathVariable Long id) {
+    public ResponseEntity<List<CategoryDto>> getSubcategories(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(categoryService.getSubcategories(id));
         } catch (CategoryNotFoundException e) {
@@ -84,12 +84,12 @@ public class CategoryController {
     }
 
     @GetMapping("/root")
-    public ResponseEntity<List<CategoryDTO>> getRootCategories() {
+    public ResponseEntity<List<CategoryDto>> getRootCategories() {
         return ResponseEntity.ok(categoryService.getRootCategories());
     }
 
     @GetMapping("/{id}/path")
-    public ResponseEntity<List<CategoryDTO>> getCategoryPath(@PathVariable Long id) {
+    public ResponseEntity<List<CategoryDto>> getCategoryPath(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(categoryService.getCategoryPath(id));
         } catch (CategoryNotFoundException e) {

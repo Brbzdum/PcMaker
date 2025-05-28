@@ -8,10 +8,53 @@ import ru.compshp.model.Category;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Репозиторий для работы с категориями
+ */
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    // Поиск по имени
-    Optional<Category> findByName(String name);
+    /**
+     * Находит категорию по имени
+     * @param name имя категории
+     * @return категория
+     */
+    Category findByName(String name);
+    
+    /**
+     * Проверяет существование категории с заданным именем
+     * @param name имя категории
+     * @return true, если категория существует
+     */
+    boolean existsByName(String name);
+    
+    /**
+     * Находит все категории без родительской категории
+     * @return список корневых категорий
+     */
+    List<Category> findByParentIsNull();
+    
+    /**
+     * Находит все дочерние категории для заданной родительской категории
+     * @param parent родительская категория
+     * @return список дочерних категорий
+     */
+    List<Category> findByParent(Category parent);
+    
+    /**
+     * Находит все дочерние категории для заданного ID родительской категории
+     * @param parentId ID родительской категории
+     * @return список дочерних категорий
+     */
+    List<Category> findByParentId(Long parentId);
+    
+    /**
+     * Считает количество продуктов в категории
+     * @param categoryId ID категории
+     * @return количество продуктов
+     */
+    @Query("SELECT COUNT(p) FROM Product p WHERE p.category.id = :categoryId")
+    long countProductsByCategoryId(@Param("categoryId") Long categoryId);
+    
     List<Category> findByNameContaining(String name);
     
     // Поиск по иерархии
@@ -20,17 +63,9 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     
     @Query("SELECT c FROM Category c WHERE c.parent.id = :parentId")
     List<Category> findChildCategories(@Param("parentId") Long parentId);
-
-    // Добавляем недостающие методы
-    List<Category> findByParentId(Long parentId);
-    
-    List<Category> findByParentIsNull();
     
     @Query("SELECT c FROM Category c WHERE c.id = :categoryId")
     Optional<Category> findById(@Param("categoryId") Long categoryId);
-    
-    @Query("SELECT COUNT(c) > 0 FROM Category c WHERE c.name = :name")
-    boolean existsByName(@Param("name") String name);
     
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Category c WHERE c.id = :id")
     boolean existsById(@Param("id") Long id);

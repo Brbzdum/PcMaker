@@ -1,66 +1,41 @@
 package ru.compshp.model.enums;
 
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Перечисление типов компонентов компьютера
+ */
 public enum ComponentType {
-    // Core Components
-    CPU,
-    GPU,
-    MB,
-    RAM,
-    PSU,
-    CASE,
-    COOLER,
+    CPU("Процессор"),
+    GPU("Видеокарта"),
+    MB("Материнская плата"),
+    RAM("Оперативная память"),
+    PSU("Блок питания"),
+    CASE("Корпус"),
+    COOLER("Система охлаждения"),
+    STORAGE("Накопитель");
 
-    // Storage
-    STORAGE,
-    SSD("Solid State Drive"),
-    HDD("Hard Disk Drive"),
-    M2("M.2 SSD"),
+    private final String displayName;
+    
+    // Список обязательных компонентов для конфигурации ПК
+    private static final List<ComponentType> REQUIRED_COMPONENTS = Arrays.asList(
+        CPU, MB, RAM, PSU, STORAGE, CASE
+    );
 
-    // Cooling
-    CASE_FAN("Case Fan"),
-    LIQUID_COOLER("Liquid Cooler"),
-
-    // Peripherals
-    MONITOR("Monitor"),
-    KEYBOARD("Keyboard"),
-    MOUSE("Mouse"),
-    HEADSET("Headset"),
-
-    // Networking
-    NETWORK_CARD("Network Card"),
-    WIFI_CARD("Wi-Fi Card");
-
-    private final String description;
-
-    ComponentType(String description) {
-        this.description = description;
+    ComponentType(String displayName) {
+        this.displayName = displayName;
     }
 
-    ComponentType() {
-        this.description = null;
+    public String getDisplayName() {
+        return displayName;
     }
-
-    public String getDescription() {
-        return description;
-    }
-
+    
+    /**
+     * Проверяет, является ли компонент обязательным для базовой конфигурации ПК
+     * @return true если компонент обязательный, иначе false
+     */
     public boolean isRequired() {
-        return this == CPU || this == MB || this == RAM || this == PSU || this == CASE;
-    }
-
-    public boolean isStorage() {
-        return this == STORAGE || this == SSD || this == HDD || this == M2;
-    }
-
-    public boolean isCooling() {
-        return this == COOLER || this == CASE_FAN || this == LIQUID_COOLER;
-    }
-
-    public boolean isPeripheral() {
-        return this == MONITOR || this == KEYBOARD || this == MOUSE || this == HEADSET;
-    }
-
-    public boolean isNetworking() {
-        return this == NETWORK_CARD || this == WIFI_CARD;
+        return REQUIRED_COMPONENTS.contains(this);
     }
 } 

@@ -1,5 +1,7 @@
 package ru.compshp.repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -7,19 +9,85 @@ import org.springframework.stereotype.Repository;
 import ru.compshp.model.Order;
 import ru.compshp.model.User;
 import ru.compshp.model.enums.OrderStatus;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// TODO: Репозиторий для заказов
+/**
+ * Репозиторий для работы с заказами
+ */
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
+    /**
+     * Находит все заказы пользователя
+     * @param userId ID пользователя
+     * @return список заказов
+     */
+    List<Order> findByUserId(Long userId);
+    
+    /**
+     * Находит все заказы пользователя с пагинацией
+     * @param userId ID пользователя
+     * @param pageable параметры пагинации
+     * @return страница заказов
+     */
+    Page<Order> findByUserId(Long userId, Pageable pageable);
+    
+    /**
+     * Находит все заказы со статусом (строковое представление)
+     * @param status статус заказа (строка)
+     * @return список заказов
+     */
+    List<Order> findByStatus(String status);
+    
+    /**
+     * Находит все заказы со статусом (перечисление)
+     * @param status статус заказа (enum)
+     * @return список заказов
+     */
+    List<Order> findByStatus(OrderStatus status);
+    
+    /**
+     * Находит все заказы созданные после указанной даты
+     * @param date дата
+     * @return список заказов
+     */
+    List<Order> findByCreatedAtAfter(LocalDateTime date);
+    
+    /**
+     * Считает количество заказов созданных после указанной даты
+     * @param date дата
+     * @return количество заказов
+     */
+    Long countByCreatedAtAfter(LocalDateTime date);
+    
+    /**
+     * Находит 5 последних заказов
+     * @return список заказов
+     */
+    List<Order> findTop5ByOrderByCreatedAtDesc();
+    
+    /**
+     * Считает общую сумму всех заказов
+     * @return общая сумма
+     */
+    @Query("SELECT SUM(o.totalPrice) FROM Order o")
+    BigDecimal calculateTotalRevenue();
+    
+    /**
+     * Считает общую сумму заказов после указанной даты
+     * @param date дата
+     * @return общая сумма
+     */
+    @Query("SELECT SUM(o.totalPrice) FROM Order o WHERE o.createdAt > :date")
+    BigDecimal calculateRevenueAfterDate(@Param("date") LocalDateTime date);
+
     // Поиск по пользователю
     List<Order> findByUserOrderByCreatedAtDesc(User user);
     List<Order> findByUser(User user);
     List<Order> findByUser_Id(Long userId);
     
     // Поиск по статусу
-    List<Order> findByStatus(OrderStatus status);
     @Query("SELECT COUNT(o) FROM Order o WHERE o.status = :status")
     long countByStatus(@Param("status") OrderStatus status);
     

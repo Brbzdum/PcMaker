@@ -10,6 +10,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DTO для ответа с данными конфигурации компьютера
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -20,9 +23,10 @@ public class ConfigResponse {
     private String name;
     private String description;
     private BigDecimal totalPrice;
-    private Double totalPerformance;
-    private Boolean isCompatible;
-    private List<Map<String, Object>> components;
+    private Boolean isPublic;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private List<Map<String, Object>> components;
+    private Boolean isCompatible;
+    private List<String> compatibilityIssues;
 } 

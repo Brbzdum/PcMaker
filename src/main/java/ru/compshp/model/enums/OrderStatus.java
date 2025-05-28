@@ -1,51 +1,23 @@
 package ru.compshp.model.enums;
 
 /**
- * Статусы заказа
+ * Перечисление статусов заказа
  */
 public enum OrderStatus {
-    /**
-     * Ожидает оплаты
-     */
-    PENDING,
-    
-    /**
-     * Оплачен
-     */
-    PAID,
-    
-    /**
-     * В обработке
-     */
-    PROCESSING,
-    
-    /**
-     * Собран
-     */
-    ASSEMBLED,
-    
-    /**
-     * Отправлен
-     */
-    SHIPPED,
-    
-    /**
-     * Доставлен
-     */
-    DELIVERED,
-    
-    /**
-     * Выполнен
-     */
-    COMPLETED,
-    
-    /**
-     * Отменен
-     */
-    CANCELLED,
-    
-    /**
-     * Возврат
-     */
-    RETURNED
+    PENDING("В ожидании"),
+    PROCESSING("В обработке"),
+    SHIPPED("Отправлен"),
+    DELIVERED("Доставлен"),
+    CANCELLED("Отменен"),
+    COMPLETED("Завершен");
+
+    private final String displayName;
+
+    OrderStatus(String displayName) {
+        this.displayName = displayName;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
 } 

@@ -1,17 +1,21 @@
 package ru.compshp.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+/**
+ * Модель производителя
+ */
 @Entity
 @Table(name = "manufacturers")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Manufacturer {
@@ -22,9 +26,10 @@ public class Manufacturer {
     @Column(nullable = false, unique = true)
     private String name;
 
+    @Column
     private String description;
 
-    @Column(name = "rating")
+    @Column(nullable = false)
     private Double rating = 0.0;
 
     @OneToMany(mappedBy = "manufacturer")
@@ -35,18 +40,4 @@ public class Manufacturer {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-        if (rating == null) rating = 0.0;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-
-
 } 

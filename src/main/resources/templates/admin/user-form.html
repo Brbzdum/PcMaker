@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="admin/layout :: head(${pageTitle})"></head>
+<body class="bg-light">
+    <div th:replace="admin/layout :: navbar"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div th:replace="admin/layout :: sidebar"></div>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" th:text="${pageTitle}">Форма пользователя</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="/admin/users" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Форма пользователя -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0" th:text="${userDto.id != null ? 'Редактирование пользователя' : 'Создание нового пользователя'}">
+                            Форма пользователя
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:object="${userDto}" method="post" th:action="${userDto.id != null} ? @{/admin/users/{id}/edit(id=${userDto.id})} : @{/admin/users/new}">
+                            <input type="hidden" th:field="*{id}" />
+                            
+                            <div class="mb-3 row">
+                                <label for="username" class="col-sm-2 col-form-label">Имя пользователя</label>
+                                <div class="col-sm-10">
+                                    <input type="text" th:field="*{username}" class="form-control" id="username" required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">
+                                        Неверное имя пользователя
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="email" class="col-sm-2 col-form-label">Email</label>
+                                <div class="col-sm-10">
+                                    <input type="email" th:field="*{email}" class="form-control" id="email" required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+                                        Неверный email
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="name" class="col-sm-2 col-form-label">Имя</label>
+                                <div class="col-sm-10">
+                                    <input type="text" th:field="*{name}" class="form-control" id="name">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                        Неверное имя
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row" th:if="${userDto.id == null}">
+                                <label for="password" class="col-sm-2 col-form-label">Пароль</label>
+                                <div class="col-sm-10">
+                                    <input type="password" th:field="*{password}" class="form-control" id="password" th:required="${userDto.id == null}">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">
+                                        Неверный пароль
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label class="col-sm-2 col-form-label">Роли</label>
+                                <div class="col-sm-10">
+                                    <div class="form-check" th:each="role : ${allRoles}">
+                                        <input class="form-check-input" type="checkbox" th:field="*{roles}" th:value="${role}" th:id="${'role-' + role}">
+                                        <label class="form-check-label" th:for="${'role-' + role}" th:text="${role}">ROLE_USER</label>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('roles')}" th:errors="*{roles}">
+                                        Выберите хотя бы одну роль
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row" th:if="${userDto.id != null}">
+                                <label class="col-sm-2 col-form-label">Статус</label>
+                                <div class="col-sm-10">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" th:field="*{active}" id="userActive">
+                                        <label class="form-check-label" for="userActive">Активен</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <div class="col-sm-10 offset-sm-2">
+                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    <a href="/admin/users" class="btn btn-secondary">Отмена</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div th:replace="admin/layout :: scripts"></div>
+</body>
+</html> 

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="admin/layout :: head(${pageTitle})"></head>
+<body class="bg-light">
+    <div th:replace="admin/layout :: navbar"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div th:replace="admin/layout :: sidebar"></div>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" th:text="${pageTitle}">Форма производителя</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="/admin/manufacturers" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Форма производителя -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0" th:text="${manufacturer != null && manufacturer.id != null ? 'Редактирование производителя' : 'Создание нового производителя'}">
+                            Форма производителя
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" th:action="${manufacturer != null && manufacturer.id != null} ? @{/admin/manufacturers/{id}/edit(id=${manufacturer.id})} : @{/admin/manufacturers/new}">
+                            
+                            <div class="mb-3 row">
+                                <label for="name" class="col-sm-2 col-form-label">Название</label>
+                                <div class="col-sm-10">
+                                    <input type="text" name="name" class="form-control" id="name" th:value="${manufacturer != null ? manufacturer.name : ''}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="description" class="col-sm-2 col-form-label">Описание</label>
+                                <div class="col-sm-10">
+                                    <textarea name="description" class="form-control" id="description" rows="3" th:text="${manufacturer != null ? manufacturer.description : ''}"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <div class="col-sm-10 offset-sm-2">
+                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    <a href="/admin/manufacturers" class="btn btn-secondary">Отмена</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div th:replace="admin/layout :: scripts"></div>
+</body>
+</html> 

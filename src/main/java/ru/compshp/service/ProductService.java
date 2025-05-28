@@ -41,8 +41,15 @@ public class ProductService {
         return productRepository.findAll();
     }
 
-    public Optional<Product> getProductById(Long id) {
-        return productRepository.findById(id);
+    /**
+     * Получает продукт по его ID
+     * @param id ID продукта
+     * @return продукт
+     * @throws ResourceNotFoundException если продукт не найден
+     */
+    public Product getProductById(Long id) {
+        return productRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
     }
 
     public List<Manufacturer> getAllManufacturers() {
@@ -184,8 +191,7 @@ public class ProductService {
 
     @Transactional
     public Product updateProduct(Long id, Product product) {
-        Product existingProduct = getProductById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", id));
+        Product existingProduct = getProductById(id);
         
         existingProduct.setTitle(product.getTitle());
         existingProduct.setDescription(product.getDescription());
@@ -244,5 +250,67 @@ public class ProductService {
 
     public Manufacturer saveManufacturer(Manufacturer manufacturer) {
         return manufacturerService.saveManufacturer(manufacturer);
+    }
+
+    /**
+     * Получает средний рейтинг продукта на основе отзывов
+     * @param productId ID продукта
+     * @return средний рейтинг или 0.0, если отзывов нет
+     */
+    public BigDecimal getAverageRating(Long productId) {
+        Product product = getProductById(productId);
+        if (product.getReviews() == null || product.getReviews().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        
+        double avgRating = product.getReviews().stream()
+            .mapToInt(Review::getRating)
+            .average()
+            .orElse(0.0);
+            
+        return BigDecimal.valueOf(avgRating);
+    }
+    
+    /**
+     * Получает количество товара на складе
+     * @param productId ID продукта
+     * @return количество товара
+     */
+    public Integer getStockQuantity(Long productId) {
+        return getProductById(productId).getStock();
+    }
+    
+    /**
+     * Получает спецификацию продукта по ключу
+     * @param productId ID продукта
+     * @param key ключ спецификации
+     * @return значение спецификации или пустая строка, если спецификация не найдена
+     */
+    public String getSpec(Long productId, String key) {
+        Product product = getProductById(productId);
+        Map<String, String> specs = product.getSpecs();
+        
+        if (specs == null) {
+            return "";
+        }
+        return specs.getOrDefault(key, "");
+    }
+    
+    /**
+     * Получает все спецификации продукта
+     * @param productId ID продукта
+     * @return карта спецификаций
+     */
+    public Map<String, String> getSpecifications(Long productId) {
+        return getProductById(productId).getSpecs();
+    }
+    
+    /**
+     * Получает название продукта
+     * @param productId ID продукта
+     * @return название продукта
+     */
+    public String getProductName(Long productId) {
+        return getProductById(productId).getTitle();
     }
 } 

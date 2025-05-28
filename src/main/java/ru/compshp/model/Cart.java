@@ -1,17 +1,22 @@
 package ru.compshp.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+/**
+ * Модель корзины пользователя
+ */
 @Entity
 @Table(name = "carts")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Cart {
@@ -19,7 +24,7 @@ public class Cart {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
@@ -41,35 +46,5 @@ public class Cart {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-
-    public BigDecimal getTotalPrice() {
-        return items.stream()
-            .map(CartItem::calculateTotal)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
-
-    public int getItemsCount() {
-        return items.stream()
-            .mapToInt(CartItem::getQuantity)
-            .sum();
-    }
-
-    public boolean isEmpty() {
-        return items.isEmpty();
-    }
-
-    public void addItem(CartItem item) {
-        items.add(item);
-        item.setCart(this);
-    }
-
-    public void removeItem(CartItem item) {
-        items.remove(item);
-        item.setCart(null);
-    }
-
-    public void clear() {
-        items.clear();
     }
 } 

@@ -1,6 +1,24 @@
 package ru.compshp.dto;
 
-// TODO: Реализовать DTO для компонента конфигурации
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import ru.compshp.model.enums.ComponentType;
+
+import java.math.BigDecimal;
+
+/**
+ * DTO для компонента конфигурации компьютера
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ConfigComponentDto {
-    // TODO: Добавить поля для передачи данных компонента конфигурации
+    private Long id;
+    private Long productId;
+    private String productName;
+    private ComponentType type;
+    private BigDecimal price;
 } 

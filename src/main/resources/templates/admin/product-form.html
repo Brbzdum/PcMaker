@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="admin/layout :: head(${pageTitle})"></head>
+<body class="bg-light">
+    <div th:replace="admin/layout :: navbar"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div th:replace="admin/layout :: sidebar"></div>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" th:text="${pageTitle}">Форма продукта</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a href="/admin/products" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Форма продукта -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0" th:text="${productDto.id != null ? 'Редактирование продукта' : 'Создание нового продукта'}">
+                            Форма продукта
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:object="${productDto}" method="post" th:action="${productDto.id != null} ? @{/admin/products/{id}/edit(id=${productDto.id})} : @{/admin/products/new}" enctype="multipart/form-data">
+                            <input type="hidden" th:field="*{id}" />
+                            
+                            <div class="mb-3 row">
+                                <label for="title" class="col-sm-2 col-form-label">Название</label>
+                                <div class="col-sm-10">
+                                    <input type="text" th:field="*{title}" class="form-control" id="title" required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
+                                        Некорректное название
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="description" class="col-sm-2 col-form-label">Описание</label>
+                                <div class="col-sm-10">
+                                    <textarea th:field="*{description}" class="form-control" id="description" rows="3"></textarea>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">
+                                        Некорректное описание
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="price" class="col-sm-2 col-form-label">Цена</label>
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        <input type="number" th:field="*{price}" class="form-control" id="price" step="0.01" min="0" required>
+                                        <span class="input-group-text">₽</span>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('price')}" th:errors="*{price}">
+                                        Некорректная цена
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="stock" class="col-sm-2 col-form-label">Количество</label>
+                                <div class="col-sm-10">
+                                    <div class="input-group">
+                                        <input type="number" th:field="*{stock}" class="form-control" id="stock" min="0" required>
+                                        <span class="input-group-text">шт.</span>
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('stock')}" th:errors="*{stock}">
+                                        Некорректное количество
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="componentType" class="col-sm-2 col-form-label">Тип компонента</label>
+                                <div class="col-sm-10">
+                                    <select th:field="*{componentType}" class="form-select" id="componentType">
+                                        <option value="">-- Выберите тип --</option>
+                                        <option th:each="type : ${componentTypes}" 
+                                                th:value="${type.name()}" 
+                                                th:text="${type.displayName}">
+                                            Тип компонента
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('componentType')}" th:errors="*{componentType}">
+                                        Выберите тип компонента
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="manufacturerId" class="col-sm-2 col-form-label">Производитель</label>
+                                <div class="col-sm-10">
+                                    <select th:field="*{manufacturerId}" class="form-select" id="manufacturerId">
+                                        <option value="">-- Выберите производителя --</option>
+                                        <option th:each="manufacturer : ${manufacturers}" 
+                                                th:value="${manufacturer.id}" 
+                                                th:text="${manufacturer.name}">
+                                            Производитель
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('manufacturerId')}" th:errors="*{manufacturerId}">
+                                        Выберите производителя
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="categoryId" class="col-sm-2 col-form-label">Категория</label>
+                                <div class="col-sm-10">
+                                    <select th:field="*{categoryId}" class="form-select" id="categoryId">
+                                        <option value="">-- Выберите категорию --</option>
+                                        <option th:each="category : ${categories}" 
+                                                th:value="${category.id}" 
+                                                th:text="${category.name}">
+                                            Категория
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}">
+                                        Выберите категорию
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="specs" class="col-sm-2 col-form-label">Характеристики</label>
+                                <div class="col-sm-10">
+                                    <textarea th:field="*{specs}" class="form-control" id="specs" rows="5"></textarea>
+                                    <div class="form-text">Введите характеристики в формате "ключ: значение" по одной на строку</div>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('specs')}" th:errors="*{specs}">
+                                        Некорректные характеристики
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <label for="imageFile" class="col-sm-2 col-form-label">Изображение</label>
+                                <div class="col-sm-10">
+                                    <input class="form-control" type="file" id="imageFile" name="imageFile" accept="image/*">
+                                    <div class="form-text">Рекомендуемый размер: 800x600 пикселей, макс. размер файла: 2 МБ</div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row" th:if="${productDto.id != null}">
+                                <label class="col-sm-2 col-form-label">Статус</label>
+                                <div class="col-sm-10">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" role="switch" th:field="*{isActive}" id="productActive">
+                                        <label class="form-check-label" for="productActive">Активен</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 row">
+                                <div class="col-sm-10 offset-sm-2">
+                                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                                    <a href="/admin/products" class="btn btn-secondary">Отмена</a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div th:replace="admin/layout :: scripts"></div>
+</body>
+</html> 

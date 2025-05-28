@@ -1,31 +1,33 @@
 package ru.compshp.model;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
-import ru.compshp.model.enums.UserRole;
+import ru.compshp.model.enums.RoleName;
+
 import java.time.LocalDateTime;
 
-@Data
+/**
+ * Модель роли пользователя
+ */
 @Entity
 @Table(name = "roles")
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
     @Enumerated(EnumType.STRING)
-    private UserRole name;
+    @Column(nullable = false, unique = true)
+    private RoleName name;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-    }
 } 

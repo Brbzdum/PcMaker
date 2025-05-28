@@ -14,13 +14,75 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Репозиторий для работы с продуктами
+ */
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
-    // Базовые методы поиска
-    List<Product> findByCategoryId(Long categoryId);
-    List<Product> findByManufacturerId(Long manufacturerId);
+    /**
+     * Находит продукты по типу компонента
+     * @param componentType тип компонента
+     * @return список продуктов
+     */
     List<Product> findByComponentType(ComponentType componentType);
+    
+    /**
+     * Находит продукты по типу компонента с пагинацией
+     * @param componentType тип компонента
+     * @param pageable параметры пагинации
+     * @return страница продуктов
+     */
+    Page<Product> findByComponentType(ComponentType componentType, Pageable pageable);
+    
+    /**
+     * Находит активные продукты
+     * @return список продуктов
+     */
     List<Product> findByIsActiveTrue();
+    
+    /**
+     * Находит активные продукты с пагинацией
+     * @param pageable параметры пагинации
+     * @return страница продуктов
+     */
+    Page<Product> findByIsActiveTrue(Pageable pageable);
+    
+    /**
+     * Находит продукты в заданном ценовом диапазоне
+     * @param minPrice минимальная цена
+     * @param maxPrice максимальная цена
+     * @return список продуктов
+     */
+    List<Product> findByPriceBetween(BigDecimal minPrice, BigDecimal maxPrice);
+    
+    /**
+     * Находит продукты по имени, содержащему подстроку (без учета регистра)
+     * @param name подстрока для поиска
+     * @return список продуктов
+     */
+    List<Product> findByTitleContainingIgnoreCase(String name);
+    
+    /**
+     * Находит продукты с количеством на складе меньше заданного
+     * @param stock количество
+     * @return список продуктов
+     */
+    List<Product> findByStockLessThan(Integer stock);
+    
+    /**
+     * Находит продукты по идентификатору производителя
+     * @param manufacturerId идентификатор производителя
+     * @return список продуктов
+     */
+    List<Product> findByManufacturerId(Long manufacturerId);
+    
+    /**
+     * Находит продукты по категории
+     * @param categoryId идентификатор категории
+     * @return список продуктов
+     */
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId")
+    List<Product> findByCategoryId(@Param("categoryId") Long categoryId);
     
     // Методы для магазина
     @Query("SELECT p FROM Product p WHERE p.stock > 0 AND p.isActive = true")

@@ -1,23 +1,21 @@
 package ru.compshp.controller;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.compshp.model.CompatibilityRule;
 import ru.compshp.model.Product;
 import ru.compshp.model.enums.ComponentType;
-import ru.compshp.service.ComponentCompatibilityService;
+import ru.compshp.service.ComponentCompatibilityServiceImpl;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/compatibility")
+@RequiredArgsConstructor
 public class ComponentCompatibilityController {
-    private final ComponentCompatibilityService compatibilityService;
-
-    public ComponentCompatibilityController(ComponentCompatibilityService compatibilityService) {
-        this.compatibilityService = compatibilityService;
-    }
+    private final ComponentCompatibilityServiceImpl compatibilityService;
 
     @PostMapping("/check")
     public ResponseEntity<Boolean> checkCompatibility(

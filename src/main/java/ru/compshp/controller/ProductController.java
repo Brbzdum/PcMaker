@@ -1,14 +1,12 @@
 package ru.compshp.controller;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import ru.compshp.model.Product;
 import ru.compshp.model.enums.ComponentType;
 import ru.compshp.service.ProductService;
-import java.math.BigDecimal;
+
 import java.util.List;
 
 @RestController
@@ -24,20 +22,18 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
-        return productService.getProductById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Product product = productService.getProductById(id);
+        return ResponseEntity.ok(product);
     }
 
     @GetMapping
-    public ResponseEntity<Page<Product>> getAllProducts(Pageable pageable) {
-        return ResponseEntity.ok(productService.getAllProducts(pageable));
+    public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(productService.getAllProducts());
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product product) {
-        product.setId(id);
-        return ResponseEntity.ok(productService.updateProduct(product));
+        return ResponseEntity.ok(productService.updateProduct(id, product));
     }
 
     @DeleteMapping("/{id}")
@@ -48,18 +44,18 @@ public class ProductController {
 
     @GetMapping("/category/{categoryId}")
     public ResponseEntity<List<Product>> getProductsByCategory(@PathVariable Long categoryId) {
-        return ResponseEntity.ok(productService.getProductsByCategory(categoryId));
+        return ResponseEntity.ok(productService.getProductsByCategoryId(categoryId));
     }
 
     @GetMapping("/manufacturer/{manufacturerId}")
     public ResponseEntity<List<Product>> getProductsByManufacturer(@PathVariable Long manufacturerId) {
-        return ResponseEntity.ok(productService.getProductsByManufacturer(manufacturerId));
+        return ResponseEntity.ok(productService.getProductsByManufacturerId(manufacturerId));
     }
 
     @GetMapping("/component-type/{componentType}")
     public ResponseEntity<List<Product>> getProductsByComponentType(
             @PathVariable ComponentType componentType) {
-        return ResponseEntity.ok(productService.getProductsByComponentType(componentType));
+        return ResponseEntity.ok(productService.getProductsByType(componentType));
     }
 
     @GetMapping("/available")
@@ -70,13 +66,19 @@ public class ProductController {
     @GetMapping("/low-stock")
     public ResponseEntity<List<Product>> getLowStockProducts(
             @RequestParam(defaultValue = "5") Integer threshold) {
-        return ResponseEntity.ok(productService.getLowStockProducts(threshold));
+        // Since there's no direct method for low stock products,
+        // we'll get all products and filter them on the server side
+        List<Product> allProducts = productService.getAllProducts();
+        List<Product> lowStockProducts = allProducts.stream()
+                .filter(p -> p.getStock() <= threshold)
+                .toList();
+        return ResponseEntity.ok(lowStockProducts);
     }
 
     @GetMapping("/highly-rated")
     public ResponseEntity<List<Product>> getHighlyRatedProducts(
             @RequestParam(defaultValue = "4.0") Double minRating) {
-        return ResponseEntity.ok(productService.getHighlyRatedProducts(minRating));
+        return ResponseEntity.ok(productService.getProductsByMinRating(minRating));
     }
 
     @PutMapping("/{id}/stock")
@@ -91,6 +93,7 @@ public class ProductController {
     public ResponseEntity<Boolean> isProductAvailable(
             @PathVariable Long id,
             @RequestParam Integer quantity) {
-        return ResponseEntity.ok(productService.isProductAvailable(id, quantity));
+        Product product = productService.getProductById(id);
+        return ResponseEntity.ok(product.getStock() >= quantity);
     }
 } 

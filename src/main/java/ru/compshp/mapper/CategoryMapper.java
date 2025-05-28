@@ -1,18 +1,18 @@
 package ru.compshp.mapper;
 
 import org.springframework.stereotype.Component;
-import ru.compshp.dto.CategoryDTO;
+import ru.compshp.dto.CategoryDto;
 import ru.compshp.model.Category;
 
 @Component
 public class CategoryMapper {
     
-    public CategoryDTO toDTO(Category category) {
+    public CategoryDto toDTO(Category category) {
         if (category == null) {
             return null;
         }
 
-        CategoryDTO dto = new CategoryDTO();
+        CategoryDto dto = new CategoryDto();
         dto.setId(category.getId());
         dto.setName(category.getName());
         dto.setDescription(category.getDescription());
@@ -22,7 +22,7 @@ public class CategoryMapper {
         return dto;
     }
 
-    public Category toEntity(CategoryDTO dto) {
+    public Category toEntity(CategoryDto dto) {
         if (dto == null) {
             return null;
         }

@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import ru.compshp.dto.UserProfileDTO;
+import ru.compshp.dto.UserProfileDto;
 import ru.compshp.model.User;
 import ru.compshp.service.UserService;
 import java.util.List;
@@ -83,8 +83,8 @@ public class UserController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<?> updateProfile(@Valid @RequestBody UserProfileDTO profileDTO) {
-        return userService.updateProfile(profileDTO);
+    public ResponseEntity<?> updateProfile(@Valid @RequestBody UserProfileDto profileDto) {
+        return userService.updateProfile(profileDto);
     }
 
     @PutMapping("/change-password")

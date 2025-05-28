@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserProfileDTO {
+public class UserProfileDto {
 
     @NotBlank(message = "Имя не может быть пустым")
     @Size(min = 2, max = 50, message = "Имя должно содержать от 2 до 50 символов")

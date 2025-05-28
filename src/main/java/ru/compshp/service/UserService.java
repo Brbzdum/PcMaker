@@ -9,11 +9,11 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.compshp.dto.UserProfileDTO;
+import ru.compshp.dto.UserProfileDto;
 import ru.compshp.exception.ResourceNotFoundException;
 import ru.compshp.model.*;
 import ru.compshp.model.enums.OrderStatus;
-import ru.compshp.model.enums.UserRole;
+import ru.compshp.model.enums.RoleName;
 import ru.compshp.repository.*;
 
 import java.util.HashMap;
@@ -62,8 +62,8 @@ public class UserService {
             user.setRoles(new HashSet<>());
         }
         
-        Role userRole = roleRepository.findByName(UserRole.USER)
-            .orElseThrow(() -> new ResourceNotFoundException("Role", "name", UserRole.USER));
+        Role userRole = roleRepository.findByName(RoleName.ROLE_USER)
+            .orElseThrow(() -> new ResourceNotFoundException("Role", "name", RoleName.ROLE_USER));
         user.getRoles().add(userRole);
         
         return userRepository.save(user);
@@ -156,9 +156,9 @@ public class UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        UserRole roleEnum;
+        RoleName roleEnum;
         try {
-            roleEnum = UserRole.valueOf(roleName.toUpperCase());
+            roleEnum = RoleName.valueOf(roleName.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Неверное имя роли: " + roleName);
         }
@@ -175,9 +175,9 @@ public class UserService {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
-        UserRole roleEnum;
+        RoleName roleEnum;
         try {
-            roleEnum = UserRole.valueOf(roleName.toUpperCase());
+            roleEnum = RoleName.valueOf(roleName.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Неверное имя роли: " + roleName);
         }
@@ -225,27 +225,27 @@ public class UserService {
      * Обновить профиль текущего пользователя
      */
     @Transactional
-    public ResponseEntity<?> updateProfile(UserProfileDTO profileDTO) {
+    public ResponseEntity<?> updateProfile(UserProfileDto profileDto) {
         try {
             User user = getCurrentUser();
             
             // Проверяем, меняется ли email
-            if (!user.getEmail().equals(profileDTO.getEmail())) {
-                if (userRepository.existsByEmail(profileDTO.getEmail())) {
+            if (!user.getEmail().equals(profileDto.getEmail())) {
+                if (userRepository.existsByEmail(profileDto.getEmail())) {
                     return ResponseEntity.badRequest().body("Пользователь с таким email уже существует");
                 }
-                user.setEmail(profileDTO.getEmail());
+                user.setEmail(profileDto.getEmail());
             }
             
             // Проверяем, меняется ли username
-            if (!user.getUsername().equals(profileDTO.getUsername())) {
-                if (userRepository.existsByUsername(profileDTO.getUsername())) {
+            if (!user.getUsername().equals(profileDto.getUsername())) {
+                if (userRepository.existsByUsername(profileDto.getUsername())) {
                     return ResponseEntity.badRequest().body("Пользователь с таким username уже существует");
                 }
-                user.setUsername(profileDTO.getUsername());
+                user.setUsername(profileDto.getUsername());
             }
             
-            user.setName(profileDTO.getName());
+            user.setName(profileDto.getName());
             userRepository.save(user);
             
             return ResponseEntity.ok("Профиль успешно обновлен");

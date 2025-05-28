@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head th:replace="admin/layout :: head(${pageTitle})"></head>
+<body class="bg-light">
+    <div th:replace="admin/layout :: navbar"></div>
+    <div class="container-fluid">
+        <div class="row">
+            <div th:replace="admin/layout :: sidebar"></div>
+            
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" th:text="${pageTitle}">Детали продукта</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <a th:href="@{/admin/products/{id}/edit(id=${product.id})}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    data-bs-toggle="modal" data-bs-target="#deleteProductModal">
+                                Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Детали продукта -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <img th:if="${product.imagePath}" th:src="${product.imagePath}" alt="Product Image" class="img-fluid mb-3" style="max-height: 200px;">
+                                <div th:unless="${product.imagePath}" class="text-center p-5 bg-light mb-3">
+                                    <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                    <p>Нет изображения</p>
+                                </div>
+                                <h5 class="card-title" th:text="${product.title}">Название продукта</h5>
+                                <p class="card-text text-muted" th:text="${product.componentType != null ? product.componentType.displayName : '-'}">Тип компонента</p>
+                                <p class="card-text">
+                                    <span class="badge bg-primary" th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</span>
+                                </p>
+                                <p class="card-text">
+                                    <span th:if="${product.isActive}" class="badge bg-success">Активен</span>
+                                    <span th:unless="${product.isActive}" class="badge bg-danger">Неактивен</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Информация о продукте</h5>
+                            </div>
+                            <div class="card-body">
+                                <dl class="row">
+                                    <dt class="col-sm-3">ID:</dt>
+                                    <dd class="col-sm-9" th:text="${product.id}">1</dd>
+                                    
+                                    <dt class="col-sm-3">Название:</dt>
+                                    <dd class="col-sm-9" th:text="${product.title}">Название продукта</dd>
+                                    
+                                    <dt class="col-sm-3">Тип компонента:</dt>
+                                    <dd class="col-sm-9" th:text="${product.componentType != null ? product.componentType.displayName : '-'}">CPU</dd>
+                                    
+                                    <dt class="col-sm-3">Категория:</dt>
+                                    <dd class="col-sm-9" th:text="${product.category != null ? product.category.name : '-'}">Категория</dd>
+                                    
+                                    <dt class="col-sm-3">Производитель:</dt>
+                                    <dd class="col-sm-9" th:text="${product.manufacturer != null ? product.manufacturer.name : '-'}">Производитель</dd>
+                                    
+                                    <dt class="col-sm-3">Цена:</dt>
+                                    <dd class="col-sm-9" th:text="${#numbers.formatDecimal(product.price, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</dd>
+                                    
+                                    <dt class="col-sm-3">На складе:</dt>
+                                    <dd class="col-sm-9" th:text="${product.stock}">10</dd>
+                                    
+                                    <dt class="col-sm-3">Статус:</dt>
+                                    <dd class="col-sm-9">
+                                        <span th:if="${product.isActive}" class="badge bg-success">Активен</span>
+                                        <span th:unless="${product.isActive}" class="badge bg-danger">Неактивен</span>
+                                    </dd>
+                                    
+                                    <dt class="col-sm-3">Дата создания:</dt>
+                                    <dd class="col-sm-9" th:text="${#temporals.format(product.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</dd>
+                                    
+                                    <dt class="col-sm-3">Последнее обновление:</dt>
+                                    <dd class="col-sm-9" th:text="${#temporals.format(product.updatedAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</dd>
+                                </dl>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Описание продукта -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Описание</h5>
+                    </div>
+                    <div class="card-body">
+                        <p th:text="${product.description ?: 'Описание отсутствует'}">Описание продукта</p>
+                    </div>
+                </div>
+                
+                <!-- Характеристики продукта -->
+                <div class="card mb-4" th:if="${product.specs != null && !product.specs.isEmpty()}">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Характеристики</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre class="p-3 bg-light rounded" th:text="${product.specs}">Характеристики продукта</pre>
+                    </div>
+                </div>
+                
+                <!-- Управление продуктом -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Управление ценой</h5>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/admin/products/{id}/update-price(id=${product.id})}" method="post">
+                                    <div class="input-group mb-3">
+                                        <input type="number" class="form-control" name="price" th:value="${product.price}" step="0.01" min="0" required>
+                                        <span class="input-group-text">₽</span>
+                                        <button class="btn btn-outline-primary" type="submit">Обновить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Управление складом</h5>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/admin/products/{id}/update-stock(id=${product.id})}" method="post">
+                                    <div class="input-group mb-3">
+                                        <input type="number" class="form-control" name="stock" th:value="${product.stock}" min="0" required>
+                                        <span class="input-group-text">шт.</span>
+                                        <button class="btn btn-outline-primary" type="submit">Обновить</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">Управление статусом</h5>
+                            </div>
+                            <div class="card-body">
+                                <form th:action="@{/admin/products/{id}/toggle-active(id=${product.id})}" method="post">
+                                    <input type="hidden" name="isActive" th:value="${!product.isActive}">
+                                    <button type="submit" th:class="${product.isActive ? 'btn btn-warning w-100' : 'btn btn-success w-100'}">
+                                        <span th:text="${product.isActive ? 'Деактивировать' : 'Активировать'}">Изменить статус</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Модальное окно для подтверждения удаления -->
+                <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-labelledby="deleteProductModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteProductModalLabel">Подтверждение удаления</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Вы уверены, что хотите удалить продукт <strong th:text="${product.title}">Название продукта</strong>?
+                                Это действие нельзя будет отменить.
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post">
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <div th:replace="admin/layout :: scripts"></div>
+</body>
+</html> 

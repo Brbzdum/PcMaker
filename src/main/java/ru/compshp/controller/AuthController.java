@@ -9,10 +9,14 @@ import ru.compshp.dto.LoginRequest;
 import ru.compshp.dto.SignupRequest;
 import ru.compshp.model.Role;
 import ru.compshp.model.User;
+import ru.compshp.model.enums.RoleName;
 import ru.compshp.service.AuthService;
 import ru.compshp.service.EmailService;
 import ru.compshp.service.RoleService;
 
+/**
+ * Контроллер для аутентификации и регистрации пользователей
+ */
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -22,6 +26,12 @@ public class AuthController {
     private final EmailService emailService;
     private final RoleService roleService;
 
+    /**
+     * Регистрация нового пользователя
+     * @param signupRequest данные нового пользователя
+     * @param request HTTP запрос для получения URL сайта
+     * @return сообщение о результате регистрации
+     */
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest, 
                                         HttpServletRequest request) {
@@ -29,7 +39,7 @@ public class AuthController {
         User user = authService.registerUser(signupRequest);
         
         // Добавляем роль USER
-        Role userRole = roleService.findByName(Role.ERole.ROLE_USER)
+        Role userRole = roleService.findByName(RoleName.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         user.addRole(userRole);
         
@@ -44,21 +54,42 @@ public class AuthController {
         return ResponseEntity.ok("User registered successfully! Please check your email for verification.");
     }
 
+    /**
+     * Аутентификация пользователя
+     * @param loginRequest данные для входа
+     * @return JWT токен и информация о пользователе
+     */
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
         return authService.authenticateUser(loginRequest);
     }
 
+    /**
+     * Верификация email пользователя
+     * @param code код верификации из email
+     * @return сообщение о результате верификации
+     */
     @GetMapping("/verify")
     public ResponseEntity<?> verifyUser(@RequestParam("code") String code) {
         return authService.verifyUser(code);
     }
 
+    /**
+     * Запрос на сброс пароля
+     * @param email email пользователя
+     * @return сообщение о результате запроса
+     */
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam("email") String email) {
         return authService.forgotPassword(email);
     }
 
+    /**
+     * Сброс пароля
+     * @param token токен для сброса пароля
+     * @param password новый пароль
+     * @return сообщение о результате сброса пароля
+     */
     @PostMapping("/reset-password")
     public ResponseEntity<?> resetPassword(@RequestParam("token") String token,
                                          @RequestParam("password") String password) {
