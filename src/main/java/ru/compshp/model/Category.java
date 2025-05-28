@@ -35,9 +35,11 @@ public class Category {
     @JoinColumn(name = "parent_id")
     private Category parent;
 
+    @Builder.Default
     @OneToMany(mappedBy = "parent")
     private List<Category> children = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "category")
     private List<Product> products = new ArrayList<>();
 
@@ -59,17 +61,23 @@ public class Category {
 
     /**
      * Проверяет, содержится ли категория с указанным ID в дереве дочерних категорий
-     * @param id ID категории
+     * @param categoryId ID категории
      * @return true, если категория найдена
      */
-    public boolean isPresent(Long id) {
-        if (this.id.equals(id)) {
+    public boolean isPresent(Long categoryId) {
+        if (this.id.equals(categoryId)) {
             return true;
         }
         
         for (Category child : children) {
-            if (child.isPresent(id)) {
+            if (child.getId().equals(categoryId)) {
                 return true;
+            }
+            // Опционально проверяем вложенные категории, но без рекурсии
+            for (Category grandchild : child.getChildren()) {
+                if (grandchild.getId().equals(categoryId)) {
+                    return true;
+                }
             }
         }
         

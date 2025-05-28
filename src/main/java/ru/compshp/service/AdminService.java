@@ -17,7 +17,9 @@ import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.model.enums.RoleName;
 import ru.compshp.repository.*;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +27,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Сервис для администрирования системы
@@ -294,7 +297,7 @@ public class AdminService {
             Files.copy(imageFile.getInputStream(), filePath);
             
             // Обновление пути к изображению
-            product.setImagePath("/uploads/products/" + fileName);
+            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
             product = productRepository.save(product);
         }
         
@@ -363,7 +366,7 @@ public class AdminService {
             Files.copy(imageFile.getInputStream(), filePath);
             
             // Обновление пути к изображению
-            product.setImagePath("/uploads/products/" + fileName);
+            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
         }
         
         return productRepository.save(product);
@@ -652,5 +655,346 @@ public class AdminService {
         }
         
         return result;
+    }
+
+    /**
+     * Получает список пользователей с фильтрацией
+     * @param pageable параметры пагинации
+     * @param search поисковый запрос (имя, email, username)
+     * @param status статус активности
+     * @param role роль пользователя
+     * @return отфильтрованный список пользователей
+     */
+    public Page<User> getUsersWithFilters(Pageable pageable, String search, String status, String role) {
+        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
+        // Временная реализация - возвращаем всех пользователей
+        // TODO: Реализовать полноценную фильтрацию
+        return userRepository.findAll(pageable);
+    }
+
+    /**
+     * Получает список продуктов с фильтрацией
+     * @param pageable параметры пагинации
+     * @param search поисковый запрос (название, описание)
+     * @param componentType тип компонента
+     * @return отфильтрованный список продуктов
+     */
+    public Page<Product> getProductsWithFilters(Pageable pageable, String search, String componentType) {
+        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
+        // Временная реализация - возвращаем все продукты
+        // TODO: Реализовать полноценную фильтрацию
+        return productRepository.findAll(pageable);
+    }
+
+    /**
+     * Получает список заказов с фильтрацией
+     * @param pageable параметры пагинации
+     * @param status статус заказа
+     * @param search поисковый запрос (номер заказа, имя пользователя)
+     * @return отфильтрованный список заказов
+     */
+    public Page<Order> getOrdersWithFilters(Pageable pageable, OrderStatus status, String search) {
+        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
+        // Временная реализация - возвращаем все заказы
+        // TODO: Реализовать полноценную фильтрацию
+        return orderRepository.findAll(pageable);
+    }
+
+    /**
+     * Получает список категорий с фильтрацией
+     * @param pageable параметры пагинации
+     * @param search поисковый запрос (название категории)
+     * @return отфильтрованный список категорий
+     */
+    public Page<Category> getCategoriesWithFilters(Pageable pageable, String search) {
+        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
+        // Временная реализация - возвращаем все категории
+        // TODO: Реализовать полноценную фильтрацию
+        return categoryRepository.findAll(pageable);
+    }
+
+    /**
+     * Получает список производителей с фильтрацией
+     * @param pageable параметры пагинации
+     * @param search поисковый запрос (название производителя)
+     * @return отфильтрованный список производителей
+     */
+    public Page<Manufacturer> getManufacturersWithFilters(Pageable pageable, String search) {
+        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
+        // Временная реализация - возвращаем всех производителей
+        // TODO: Реализовать полноценную фильтрацию
+        return manufacturerRepository.findAll(pageable);
+    }
+
+    /**
+     * Обновляет изображение продукта
+     * @param id ID продукта
+     * @param imageFile новый файл изображения
+     * @return обновленный продукт
+     * @throws IOException при ошибке загрузки файла
+     */
+    @Transactional
+    public Product updateProductImage(Long id, MultipartFile imageFile) throws IOException {
+        Product product = getProductById(id);
+        
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // Создаем директорию, если она не существует
+            Path uploadPath = Paths.get(PRODUCT_IMAGES_DIR);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
+            // Генерируем уникальное имя файла
+            String fileName = UUID.randomUUID() + "-" + imageFile.getOriginalFilename();
+            Path filePath = uploadPath.resolve(fileName);
+            
+            // Сохраняем файл
+            Files.copy(imageFile.getInputStream(), filePath);
+            
+            // Обновляем путь к изображению
+            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
+        }
+        
+        return productRepository.save(product);
+    }
+
+    /**
+     * Экспортирует список пользователей в CSV
+     * @param search поисковый запрос
+     * @param status статус активности
+     * @param roleFilter роль пользователя
+     * @throws IOException при ошибке создания файла
+     */
+    public void exportUsersToCSV(String search, String status, String roleFilter) throws IOException {
+        // Получаем всех пользователей с фильтрацией
+        List<User> users = userRepository.findAll();
+        
+        // Создаем директорию для экспорта, если её нет
+        Path exportDir = Paths.get(UPLOAD_DIR + "export/");
+        if (!Files.exists(exportDir)) {
+            Files.createDirectories(exportDir);
+        }
+        
+        // Создаем CSV файл
+        String fileName = "users_export_" + LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "-") + ".csv";
+        Path filePath = exportDir.resolve(fileName);
+        
+        // Записываем данные в CSV
+        StringBuilder csv = new StringBuilder();
+        csv.append("ID,Имя пользователя,Email,Имя,Активность,Роли,Дата регистрации\n");
+        
+        for (User user : users) {
+            csv.append(user.getId()).append(",");
+            csv.append(user.getUsername()).append(",");
+            csv.append(user.getEmail()).append(",");
+            csv.append(user.getName()).append(",");
+            csv.append(user.getActive()).append(",");
+            csv.append(user.getRoles().stream()
+                    .map(role -> role.getName().name())
+                    .collect(Collectors.joining(";"))).append(",");
+            csv.append(user.getCreatedAt()).append("\n");
+        }
+        
+        Files.write(filePath, csv.toString().getBytes());
+    }
+    
+    /**
+     * Экспортирует список продуктов в CSV
+     * @param search поисковый запрос
+     * @param componentType тип компонента
+     * @throws IOException при ошибке создания файла
+     */
+    public void exportProductsToCSV(String search, String componentType) throws IOException {
+        // Получаем все продукты с фильтрацией
+        List<Product> products = productRepository.findAll();
+        
+        // Создаем директорию для экспорта, если её нет
+        Path exportDir = Paths.get(UPLOAD_DIR + "export/");
+        if (!Files.exists(exportDir)) {
+            Files.createDirectories(exportDir);
+        }
+        
+        // Создаем CSV файл
+        String fileName = "products_export_" + LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "-") + ".csv";
+        Path filePath = exportDir.resolve(fileName);
+        
+        // Записываем данные в CSV
+        StringBuilder csv = new StringBuilder();
+        csv.append("ID,Название,Цена,Количество,Тип компонента,Производитель,Категория,Активность\n");
+        
+        for (Product product : products) {
+            csv.append(product.getId()).append(",");
+            csv.append(product.getTitle()).append(",");
+            csv.append(product.getPrice()).append(",");
+            csv.append(product.getStock()).append(",");
+            csv.append(product.getComponentType() != null ? product.getComponentType().name() : "").append(",");
+            csv.append(product.getManufacturer() != null ? product.getManufacturer().getName() : "").append(",");
+            csv.append(product.getCategory() != null ? product.getCategory().getName() : "").append(",");
+            csv.append(product.getIsActive()).append("\n");
+        }
+        
+        Files.write(filePath, csv.toString().getBytes());
+    }
+    
+    /**
+     * Экспортирует список заказов в CSV
+     * @param status статус заказа
+     * @param search поисковый запрос
+     * @throws IOException при ошибке создания файла
+     */
+    public void exportOrdersToCSV(OrderStatus status, String search) throws IOException {
+        // Получаем все заказы с фильтрацией
+        List<Order> orders = orderRepository.findAll();
+        
+        // Создаем директорию для экспорта, если её нет
+        Path exportDir = Paths.get(UPLOAD_DIR + "export/");
+        if (!Files.exists(exportDir)) {
+            Files.createDirectories(exportDir);
+        }
+        
+        // Создаем CSV файл
+        String fileName = "orders_export_" + LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS).toString().replace(":", "-") + ".csv";
+        Path filePath = exportDir.resolve(fileName);
+        
+        // Записываем данные в CSV
+        StringBuilder csv = new StringBuilder();
+        csv.append("ID,Пользователь,Статус,Сумма,Дата создания,Дата обновления\n");
+        
+        for (Order order : orders) {
+            csv.append(order.getId()).append(",");
+            csv.append(order.getUser() != null ? order.getUser().getUsername() : "").append(",");
+            csv.append(order.getStatus().name()).append(",");
+            csv.append(order.getTotalPrice()).append(",");
+            csv.append(order.getCreatedAt()).append(",");
+            csv.append(order.getUpdatedAt()).append("\n");
+        }
+        
+        Files.write(filePath, csv.toString().getBytes());
+    }
+
+    /**
+     * Импортирует продукты из CSV файла
+     * @param csvFile файл CSV с данными продуктов
+     * @return количество импортированных продуктов
+     * @throws IOException при ошибке чтения файла
+     */
+    @Transactional
+    public int importProductsFromCSV(MultipartFile csvFile) throws IOException {
+        List<String> lines = new BufferedReader(new InputStreamReader(csvFile.getInputStream()))
+                .lines()
+                .collect(Collectors.toList());
+        
+        // Пропускаем заголовок
+        if (lines.isEmpty()) {
+            return 0;
+        }
+        
+        int importedCount = 0;
+        boolean isFirstLine = true;
+        
+        for (String line : lines) {
+            if (isFirstLine) {
+                isFirstLine = false;
+                continue; // Пропускаем заголовок
+            }
+            
+            String[] values = line.split(",");
+            if (values.length < 7) {
+                continue; // Некорректная строка
+            }
+            
+            try {
+                String title = values[0].trim();
+                BigDecimal price = new BigDecimal(values[1].trim());
+                int stock = Integer.parseInt(values[2].trim());
+                String componentTypeName = values[3].trim();
+                String manufacturerName = values[4].trim();
+                String categoryName = values[5].trim();
+                String description = values.length > 6 ? values[6].trim() : "";
+                
+                // Поиск или создание производителя
+                Manufacturer manufacturer = null;
+                if (!manufacturerName.isEmpty()) {
+                    manufacturer = manufacturerRepository.findByName(manufacturerName)
+                            .orElseGet(() -> {
+                                Manufacturer newManufacturer = new Manufacturer();
+                                newManufacturer.setName(manufacturerName);
+                                newManufacturer.setDescription("Импортировано");
+                                return manufacturerRepository.save(newManufacturer);
+                            });
+                }
+                
+                // Поиск или создание категории
+                Category category = null;
+                if (!categoryName.isEmpty()) {
+                    category = categoryRepository.findByName(categoryName)
+                            .orElseGet(() -> {
+                                Category newCategory = new Category();
+                                newCategory.setName(categoryName);
+                                newCategory.setDescription("Импортировано");
+                                return categoryRepository.save(newCategory);
+                            });
+                }
+                
+                // Создание продукта
+                Product product = new Product();
+                product.setTitle(title);
+                product.setDescription(description);
+                product.setPrice(price);
+                product.setStock(stock);
+                
+                if (!componentTypeName.isEmpty()) {
+                    try {
+                        ComponentType componentType = ComponentType.valueOf(componentTypeName);
+                        product.setComponentType(componentType);
+                    } catch (IllegalArgumentException e) {
+                        // Игнорируем неверный тип компонента
+                    }
+                }
+                
+                product.setManufacturer(manufacturer);
+                product.setCategory(category);
+                product.setIsActive(true);
+                product.setCreatedAt(LocalDateTime.now());
+                
+                productRepository.save(product);
+                importedCount++;
+                
+            } catch (Exception e) {
+                // Пропускаем строку с ошибкой
+                System.err.println("Ошибка при импорте строки: " + line + " - " + e.getMessage());
+            }
+        }
+        
+        return importedCount;
+    }
+
+    /**
+     * Удаляет изображение продукта
+     * @param id ID продукта
+     * @return обновленный продукт
+     * @throws IOException при ошибке удаления файла
+     */
+    @Transactional
+    public Product deleteProductImage(Long id) throws IOException {
+        Product product = getProductById(id);
+        
+        // Если у продукта есть изображение
+        if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
+            String fileName = product.getImagePath().substring(product.getImagePath().lastIndexOf("/") + 1);
+            Path filePath = Paths.get(PRODUCT_IMAGES_DIR).resolve(fileName);
+            
+            // Удаляем файл
+            Files.deleteIfExists(filePath);
+            
+            // Сбрасываем путь к изображению
+            product.setImagePath(null);
+            product.setImagePath(null);
+            
+            // Сохраняем обновленный продукт
+            product = productRepository.save(product);
+        }
+        
+        return product;
     }
 } 

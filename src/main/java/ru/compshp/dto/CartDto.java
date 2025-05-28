@@ -8,7 +8,9 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.util.List;
 
-// TODO: Реализовать DTO для корзины
+/**
+ * DTO для корзины покупок
+ */
 @Data
 @Builder
 @NoArgsConstructor

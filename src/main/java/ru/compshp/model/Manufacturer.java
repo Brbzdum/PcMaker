@@ -29,9 +29,11 @@ public class Manufacturer {
     @Column
     private String description;
 
+    @Builder.Default
     @Column(nullable = false)
     private Double rating = 0.0;
 
+    @Builder.Default
     @OneToMany(mappedBy = "manufacturer")
     private List<Product> products = new ArrayList<>();
 

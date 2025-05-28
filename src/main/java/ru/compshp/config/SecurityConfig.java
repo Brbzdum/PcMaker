@@ -18,7 +18,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import ru.compshp.security.AuthEntryPointJwt;
 import ru.compshp.security.AuthTokenFilter;
-import ru.compshp.service.UserDetailsServiceImpl;
+import ru.compshp.service.CustomUserDetailsService;
 
 import java.util.Arrays;
 
@@ -31,7 +31,7 @@ import java.util.Arrays;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsServiceImpl userDetailsService;
+    private final CustomUserDetailsService userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
     private final AuthTokenFilter authTokenFilter;
 

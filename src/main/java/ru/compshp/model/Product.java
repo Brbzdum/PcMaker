@@ -44,6 +44,7 @@ public class Product {
     @Column(nullable = false)
     private Integer stock;
 
+    @Builder.Default
     @Column(name = "is_active")
     private Boolean isActive = true;
 
@@ -59,6 +60,7 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
+    @Builder.Default
     @ElementCollection
     @CollectionTable(name = "product_specs", 
         joinColumns = @JoinColumn(name = "product_id"))
@@ -72,6 +74,7 @@ public class Product {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    @Builder.Default
     @OneToMany(mappedBy = "product")
     private Set<Review> reviews = new HashSet<>();
     

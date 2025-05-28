@@ -18,7 +18,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      * @param name имя категории
      * @return категория
      */
-    Category findByName(String name);
+    Optional<Category> findByName(String name);
     
     /**
      * Проверяет существование категории с заданным именем

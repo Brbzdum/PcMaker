@@ -26,11 +26,11 @@ import ru.compshp.model.enums.OrderStatus;
 import ru.compshp.service.AdminService;
 import ru.compshp.service.CategoryService;
 import ru.compshp.service.ManufacturerService;
-import ru.compshp.service.RoleService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +45,6 @@ public class AdminController {
 
     private final AdminService adminService;
     private final ManufacturerService manufacturerService;
-    private final RoleService roleService;
     private final CategoryService categoryService;
     
     /**
@@ -80,13 +79,24 @@ public class AdminController {
             @RequestParam(required = false) String role,
             Model model) {
         
-        // В реальном приложении здесь должна быть фильтрация по поисковому запросу, статусу и роли
-        Page<User> users = adminService.getAllUsers(PageRequest.of(page, size, Sort.by("id")));
+        // Используем параметры фильтрации
+        Page<User> users = adminService.getUsersWithFilters(
+                PageRequest.of(page, size, Sort.by("id")),
+                search,
+                status,
+                role
+        );
         
         model.addAttribute("users", users);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", users.getTotalPages());
         model.addAttribute("pageTitle", "Пользователи");
+        model.addAttribute("search", search);
+        model.addAttribute("status", status);
+        model.addAttribute("role", role);
+        model.addAttribute("allRoles", Arrays.stream(RoleName.values())
+                .map(RoleName::name)
+                .collect(Collectors.toList()));
         
         return "admin/users";
     }
@@ -162,7 +172,7 @@ public class AdminController {
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .name(user.getName())
-                .active(user.isActive())
+                .active(user.getActive())
                 .roles(user.getRoles().stream()
                         .map(role -> role.getName().name())
                         .collect(Collectors.toList()))
@@ -257,33 +267,41 @@ public class AdminController {
             @RequestParam(required = false) String componentType,
             Model model) {
         
-        // В реальном приложении здесь должна быть фильтрация по поисковому запросу и типу компонента
-        Page<Product> products = adminService.getAllProducts(PageRequest.of(page, size, Sort.by("id")));
+        // Используем параметры фильтрации
+        Page<Product> products = adminService.getProductsWithFilters(
+                PageRequest.of(page, size, Sort.by("id")),
+                search,
+                componentType
+        );
         
         model.addAttribute("products", products);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", products.getTotalPages());
         model.addAttribute("componentTypes", ComponentType.values());
         model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+        model.addAttribute("categories", categoryService.getAllCategories());
         model.addAttribute("pageTitle", "Продукты");
+        model.addAttribute("search", search);
+        model.addAttribute("selectedComponentType", componentType);
         
         return "admin/products";
     }
     
     /**
-     * Страница с деталями продукта
-     * @param id ID продукта
-     * @param model модель для передачи данных в представление
-     * @return имя представления
+     * Обработчик страницы просмотра продукта с обработкой возможных ошибок
      */
     @GetMapping("/products/{id}")
     public String getProductDetails(@PathVariable Long id, Model model) {
-        Product product = adminService.getProductById(id);
-        model.addAttribute("product", product);
-        model.addAttribute("componentTypes", ComponentType.values());
-        model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
-        model.addAttribute("pageTitle", "Продукт: " + product.getTitle());
-        return "admin/product-details";
+        try {
+            Product product = adminService.getProductById(id);
+            model.addAttribute("product", product);
+            model.addAttribute("componentTypes", ComponentType.values());
+            model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+            model.addAttribute("pageTitle", "Продукт: " + product.getTitle());
+            return "admin/product-details";
+        } catch (Exception e) {
+            return "redirect:/admin/products";
+        }
     }
     
     /**
@@ -465,9 +483,34 @@ public class AdminController {
     }
     
     /**
+     * Загружает изображение продукта
+     * @param id ID продукта
+     * @param imageFile файл изображения
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу продукта
+     */
+    @PostMapping("/products/{id}/upload-image")
+    public String uploadProductImage(
+            @PathVariable("id") Long id,
+            @RequestParam("image") MultipartFile imageFile,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            Product product = adminService.updateProductImage(id, imageFile);
+            redirectAttributes.addFlashAttribute("message", "Изображение продукта успешно обновлено");
+            return "redirect:/admin/products/" + id;
+        } catch (IOException e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при загрузке изображения: " + e.getMessage());
+            return "redirect:/admin/products/" + id;
+        }
+    }
+    
+    /**
      * Страница со списком заказов
      * @param page номер страницы
      * @param size размер страницы
+     * @param status фильтр по статусу заказа
+     * @param search поисковый запрос
      * @param model модель для передачи данных в представление
      * @return имя представления
      */
@@ -475,13 +518,24 @@ public class AdminController {
     public String getOrders(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
             Model model) {
         
-        Page<Order> orders = adminService.getAllOrders(PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status) : null;
+        
+        Page<Order> orders = adminService.getOrdersWithFilters(
+                PageRequest.of(page, size, Sort.by("createdAt").descending()),
+                orderStatus,
+                search
+        );
         
         model.addAttribute("orders", orders);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", orders.getTotalPages());
+        model.addAttribute("orderStatuses", OrderStatus.values());
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("search", search);
         model.addAttribute("pageTitle", "Заказы");
         
         return "admin/orders";
@@ -529,6 +583,7 @@ public class AdminController {
      * Страница со списком категорий
      * @param page номер страницы
      * @param size размер страницы
+     * @param search поисковый запрос
      * @param model модель для передачи данных в представление
      * @return имя представления
      */
@@ -536,13 +591,18 @@ public class AdminController {
     public String getCategories(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
             Model model) {
         
-        Page<Category> categories = adminService.getAllCategories(PageRequest.of(page, size, Sort.by("name")));
+        Page<Category> categories = adminService.getCategoriesWithFilters(
+                PageRequest.of(page, size, Sort.by("name")),
+                search
+        );
         
         model.addAttribute("categories", categories);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", categories.getTotalPages());
+        model.addAttribute("search", search);
         model.addAttribute("pageTitle", "Категории");
         
         return "admin/categories";
@@ -660,6 +720,19 @@ public class AdminController {
         return "redirect:/admin/categories";
     }
     
+    /**
+     * Отображает категории в иерархическом виде
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/categories/tree")
+    public String getCategoryTree(Model model) {
+        List<CategoryDto> rootCategories = categoryService.getRootCategories();
+        model.addAttribute("rootCategories", rootCategories);
+        model.addAttribute("pageTitle", "Дерево категорий");
+        return "admin/category-tree";
+    }
+    
     //
     // Управление производителями
     //
@@ -668,6 +741,7 @@ public class AdminController {
      * Страница со списком производителей
      * @param page номер страницы
      * @param size размер страницы
+     * @param search поисковый запрос
      * @param model модель для передачи данных в представление
      * @return имя представления
      */
@@ -675,13 +749,18 @@ public class AdminController {
     public String getManufacturers(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search,
             Model model) {
         
-        Page<Manufacturer> manufacturers = adminService.getAllManufacturers(PageRequest.of(page, size, Sort.by("name")));
+        Page<Manufacturer> manufacturers = adminService.getManufacturersWithFilters(
+                PageRequest.of(page, size, Sort.by("name")),
+                search
+        );
         
         model.addAttribute("manufacturers", manufacturers);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", manufacturers.getTotalPages());
+        model.addAttribute("search", search);
         model.addAttribute("pageTitle", "Производители");
         
         return "admin/manufacturers";
@@ -789,5 +868,180 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", "Ошибка при удалении производителя: " + e.getMessage());
         }
         return "redirect:/admin/manufacturers";
+    }
+    
+    /**
+     * Экспорт списка пользователей в CSV
+     * @param search поисковый запрос
+     * @param status фильтр по статусу
+     * @param role фильтр по роли
+     * @return CSV файл с пользователями
+     */
+    @GetMapping("/users/export/csv")
+    public String exportUsersToCSV(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            adminService.exportUsersToCSV(search, status, role);
+            redirectAttributes.addFlashAttribute("message", "Экспорт пользователей выполнен успешно");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при экспорте пользователей: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/users";
+    }
+    
+    /**
+     * Экспорт списка продуктов в CSV
+     * @param search поисковый запрос
+     * @param componentType фильтр по типу компонента
+     * @return CSV файл с продуктами
+     */
+    @GetMapping("/products/export/csv")
+    public String exportProductsToCSV(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String componentType,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            adminService.exportProductsToCSV(search, componentType);
+            redirectAttributes.addFlashAttribute("message", "Экспорт продуктов выполнен успешно");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при экспорте продуктов: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/products";
+    }
+    
+    /**
+     * Экспорт списка заказов в CSV
+     * @param status фильтр по статусу заказа
+     * @param search поисковый запрос
+     * @return CSV файл с заказами
+     */
+    @GetMapping("/orders/export/csv")
+    public String exportOrdersToCSV(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            RedirectAttributes redirectAttributes) {
+        
+        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status) : null;
+        
+        try {
+            adminService.exportOrdersToCSV(orderStatus, search);
+            redirectAttributes.addFlashAttribute("message", "Экспорт заказов выполнен успешно");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при экспорте заказов: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/orders";
+    }
+    
+    /**
+     * Страница импорта продуктов из CSV
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/product-import")
+    public String showProductImport(Model model) {
+        model.addAttribute("pageTitle", "Импорт продуктов");
+        return "admin/product-import";
+    }
+    
+    /**
+     * Обработка импорта продуктов из CSV
+     * @param csvFile файл CSV с данными продуктов
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу продуктов
+     */
+    @PostMapping("/product-import")
+    public String importProducts(
+            @RequestParam("csvFile") MultipartFile csvFile,
+            RedirectAttributes redirectAttributes) {
+        
+        try {
+            int importedCount = adminService.importProductsFromCSV(csvFile);
+            redirectAttributes.addFlashAttribute("message", "Успешно импортировано " + importedCount + " продуктов");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при импорте продуктов: " + e.getMessage());
+        }
+        
+        return "redirect:/admin/products";
+    }
+
+    /**
+     * Обработчик запроса на удаление изображения продукта
+     */
+    @PostMapping("/products/{id}/delete-image")
+    public String deleteProductImage(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            adminService.deleteProductImage(id);
+            redirectAttributes.addFlashAttribute("message", "Изображение продукта успешно удалено");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при удалении изображения: " + e.getMessage());
+        }
+        return "redirect:/admin/products/" + id + "/edit";
+    }
+    
+    /**
+     * Обработчик для массового импорта продуктов
+     */
+    @GetMapping("/products/bulk-import")
+    public String bulkImportForm(Model model) {
+        model.addAttribute("pageTitle", "Массовый импорт продуктов");
+        return "admin/product-bulk-import";
+    }
+
+    /**
+     * Страница отчетов
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reports")
+    public String showReports(Model model) {
+        model.addAttribute("pageTitle", "Отчеты");
+        return "admin/reports";
+    }
+    
+    /**
+     * Отчет по продажам за период
+     * @param startDate начальная дата
+     * @param endDate конечная дата
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reports/sales")
+    public String showSalesReport(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate,
+            Model model) {
+        
+        // Здесь будет логика получения данных для отчета
+        model.addAttribute("pageTitle", "Отчет по продажам");
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        
+        return "admin/reports-sales";
+    }
+    
+    /**
+     * Отчет по популярным продуктам
+     * @param limit количество продуктов
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reports/popular-products")
+    public String showPopularProductsReport(
+            @RequestParam(defaultValue = "10") int limit,
+            Model model) {
+        
+        // Здесь будет логика получения данных для отчета
+        model.addAttribute("pageTitle", "Популярные продукты");
+        model.addAttribute("limit", limit);
+        
+        return "admin/reports-popular-products";
     }
 } 

@@ -21,7 +21,7 @@ import ru.compshp.model.enums.RoleName;
 import ru.compshp.repository.RoleRepository;
 import ru.compshp.repository.UserRepository;
 import ru.compshp.security.JwtUtils;
-import ru.compshp.security.UserDetailsImpl;
+import ru.compshp.security.CustomUserDetails;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -68,7 +68,8 @@ public class AuthService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
         user.setName(signupRequest.getName());
         user.setActive(true);
-        user.setEmailVerified(false);
+        // Генерируем код активации для верификации email
+        user.setActivationCode(UUID.randomUUID().toString());
         user.setCreatedAt(LocalDateTime.now());
         
         // Устанавливаем роли
@@ -118,7 +119,7 @@ public class AuthService implements UserDetailsService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
         
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         
         Map<String, Object> response = new HashMap<>();
         response.put("token", jwt);
@@ -142,7 +143,6 @@ public class AuthService implements UserDetailsService {
         
         user.setActivationCode(null);
         user.setActive(true);
-        user.setEmailVerified(true);
         userRepository.save(user);
         
         return ResponseEntity.ok("User verified successfully");
@@ -159,11 +159,13 @@ public class AuthService implements UserDetailsService {
             .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
         
         String token = UUID.randomUUID().toString();
-        user.setVerificationToken(token);
-        user.setTokenExpiryDate(LocalDateTime.now().plusHours(24));
+        // Сохраняем токен сброса пароля и время его истечения
+        user.setResetToken(token);
+        user.setResetTokenExpiry(LocalDateTime.now().plusHours(24));
         userRepository.save(user);
         
         // Отправка email должна быть реализована в сервисе EmailService
+        emailVerificationService.sendPasswordResetEmail(user);
         
         return ResponseEntity.ok("Password reset link sent to your email");
     }
@@ -176,16 +178,16 @@ public class AuthService implements UserDetailsService {
      */
     @Transactional
     public ResponseEntity<?> resetPassword(String token, String password) {
-        User user = userRepository.findByVerificationToken(token)
+        User user = userRepository.findByResetToken(token)
             .orElseThrow(() -> new ResourceNotFoundException("Invalid token"));
         
-        if (user.getTokenExpiryDate().isBefore(LocalDateTime.now())) {
+        if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Токен сброса пароля истек");
         }
         
         user.setPassword(passwordEncoder.encode(password));
-        user.setVerificationToken(null);
-        user.setTokenExpiryDate(null);
+        user.setResetToken(null);
+        user.setResetTokenExpiry(null);
         userRepository.save(user);
         
         return ResponseEntity.ok("Password has been reset successfully");
@@ -200,29 +202,26 @@ public class AuthService implements UserDetailsService {
         if (authentication == null || !authentication.isAuthenticated()) {
             return null;
         }
-
+        
         String username = authentication.getName();
         return userRepository.findByUsername(username).orElse(null);
     }
 
     /**
-     * Проверка, является ли пользователь администратором
-     * @param user пользователь
-     * @return true, если пользователь администратор
+     * Проверяет, является ли пользователь администратором
+     * @param user пользователь для проверки
+     * @return true, если пользователь имеет роль ADMIN
      */
     public boolean isAdmin(User user) {
-        if (user == null) {
-            return false;
-        }
-
         return user.getRoles().stream()
-                .anyMatch(role -> role.getName() == RoleName.ROLE_ADMIN);
+            .anyMatch(role -> role.getName() == RoleName.ROLE_ADMIN);
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
-        return ru.compshp.security.UserDetailsImpl.build(user);
+            .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
+        
+        return new CustomUserDetails(user);
     }
 } 

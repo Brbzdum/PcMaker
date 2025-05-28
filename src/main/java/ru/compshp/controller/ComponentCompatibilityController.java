@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 import ru.compshp.model.CompatibilityRule;
 import ru.compshp.model.Product;
 import ru.compshp.model.enums.ComponentType;
-import ru.compshp.service.ComponentCompatibilityServiceImpl;
+import ru.compshp.service.ComponentCompatibilityService;
 
 import java.util.List;
 import java.util.Map;
@@ -15,7 +15,7 @@ import java.util.Map;
 @RequestMapping("/api/compatibility")
 @RequiredArgsConstructor
 public class ComponentCompatibilityController {
-    private final ComponentCompatibilityServiceImpl compatibilityService;
+    private final ComponentCompatibilityService compatibilityService;
 
     @PostMapping("/check")
     public ResponseEntity<Boolean> checkCompatibility(

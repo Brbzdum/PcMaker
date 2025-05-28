@@ -42,10 +42,12 @@ public class PCConfiguration {
     private Boolean isCompatible;
 
     // Дополнительное поле для хранения общей производительности
+    @Builder.Default
     @Transient
     private Double totalPerformance = 0.0;
 
-    @OneToMany(mappedBy = "config", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ConfigComponent> components = new HashSet<>();
 
     @Column(name = "created_at")

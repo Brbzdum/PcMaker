@@ -21,7 +21,7 @@ public class ConfiguratorService {
     private final ConfigComponentRepository configComponentRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
-    private final ComponentCompatibilityServiceImpl compatibilityService;
+    private final ComponentCompatibilityService compatibilityService;
 
     // Базовые операции с конфигурациями
     /**

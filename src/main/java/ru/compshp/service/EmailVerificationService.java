@@ -25,52 +25,64 @@ public class EmailVerificationService {
     @Value("${app.verification-token-expiry:24}")
     private int tokenExpiryHours;
 
-    @Value("${app.base-url}")
+    @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
 
     /**
-     * Создает токен верификации и отправляет письмо для подтверждения email
+     * Отправляет письмо для подтверждения email
      * @param user пользователь, которому отправляется письмо
      */
     @Transactional
     public void sendVerificationEmail(User user) {
-        // Генерация уникального токена
-        String token = UUID.randomUUID().toString();
-        
-        // Сохранение токена и времени его истечения
-        user.setVerificationToken(token);
-        user.setTokenExpiryDate(LocalDateTime.now().plusHours(tokenExpiryHours));
-        userRepository.save(user);
+        // Проверяем, есть ли у пользователя код активации
+        if (user.getActivationCode() == null) {
+            user.setActivationCode(UUID.randomUUID().toString());
+            userRepository.save(user);
+        }
 
         // Формирование и отправка письма
         SimpleMailMessage mailMessage = new SimpleMailMessage();
         mailMessage.setTo(user.getEmail());
         mailMessage.setSubject("Подтверждение регистрации на сайте PC Maker");
         mailMessage.setText("Для подтверждения email перейдите по ссылке: " 
-                + baseUrl + "/auth/verify-email?token=" + token);
+                + baseUrl + "/auth/verify-email?code=" + user.getActivationCode());
         
         mailSender.send(mailMessage);
     }
 
     /**
-     * Проверяет токен верификации и активирует аккаунт пользователя
-     * @param token токен верификации
+     * Отправляет письмо для сброса пароля
+     * @param user пользователь, которому отправляется письмо
+     */
+    @Transactional
+    public void sendPasswordResetEmail(User user) {
+        // Формирование и отправка письма
+        SimpleMailMessage mailMessage = new SimpleMailMessage();
+        mailMessage.setTo(user.getEmail());
+        mailMessage.setSubject("Сброс пароля на сайте PC Maker");
+        mailMessage.setText("Для сброса пароля перейдите по ссылке: " 
+                + baseUrl + "/auth/reset-password?token=" + user.getResetToken());
+        
+        mailSender.send(mailMessage);
+    }
+
+    /**
+     * Проверяет код активации и активирует аккаунт пользователя
+     * @param code код активации
      * @return true, если верификация прошла успешно
      */
     @Transactional
-    public boolean verifyEmail(String token) {
-        User user = userRepository.findByVerificationToken(token)
+    public boolean verifyEmail(String code) {
+        User user = userRepository.findByActivationCode(code)
                 .orElse(null);
         
-        if (user == null || user.isEmailVerified() || 
-                user.getTokenExpiryDate().isBefore(LocalDateTime.now())) {
+        if (user == null) {
             return false;
         }
         
         // Активация аккаунта
-        user.setEmailVerified(true);
-        user.setVerificationToken(null);
-        user.setTokenExpiryDate(null);
+        user.setActive(true);
+        user.setActivationCode(null);
         userRepository.save(user);
         
         return true;
@@ -86,9 +98,13 @@ public class EmailVerificationService {
         User user = userRepository.findByEmail(email)
                 .orElse(null);
                 
-        if (user == null || user.isEmailVerified()) {
+        if (user == null || user.getActive()) {
             return false;
         }
+        
+        // Генерируем новый код активации
+        user.setActivationCode(UUID.randomUUID().toString());
+        userRepository.save(user);
         
         sendVerificationEmail(user);
         return true;

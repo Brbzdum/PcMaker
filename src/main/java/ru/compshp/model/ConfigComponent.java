@@ -1,36 +1,34 @@
 package ru.compshp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 
-/**
- * Модель компонента в конфигурации ПК
- */
+@Data
 @Entity
 @Table(name = "config_components")
-@Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ConfigComponent {
     @EmbeddedId
     private ConfigComponentId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("configId")
     @JoinColumn(name = "config_id")
-    private PCConfiguration config;
+    private PCConfiguration configuration;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;
 
+    @Builder.Default
     @Column(nullable = false)
     private Integer quantity = 1;
 
@@ -39,16 +37,7 @@ public class ConfigComponent {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
-    
-    // Методы для совместимости с существующим кодом
-    public void setConfiguration(PCConfiguration configuration) {
-        this.config = configuration;
-    }
-    
-    public PCConfiguration getConfiguration() {
-        return this.config;
-    }
-    
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -57,6 +57,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByActivationCode(String activationCode);
     
     /**
+     * Находит пользователя по токену сброса пароля
+     * @param resetToken токен сброса пароля
+     * @return Optional с пользователем
+     */
+    Optional<User> findByResetToken(String resetToken);
+    
+    /**
      * Считает количество пользователей, созданных после указанной даты
      * @param date дата
      * @return количество пользователей
@@ -83,4 +90,18 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return список пользователей
      */
     List<User> findByTokenExpiryDateBeforeAndEmailVerifiedFalse(LocalDateTime date);
+
+    /**
+     * Находит пользователей с заданным активным статусом
+     * @param active активный статус
+     * @return список пользователей
+     */
+    List<User> findByActive(Boolean active);
+
+    /**
+     * Находит пользователей, созданных после указанной даты
+     * @param date дата
+     * @return список пользователей
+     */
+    List<User> findByCreatedAtAfter(LocalDateTime date);
 } 

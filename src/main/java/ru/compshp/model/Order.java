@@ -34,6 +34,7 @@ public class Order {
     @Column(name = "total_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalPrice;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
@@ -45,9 +46,11 @@ public class Order {
     @JoinColumn(name = "pc_configuration_id")
     private PCConfiguration pcConfiguration;
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> items = new ArrayList<>();
 
+    @Builder.Default
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderStatusHistory> statusHistory = new ArrayList<>();
 
