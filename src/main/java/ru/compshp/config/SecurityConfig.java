@@ -41,14 +41,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors().and()
-            .csrf().disable()
-            .exceptionHandling().authenticationEntryPoint(unauthorizedHandler).and()
-            .sessionManagement(session -> 
-                // Для REST API используем STATELESS
-                // Для админ-панели Thymeleaf используем IF_REQUIRED
-                session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-            )
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth
                 // Публичные ресурсы
                 .requestMatchers(

@@ -67,5 +67,19 @@ public class User {
         updatedAt = LocalDateTime.now();
     }
 
-
+    /**
+     * Добавляет роль пользователю
+     * @param role роль для добавления
+     */
+    public void addRole(Role role) {
+        this.roles.add(role);
+    }
+    
+    /**
+     * Проверяет, активен ли пользователь
+     * @return true если пользователь активен, иначе false
+     */
+    public boolean isActive() {
+        return this.active;
+    }
 }

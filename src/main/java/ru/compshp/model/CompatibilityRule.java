@@ -2,9 +2,11 @@ package ru.compshp.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import ru.compshp.model.enums.ComponentType;
+import java.time.LocalDateTime;
 
 /**
  * Модель правила совместимости компонентов
@@ -12,6 +14,7 @@ import ru.compshp.model.enums.ComponentType;
 @Entity
 @Table(name = "compatibility_rules")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompatibilityRule {
@@ -39,19 +42,41 @@ public class CompatibilityRule {
     @Column(name = "target_type", nullable = false)
     private ComponentType targetType;
 
-    @Column(name = "source_spec_key", nullable = false)
-    private String sourceSpecKey;
+    @Column(name = "rule_type", nullable = false)
+    private String ruleType;
 
-    @Column(name = "target_spec_key", nullable = false)
-    private String targetSpecKey;
+    @Column(name = "source_property", nullable = false)
+    private String sourceProperty;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private Operator operator;
+    @Column(name = "target_property", nullable = false)
+    private String targetProperty;
 
-    @Column(length = 500)
+    @Column(name = "comparison_operator", nullable = false)
+    private String comparisonOperator;
+
+    @Column(name = "value_modifier")
+    private String valueModifier;
+
+    @Column
     private String description;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
+
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 } 

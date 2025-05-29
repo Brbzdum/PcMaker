@@ -23,6 +23,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ComponentCompatibilityService {
     
+    // Константы операторов сравнения
+    public static final String EQUALS = "=";
+    public static final String NOT_EQUALS = "!=";
+    public static final String GREATER_THAN = ">";
+    public static final String LESS_THAN = "<";
+    public static final String GREATER_THAN_EQUALS = ">=";
+    public static final String LESS_THAN_EQUALS = "<=";
+    public static final String CONTAINS = "CONTAINS";
+    
     private final ProductRepository productRepository;
     private final CompatibilityRuleRepository compatibilityRuleRepository;
     
@@ -63,11 +72,11 @@ public class ComponentCompatibilityService {
         
         // Проверяем каждое правило
         for (CompatibilityRule rule : rules) {
-            String sourceSpecKey = rule.getSourceSpecKey();
-            String targetSpecKey = rule.getTargetSpecKey();
+            String sourceProperty = rule.getSourceProperty();
+            String targetProperty = rule.getTargetProperty();
             
-            String sourceValue = source.getSpec(sourceSpecKey);
-            String targetValue = target.getSpec(targetSpecKey);
+            String sourceValue = source.getSpec(sourceProperty);
+            String targetValue = target.getSpec(targetProperty);
             
             // Если у одного из компонентов нет нужной характеристики, пропускаем правило
             if (sourceValue.isEmpty() || targetValue.isEmpty()) {
@@ -75,7 +84,7 @@ public class ComponentCompatibilityService {
             }
             
             // Проверяем соответствие правилу
-            switch (rule.getOperator()) {
+            switch (rule.getComparisonOperator()) {
                 case EQUALS:
                     if (!sourceValue.equals(targetValue)) {
                         return false;
@@ -102,6 +111,28 @@ public class ComponentCompatibilityService {
                         double sourceNum = Double.parseDouble(sourceValue);
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum >= targetNum) {
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Если не числа, пропускаем правило
+                    }
+                    break;
+                case LESS_THAN_EQUALS:
+                    try {
+                        double sourceNum = Double.parseDouble(sourceValue);
+                        double targetNum = Double.parseDouble(targetValue);
+                        if (sourceNum > targetNum) {
+                            return false;
+                        }
+                    } catch (NumberFormatException e) {
+                        // Если не числа, пропускаем правило
+                    }
+                    break;
+                case GREATER_THAN_EQUALS:
+                    try {
+                        double sourceNum = Double.parseDouble(sourceValue);
+                        double targetNum = Double.parseDouble(targetValue);
+                        if (sourceNum < targetNum) {
                             return false;
                         }
                     } catch (NumberFormatException e) {
@@ -143,11 +174,11 @@ public class ComponentCompatibilityService {
         
         // Проверяем каждое правило
         for (CompatibilityRule rule : rules) {
-            String sourceSpecKey = rule.getSourceSpecKey();
-            String targetSpecKey = rule.getTargetSpecKey();
+            String sourceProperty = rule.getSourceProperty();
+            String targetProperty = rule.getTargetProperty();
             
-            String sourceValue = source.getSpec(sourceSpecKey);
-            String targetValue = target.getSpec(targetSpecKey);
+            String sourceValue = source.getSpec(sourceProperty);
+            String targetValue = target.getSpec(targetProperty);
             
             // Если у одного из компонентов нет нужной характеристики, пропускаем правило
             if (sourceValue.isEmpty() || targetValue.isEmpty()) {
@@ -155,17 +186,17 @@ public class ComponentCompatibilityService {
             }
             
             // Проверяем соответствие правилу
-            switch (rule.getOperator()) {
+            switch (rule.getComparisonOperator()) {
                 case EQUALS:
                     if (!sourceValue.equals(targetValue)) {
                         return String.format("%s должен быть равен %s (текущие значения: %s и %s)",
-                                sourceSpecKey, targetSpecKey, sourceValue, targetValue);
+                                sourceProperty, targetProperty, sourceValue, targetValue);
                     }
                     break;
                 case NOT_EQUALS:
                     if (sourceValue.equals(targetValue)) {
                         return String.format("%s не должен быть равен %s (оба имеют значение %s)",
-                                sourceSpecKey, targetSpecKey, sourceValue);
+                                sourceProperty, targetProperty, sourceValue);
                     }
                     break;
                 case GREATER_THAN:
@@ -174,7 +205,7 @@ public class ComponentCompatibilityService {
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum <= targetNum) {
                             return String.format("%s должен быть больше %s (текущие значения: %s и %s)",
-                                    sourceSpecKey, targetSpecKey, sourceValue, targetValue);
+                                    sourceProperty, targetProperty, sourceValue, targetValue);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
@@ -186,7 +217,31 @@ public class ComponentCompatibilityService {
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum >= targetNum) {
                             return String.format("%s должен быть меньше %s (текущие значения: %s и %s)",
-                                    sourceSpecKey, targetSpecKey, sourceValue, targetValue);
+                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        // Если не числа, пропускаем правило
+                    }
+                    break;
+                case LESS_THAN_EQUALS:
+                    try {
+                        double sourceNum = Double.parseDouble(sourceValue);
+                        double targetNum = Double.parseDouble(targetValue);
+                        if (sourceNum > targetNum) {
+                            return String.format("%s должен быть меньше или равен %s (текущие значения: %s и %s)",
+                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                        }
+                    } catch (NumberFormatException e) {
+                        // Если не числа, пропускаем правило
+                    }
+                    break;
+                case GREATER_THAN_EQUALS:
+                    try {
+                        double sourceNum = Double.parseDouble(sourceValue);
+                        double targetNum = Double.parseDouble(targetValue);
+                        if (sourceNum < targetNum) {
+                            return String.format("%s должен быть больше или равен %s (текущие значения: %s и %s)",
+                                    sourceProperty, targetProperty, sourceValue, targetValue);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
@@ -195,7 +250,7 @@ public class ComponentCompatibilityService {
                 case CONTAINS:
                     if (!sourceValue.contains(targetValue)) {
                         return String.format("%s должен содержать %s (текущие значения: %s и %s)",
-                                sourceSpecKey, targetSpecKey, sourceValue, targetValue);
+                                sourceProperty, targetProperty, sourceValue, targetValue);
                     }
                     break;
                 default:
@@ -206,11 +261,11 @@ public class ComponentCompatibilityService {
         // Также проверяем в обратном направлении
         rules = compatibilityRuleRepository.findBySourceTypeAndTargetType(targetType, sourceType);
         for (CompatibilityRule rule : rules) {
-            String sourceSpecKey = rule.getSourceSpecKey();
-            String targetSpecKey = rule.getTargetSpecKey();
+            String sourceProperty = rule.getSourceProperty();
+            String targetProperty = rule.getTargetProperty();
             
-            String targetValue = target.getSpec(sourceSpecKey); // Меняем местами source и target
-            String sourceValue = source.getSpec(targetSpecKey);
+            String targetValue = target.getSpec(sourceProperty); // Меняем местами source и target
+            String sourceValue = source.getSpec(targetProperty);
             
             if (sourceValue.isEmpty() || targetValue.isEmpty()) {
                 continue;
@@ -304,15 +359,15 @@ public class ComponentCompatibilityService {
                     target = product;
                 }
                 
-                String sourceValue = source.getSpec(rule.getSourceSpecKey());
-                String targetValue = target.getSpec(rule.getTargetSpecKey());
+                String sourceValue = source.getSpec(rule.getSourceProperty());
+                String targetValue = target.getSpec(rule.getTargetProperty());
                 
                 if (sourceValue.isEmpty() || targetValue.isEmpty()) {
                     continue;
                 }
                 
                 boolean isCompatible = true;
-                switch (rule.getOperator()) {
+                switch (rule.getComparisonOperator()) {
                     case EQUALS: {
                         isCompatible = sourceValue.equals(targetValue);
                         break;
@@ -336,6 +391,26 @@ public class ComponentCompatibilityService {
                             double sourceNum = Double.parseDouble(sourceValue);
                             double targetNum = Double.parseDouble(targetValue);
                             isCompatible = sourceNum < targetNum;
+                        } catch (NumberFormatException e) {
+                            // Пропускаем
+                        }
+                        break;
+                    }
+                    case LESS_THAN_EQUALS: {
+                        try {
+                            double sourceNum = Double.parseDouble(sourceValue);
+                            double targetNum = Double.parseDouble(targetValue);
+                            isCompatible = sourceNum <= targetNum;
+                        } catch (NumberFormatException e) {
+                            // Пропускаем
+                        }
+                        break;
+                    }
+                    case GREATER_THAN_EQUALS: {
+                        try {
+                            double sourceNum = Double.parseDouble(sourceValue);
+                            double targetNum = Double.parseDouble(targetValue);
+                            isCompatible = sourceNum >= targetNum;
                         } catch (NumberFormatException e) {
                             // Пропускаем
                         }
@@ -398,10 +473,10 @@ public class ComponentCompatibilityService {
             }
             
             // Проверяем на конфликт правил с одинаковыми полями
-            if (existingRule.getSourceSpecKey().equals(rule.getSourceSpecKey()) &&
-                existingRule.getTargetSpecKey().equals(rule.getTargetSpecKey())) {
+            if (existingRule.getSourceProperty().equals(rule.getSourceProperty()) &&
+                existingRule.getTargetProperty().equals(rule.getTargetProperty())) {
                 // Если оператор тот же или противоположный
-                if (isConflictingOperator(existingRule.getOperator(), rule.getOperator())) {
+                if (isConflictingOperator(existingRule.getComparisonOperator(), rule.getComparisonOperator())) {
                     conflicts.add("Конфликт с существующим правилом: " + existingRule.getDescription());
                 }
             }
@@ -416,13 +491,23 @@ public class ComponentCompatibilityService {
      * @param op2 второй оператор
      * @return true, если операторы конфликтуют
      */
-    private boolean isConflictingOperator(Enum<?> op1, Enum<?> op2) {
+    private boolean isConflictingOperator(String op1, String op2) {
         // Простая проверка на конфликт - если операторы одинаковые или противоположные
-        return op1 == op2 || 
-               (op1.toString().equals("EQUALS") && op2.toString().equals("NOT_EQUALS")) ||
-               (op1.toString().equals("NOT_EQUALS") && op2.toString().equals("EQUALS")) ||
-               (op1.toString().equals("GREATER_THAN") && op2.toString().equals("LESS_THAN")) ||
-               (op1.toString().equals("LESS_THAN") && op2.toString().equals("GREATER_THAN"));
+        if (op1.equals(op2)) {
+            return true;
+        }
+        
+        // Проверка противоположных операторов
+        if ((op1.equals(EQUALS) && op2.equals(NOT_EQUALS)) ||
+            (op1.equals(NOT_EQUALS) && op2.equals(EQUALS)) ||
+            (op1.equals(GREATER_THAN) && op2.equals(LESS_THAN_EQUALS)) ||
+            (op1.equals(LESS_THAN_EQUALS) && op2.equals(GREATER_THAN)) ||
+            (op1.equals(LESS_THAN) && op2.equals(GREATER_THAN_EQUALS)) ||
+            (op1.equals(GREATER_THAN_EQUALS) && op2.equals(LESS_THAN))) {
+            return true;
+        }
+        
+        return false;
     }
     
     /**
@@ -474,9 +559,9 @@ public class ComponentCompatibilityService {
             CompatibilityRule rule = new CompatibilityRule();
             rule.setSourceType(sourceType);
             rule.setTargetType(targetType);
-            rule.setSourceSpecKey("compatibility");
-            rule.setTargetSpecKey("compatibility");
-            rule.setOperator(Enum.valueOf(CompatibilityRule.Operator.class, "EQUALS"));
+            rule.setSourceProperty("compatibility");
+            rule.setTargetProperty("compatibility");
+            rule.setComparisonOperator(EQUALS);
             rule.setDescription("Совместимость между " + source.getTitle() + " и " + target.getTitle());
             
             // Проверяем наличие конфликтов

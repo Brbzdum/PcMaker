@@ -129,7 +129,7 @@ public class OrderController {
                 .totalPrice(order.getTotalPrice())
                 .createdAt(order.getCreatedAt())
                 .updatedAt(order.getUpdatedAt())
-                .deliveryAddress(order.getDeliveryAddress())
+                .deliveryAddress(order.getDeliveryAddress().toString())
                 .items(itemsList)
                 .build();
     }

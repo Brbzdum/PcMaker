@@ -1,10 +1,12 @@
 package ru.compshp.model;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 import ru.compshp.model.enums.ComponentType;
 
 import java.math.BigDecimal;
@@ -61,11 +63,8 @@ public class Product {
     private Category category;
 
     @Builder.Default
-    @ElementCollection
-    @CollectionTable(name = "product_specs", 
-        joinColumns = @JoinColumn(name = "product_id"))
-    @MapKeyColumn(name = "spec_key")
-    @Column(name = "spec_value")
+    @Type(JsonBinaryType.class)
+    @Column(name = "specs", columnDefinition = "jsonb")
     private Map<String, String> specs = new HashMap<>();
 
     @Column(name = "created_at")

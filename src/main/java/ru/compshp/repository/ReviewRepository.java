@@ -10,6 +10,7 @@ import ru.compshp.model.Review;
 import ru.compshp.model.Product;
 import ru.compshp.model.User;
 import java.util.List;
+import java.util.Optional;
 
 // TODO: Репозиторий для отзывов
 @Repository
@@ -76,4 +77,11 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     
     @Query("SELECT r.rating, COUNT(r) FROM Review r WHERE r.product.id = :productId GROUP BY r.rating ORDER BY r.rating DESC")
     List<Object[]> countByProductIdGroupByRating(@Param("productId") Long productId);
+    
+    /**
+     * Найти отзыв по ID
+     * @param id ID отзыва
+     * @return отзыв
+     */
+    Optional<Review> findReviewById(Long id);
 } 

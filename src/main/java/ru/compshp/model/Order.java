@@ -1,16 +1,20 @@
 package ru.compshp.model;
 
+import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Type;
 import ru.compshp.model.enums.OrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Модель заказа
@@ -39,8 +43,10 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
+    @Builder.Default
+    @Type(JsonBinaryType.class)
     @Column(name = "delivery_address", columnDefinition = "jsonb")
-    private String deliveryAddress;
+    private Map<String, Object> deliveryAddress = new HashMap<>();
 
     @ManyToOne
     @JoinColumn(name = "pc_configuration_id")
@@ -60,17 +66,14 @@ public class Order {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Информация о доставке
-    private String deliveryCity;
-    private String deliveryPostalCode;
-    private String deliveryCountry;
-    
-    // Информация об оплате
-    private String paymentMethod;
-    private String paymentId;
-    private LocalDateTime paymentDate;
-    
-    // Комментарий к заказу
-    @Column(length = 1000)
-    private String comment;
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = LocalDateTime.now();
+    }
 } 

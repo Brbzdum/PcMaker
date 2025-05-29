@@ -228,7 +228,7 @@ public class ConfiguratorController {
                                 .type(component.getProduct().getComponentType())
                                 .price(component.getProduct().getPrice())
                                 .build())
-                        .<ConfigComponentDto>collect(Collectors.toList()))
+                        .collect(Collectors.toList()))
                 .createdAt(config.getCreatedAt())
                 .updatedAt(config.getUpdatedAt())
                 .build();

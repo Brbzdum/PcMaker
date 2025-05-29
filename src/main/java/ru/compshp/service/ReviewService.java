@@ -77,7 +77,8 @@ public class ReviewService {
 
         // Устанавливаем пользователя и продукт
         review.setUser(user);
-        review.setProduct(productRepository.getById(productId));
+        review.setProduct(productRepository.findById(productId)
+            .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId)));
         
         // По умолчанию отзыв не одобрен и не модерирован
         review.setIsApproved(false);
