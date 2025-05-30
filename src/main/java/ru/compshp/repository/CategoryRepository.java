@@ -86,4 +86,11 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      */
     @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM Product p WHERE p.category.id = :categoryId")
     boolean hasProducts(@Param("categoryId") Long categoryId);
+    
+    /**
+     * Найти категории компонентов ПК
+     * @param pcComponent флаг, указывающий на категории компонентов ПК
+     * @return список категорий
+     */
+    List<Category> findByPcComponent(Boolean pcComponent);
 } 

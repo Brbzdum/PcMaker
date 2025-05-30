@@ -18,11 +18,11 @@ import java.util.Optional;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
-    private final JwtTokenProvider tokenProvider;
+    private final JwtUtils jwtUtils;
 
-    public OAuth2AuthenticationSuccessHandler(UserRepository userRepository, JwtTokenProvider tokenProvider) {
+    public OAuth2AuthenticationSuccessHandler(UserRepository userRepository, JwtUtils jwtUtils) {
         this.userRepository = userRepository;
-        this.tokenProvider = tokenProvider;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
@@ -49,7 +49,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         }
 
         // Генерируем JWT токен
-        String token = tokenProvider.generateToken(authentication);
+        String token = jwtUtils.generateJwtToken(authentication);
 
         // Добавляем токен в заголовок ответа
         response.setHeader("Authorization", "Bearer " + token);

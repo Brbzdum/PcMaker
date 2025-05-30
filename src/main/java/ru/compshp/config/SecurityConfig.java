@@ -1,9 +1,10 @@
 package ru.compshp.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,7 +21,7 @@ import ru.compshp.security.AuthEntryPointJwt;
 import ru.compshp.security.AuthTokenFilter;
 import ru.compshp.service.CustomUserDetailsService;
 
-import java.util.Arrays;
+import java.util.List;
 
 /**
  * Конфигурация безопасности приложения
@@ -28,33 +29,74 @@ import java.util.Arrays;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
-    private final AuthTokenFilter authTokenFilter;
+
+    public SecurityConfig(CustomUserDetailsService userDetailsService, AuthEntryPointJwt unauthorizedHandler) {
+        this.userDetailsService = userDetailsService;
+        this.unauthorizedHandler = unauthorizedHandler;
+    }
+
+    @Bean
+    public AuthTokenFilter authenticationJwtTokenFilter() {
+        return new AuthTokenFilter();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
     /**
-     * Настройка цепочки фильтров безопасности
+     * Конфигурация для REST API (JWT аутентификация)
      */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    @Order(1)
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
+            .securityMatcher("/api/**")
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Публичные ресурсы
+                // Публичные API эндпоинты
                 .requestMatchers(
+                    "/api/auth/**",
+                    "/api/public/**"
+                ).permitAll()
+                // Остальные API запросы требуют аутентификации
+                .anyRequest().authenticated()
+            );
+
+        // Добавляем провайдер аутентификации
+        http.authenticationProvider(authenticationProvider());
+        
+        // Добавляем фильтр JWT токена перед фильтром UsernamePasswordAuthenticationFilter
+        http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    /**
+     * Конфигурация для веб-интерфейса (форменная аутентификация)
+     */
+    @Bean
+    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/", "/admin/**", "/static/**", "/login/**", "/logout/**")
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers(
+                    "/static/**",
                     "/",
                     "/favicon.ico",
-                    "/static/**",
-                    "/admin-static/**",
-                    "/api/auth/**",
-                    "/api/public/**",
-                    "/uploads/**",
+                    "/login",
+                    "/login/**",
                     "/error"
                 ).permitAll()
                 // Доступ к админ-панели только для администраторов
@@ -64,20 +106,34 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 // Настройка формы входа для админ-панели
-                .loginPage("/api/auth/login")
-                .loginProcessingUrl("/api/auth/login")
+                .loginPage("/login")
+                .loginProcessingUrl("/login/process")
                 .defaultSuccessUrl("/admin", true)
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(logout -> logout
                 // Настройка выхода
                 .logoutUrl("/logout")
-                .logoutSuccessUrl("/api/auth/login?logout")
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
                 .permitAll()
             );
 
-        // Добавляем фильтр JWT токена перед фильтром UsernamePasswordAuthenticationFilter
-        http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);
+        return http.build();
+    }
+
+    /**
+     * Конфигурация для Swagger/OpenAPI
+     */
+    @Bean
+    @Order(3)
+    public SecurityFilterChain swaggerFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }
@@ -88,9 +144,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setAllowedOrigins(List.of("*"));
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

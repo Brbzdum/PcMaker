@@ -96,4 +96,9 @@ public class ProductController {
         Product product = productService.getProductById(id);
         return ResponseEntity.ok(product.getStock() >= quantity);
     }
+
+    @GetMapping("/pc-components")
+    public ResponseEntity<List<Product>> getPcComponentProducts() {
+        return ResponseEntity.ok(productService.getPcComponentProducts());
+    }
 } 

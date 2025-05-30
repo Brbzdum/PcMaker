@@ -42,7 +42,7 @@ public class AuthService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
-    private final EmailVerificationService emailVerificationService;
+    private final EmailService emailService;
 
     /**
      * Регистрирует нового пользователя
@@ -67,10 +67,6 @@ public class AuthService implements UserDetailsService {
         user.setEmail(signupRequest.getEmail());
         user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
         user.setName(signupRequest.getName());
-        user.setActive(true);
-        // Генерируем код активации для верификации email
-        user.setActivationCode(UUID.randomUUID().toString());
-        user.setCreatedAt(LocalDateTime.now());
         
         // Устанавливаем роли
         Set<Role> roles = new HashSet<>();
@@ -78,27 +74,51 @@ public class AuthService implements UserDetailsService {
                 .orElseThrow(() -> new RuntimeException("Роль ROLE_USER не найдена"));
         roles.add(userRole);
         
+        boolean isAdmin = false;
+        
         // Если в запросе указаны роли, добавляем их
         if (signupRequest.getRoles() != null && !signupRequest.getRoles().isEmpty()) {
-            signupRequest.getRoles().forEach(roleName -> {
+            for (String roleName : signupRequest.getRoles()) {
                 try {
                     RoleName enumRoleName = RoleName.valueOf(roleName);
                     Role role = roleRepository.findByName(enumRoleName)
                             .orElseThrow(() -> new RuntimeException("Роль не найдена: " + roleName));
                     roles.add(role);
+                    
+                    if (enumRoleName == RoleName.ROLE_ADMIN) {
+                        isAdmin = true;
+                    }
                 } catch (IllegalArgumentException e) {
                     // Игнорируем неизвестные роли
                 }
-            });
+            }
         }
         
         user.setRoles(roles);
         
+        // Если это администратор, сразу активируем аккаунт
+        // Если обычный пользователь, то активация после подтверждения email
+        if (isAdmin) {
+            user.setActive(true);
+            user.setActivationCode(null);
+        } else {
+            user.setActive(false); // Не активен до подтверждения email
+            user.setActivationCode(UUID.randomUUID().toString());
+            
+            // Отправляем письмо для подтверждения email через EmailService
+            try {
+                String siteURL = "http://localhost:8080"; // Базовый URL, может быть изменен через конфигурацию
+                emailService.sendVerificationEmail(user, siteURL);
+            } catch (Exception e) {
+                // Логирование ошибки, но не прерываем регистрацию
+                // Пользователь может запросить повторную отправку письма
+            }
+        }
+        
+        user.setCreatedAt(LocalDateTime.now());
+        
         // Сохраняем пользователя
         User savedUser = userRepository.save(user);
-        
-        // Отправляем письмо для подтверждения email
-        emailVerificationService.sendVerificationEmail(savedUser);
         
         return savedUser;
     }
@@ -138,12 +158,11 @@ public class AuthService implements UserDetailsService {
      */
     @Transactional
     public ResponseEntity<?> verifyUser(String code) {
-        User user = userRepository.findByActivationCode(code)
-            .orElseThrow(() -> new ResourceNotFoundException("Verification code not found"));
+        boolean verified = emailService.verifyEmail(code);
         
-        user.setActivationCode(null);
-        user.setActive(true);
-        userRepository.save(user);
+        if (!verified) {
+            return ResponseEntity.badRequest().body("Invalid verification code");
+        }
         
         return ResponseEntity.ok("User verified successfully");
     }
@@ -164,8 +183,12 @@ public class AuthService implements UserDetailsService {
         user.setResetTokenExpiry(LocalDateTime.now().plusHours(24));
         userRepository.save(user);
         
-        // Отправка email должна быть реализована в сервисе EmailService
-        emailVerificationService.sendPasswordResetEmail(user);
+        // Отправка email через EmailService
+        try {
+            emailService.sendPasswordReset(user, token);
+        } catch (Exception e) {
+            throw new RuntimeException("Не удалось отправить письмо для сброса пароля", e);
+        }
         
         return ResponseEntity.ok("Password reset link sent to your email");
     }

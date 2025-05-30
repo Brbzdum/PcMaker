@@ -18,6 +18,7 @@ public class CategoryMapper {
         dto.setDescription(category.getDescription());
         dto.setParentId(category.getParent() != null ? category.getParent().getId() : null);
         dto.setHasChildren(!category.getChildren().isEmpty());
+        dto.setPcComponent(category.getPcComponent());
         
         return dto;
     }
@@ -31,6 +32,7 @@ public class CategoryMapper {
         category.setId(dto.getId());
         category.setName(dto.getName());
         category.setDescription(dto.getDescription());
+        category.setPcComponent(dto.getPcComponent());
         
         return category;
     }

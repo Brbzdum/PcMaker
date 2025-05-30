@@ -27,7 +27,21 @@ public class CompatibilityRule {
         NOT_EQUALS,
         GREATER_THAN,
         LESS_THAN,
+        GREATER_THAN_EQUALS,
+        LESS_THAN_EQUALS,
         CONTAINS
+    }
+    
+    /**
+     * Тип правила совместимости
+     */
+    public enum RuleType {
+        EXACT_MATCH,
+        RANGE_CHECK,
+        COMPATIBILITY_LIST,
+        GREATER_THAN,
+        LESS_THAN,
+        SUBSET_CHECK
     }
 
     @Id
@@ -42,8 +56,9 @@ public class CompatibilityRule {
     @Column(name = "target_type", nullable = false)
     private ComponentType targetType;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "rule_type", nullable = false)
-    private String ruleType;
+    private RuleType ruleType;
 
     @Column(name = "source_property", nullable = false)
     private String sourceProperty;
@@ -51,8 +66,9 @@ public class CompatibilityRule {
     @Column(name = "target_property", nullable = false)
     private String targetProperty;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "comparison_operator", nullable = false)
-    private String comparisonOperator;
+    private Operator comparisonOperator;
 
     @Column(name = "value_modifier")
     private String valueModifier;

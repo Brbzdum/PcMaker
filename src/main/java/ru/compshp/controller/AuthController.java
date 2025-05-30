@@ -43,14 +43,8 @@ public class AuthController {
                 .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
         user.addRole(userRole);
         
-        // Отправляем письмо с подтверждением
-        String siteURL = request.getRequestURL().toString().replace(request.getServletPath(), "");
-        try {
-            emailService.sendVerificationEmail(user, siteURL);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Error: Could not send verification email");
-        }
-
+        // Письмо с подтверждением отправляется в сервисе AuthService
+        
         return ResponseEntity.ok("User registered successfully! Please check your email for verification.");
     }
 

@@ -23,14 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ComponentCompatibilityService {
     
-    // Константы операторов сравнения
-    public static final String EQUALS = "=";
-    public static final String NOT_EQUALS = "!=";
-    public static final String GREATER_THAN = ">";
-    public static final String LESS_THAN = "<";
-    public static final String GREATER_THAN_EQUALS = ">=";
-    public static final String LESS_THAN_EQUALS = "<=";
-    public static final String CONTAINS = "CONTAINS";
+    // Константы операторов сравнения больше не нужны - используем enum
     
     private final ProductRepository productRepository;
     private final CompatibilityRuleRepository compatibilityRuleRepository;
@@ -491,19 +484,19 @@ public class ComponentCompatibilityService {
      * @param op2 второй оператор
      * @return true, если операторы конфликтуют
      */
-    private boolean isConflictingOperator(String op1, String op2) {
+    private boolean isConflictingOperator(CompatibilityRule.Operator op1, CompatibilityRule.Operator op2) {
         // Простая проверка на конфликт - если операторы одинаковые или противоположные
-        if (op1.equals(op2)) {
+        if (op1 == op2) {
             return true;
         }
         
         // Проверка противоположных операторов
-        if ((op1.equals(EQUALS) && op2.equals(NOT_EQUALS)) ||
-            (op1.equals(NOT_EQUALS) && op2.equals(EQUALS)) ||
-            (op1.equals(GREATER_THAN) && op2.equals(LESS_THAN_EQUALS)) ||
-            (op1.equals(LESS_THAN_EQUALS) && op2.equals(GREATER_THAN)) ||
-            (op1.equals(LESS_THAN) && op2.equals(GREATER_THAN_EQUALS)) ||
-            (op1.equals(GREATER_THAN_EQUALS) && op2.equals(LESS_THAN))) {
+        if ((op1 == CompatibilityRule.Operator.EQUALS && op2 == CompatibilityRule.Operator.NOT_EQUALS) ||
+            (op1 == CompatibilityRule.Operator.NOT_EQUALS && op2 == CompatibilityRule.Operator.EQUALS) ||
+            (op1 == CompatibilityRule.Operator.GREATER_THAN && op2 == CompatibilityRule.Operator.LESS_THAN_EQUALS) ||
+            (op1 == CompatibilityRule.Operator.LESS_THAN_EQUALS && op2 == CompatibilityRule.Operator.GREATER_THAN) ||
+            (op1 == CompatibilityRule.Operator.LESS_THAN && op2 == CompatibilityRule.Operator.GREATER_THAN_EQUALS) ||
+            (op1 == CompatibilityRule.Operator.GREATER_THAN_EQUALS && op2 == CompatibilityRule.Operator.LESS_THAN)) {
             return true;
         }
         
@@ -561,7 +554,7 @@ public class ComponentCompatibilityService {
             rule.setTargetType(targetType);
             rule.setSourceProperty("compatibility");
             rule.setTargetProperty("compatibility");
-            rule.setComparisonOperator(EQUALS);
+            rule.setComparisonOperator(CompatibilityRule.Operator.EQUALS);
             rule.setDescription("Совместимость между " + source.getTitle() + " и " + target.getTitle());
             
             // Проверяем наличие конфликтов

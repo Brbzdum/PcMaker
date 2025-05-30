@@ -313,4 +313,15 @@ public class ProductService {
     public String getProductName(Long productId) {
         return getProductById(productId).getTitle();
     }
+
+    /**
+     * Получает все продукты из категорий, которые являются компонентами ПК
+     * @return список продуктов из категорий компонентов ПК
+     */
+    public List<Product> getPcComponentProducts() {
+        List<Category> pcComponentCategories = categoryRepository.findByPcComponent(true);
+        return pcComponentCategories.stream()
+                .flatMap(category -> productRepository.findByCategoryId(category.getId()).stream())
+                .toList();
+    }
 } 

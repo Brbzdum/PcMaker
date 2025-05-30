@@ -48,6 +48,26 @@ public class Category {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Builder.Default
+    @Column(name = "is_pc_component")
+    private Boolean isPcComponent = false;
+
+    /**
+     * Получает признак, является ли категория категорией компонентов ПК
+     * @return true, если категория является категорией компонентов ПК
+     */
+    public Boolean getPcComponent() {
+        return isPcComponent;
+    }
+
+    /**
+     * Устанавливает признак, является ли категория категорией компонентов ПК
+     * @param pcComponent признак категории компонентов ПК
+     */
+    public void setPcComponent(Boolean pcComponent) {
+        this.isPcComponent = pcComponent;
+    }
 
     /**
      * Метод для совместимости с существующим кодом

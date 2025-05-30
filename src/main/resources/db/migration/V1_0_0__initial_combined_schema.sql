@@ -45,7 +45,8 @@ CREATE TABLE categories (
                             description TEXT,
                             parent_id BIGINT REFERENCES categories(id),
                             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            is_pc_component BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE manufacturers (
@@ -70,11 +71,7 @@ CREATE TABLE products (
                           category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
                           component_type component_type,
                           specs JSONB NOT NULL,
-                          is_active BOOLEAN DEFAULT TRUE,
-                          CHECK (
-                              (component_type IS NOT NULL AND category_id IN (SELECT id FROM categories WHERE name = 'PC_COMPONENT')) OR
-                              (component_type IS NULL AND category_id NOT IN (SELECT id FROM categories WHERE name = 'PC_COMPONENT'))
-                              )
+                          is_active BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE carts (
@@ -173,6 +170,36 @@ CREATE TABLE compatibility_rules (
                                      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Установка флага is_pc_component для категорий
+UPDATE categories SET is_pc_component = TRUE WHERE name = 'PC_COMPONENT';
+
+-- Триггерная функция для проверки component_type
+CREATE OR REPLACE FUNCTION validate_component_type()
+RETURNS TRIGGER AS $$
+DECLARE
+    category_is_pc BOOLEAN;
+BEGIN
+    SELECT is_pc_component INTO category_is_pc 
+    FROM categories WHERE id = NEW.category_id;
+
+    IF category_is_pc THEN
+        IF NEW.component_type IS NULL THEN
+            RAISE EXCEPTION 'Component type required for PC_COMPONENT category';
+        END IF;
+    ELSE
+        IF NEW.component_type IS NOT NULL THEN
+            RAISE EXCEPTION 'Component type must be NULL for non-PC_COMPONENT categories';
+        END IF;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Триггер для проверки условия
+CREATE TRIGGER trg_validate_component_type
+BEFORE INSERT OR UPDATE ON products
+FOR EACH ROW EXECUTE FUNCTION validate_component_type();
 
 -- Оптимизированные индексы
 CREATE INDEX idx_products_component_type ON products(component_type);
@@ -190,7 +217,6 @@ CREATE INDEX idx_config_components_config ON config_components(config_id);
 CREATE INDEX idx_rules_source_type ON compatibility_rules(source_type);
 CREATE INDEX idx_rules_target_type ON compatibility_rules(target_type);
 CREATE INDEX idx_rules_active ON compatibility_rules(is_active);
-
 
 -- Создание функций и триггеров
 CREATE OR REPLACE FUNCTION update_timestamp()

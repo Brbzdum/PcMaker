@@ -89,6 +89,11 @@ public class CategoryService {
                     .orElseThrow(() -> new CategoryNotFoundException("Parent category not found"));
             category.setParent(parent);
         }
+        
+        // Установка значения isPcComponent, если оно не было установлено
+        if (category.getPcComponent() == null) {
+            category.setPcComponent(false);
+        }
 
         Category savedCategory = categoryRepository.save(category);
         return categoryMapper.toDTO(savedCategory);
@@ -107,6 +112,11 @@ public class CategoryService {
 
         existingCategory.setName(categoryDto.getName());
         existingCategory.setDescription(categoryDto.getDescription());
+        
+        // Обновление поля isPcComponent, если оно предоставлено
+        if (categoryDto.getPcComponent() != null) {
+            existingCategory.setPcComponent(categoryDto.getPcComponent());
+        }
 
         if (categoryDto.getParentId() != null) {
             Category parent = categoryRepository.findById(categoryDto.getParentId())
@@ -198,5 +208,16 @@ public class CategoryService {
         if (!categoryRepository.existsById(id)) {
             throw new CategoryNotFoundException("Category not found with id: " + id);
         }
+    }
+
+    /**
+     * Получает все категории компонентов ПК
+     * @return список категорий компонентов ПК
+     */
+    @Cacheable(value = "categories", key = "'pcComponents'")
+    public List<CategoryDto> getPcComponentCategories() {
+        return categoryRepository.findByPcComponent(true).stream()
+                .map(categoryMapper::toDTO)
+                .collect(Collectors.toList());
     }
 } 

@@ -88,6 +88,11 @@ public class CategoryController {
         return ResponseEntity.ok(categoryService.getRootCategories());
     }
 
+    @GetMapping("/pc-components")
+    public ResponseEntity<List<CategoryDto>> getPcComponentCategories() {
+        return ResponseEntity.ok(categoryService.getPcComponentCategories());
+    }
+
     @GetMapping("/{id}/path")
     public ResponseEntity<List<CategoryDto>> getCategoryPath(@PathVariable Long id) {
         try {
