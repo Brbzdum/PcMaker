@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -54,8 +55,45 @@ public class AdminController {
      */
     @GetMapping
     public String dashboard(Model model) {
-        DashboardStatsDto stats = adminService.getDashboardStats();
-        model.addAttribute("stats", stats);
+        try {
+            DashboardStatsDto stats = adminService.getDashboardStats();
+            // Убедимся, что все поля объекта имеют значения
+            if (stats.getTotalRevenue() == null) {
+                stats = DashboardStatsDto.builder()
+                    .totalUsers(stats.getTotalUsers())
+                    .totalProducts(stats.getTotalProducts())
+                    .totalOrders(stats.getTotalOrders())
+                    .totalConfigurations(stats.getTotalConfigurations())
+                    .newUsersThisMonth(stats.getNewUsersThisMonth())
+                    .newOrdersThisMonth(stats.getNewOrdersThisMonth())
+                    .revenueThisMonth(BigDecimal.ZERO) // заменяем null на 0
+                    .totalRevenue(BigDecimal.ZERO) // заменяем null на 0
+                    .recentOrders(stats.getRecentOrders())
+                    .ordersByStatus(stats.getOrdersByStatus())
+                    .lowStockProducts(stats.getLowStockProducts())
+                    .build();
+            }
+            model.addAttribute("stats", stats);
+            System.out.println("Передаю данные в шаблон dashboard (безопасная версия): " + stats);
+        } catch (Exception e) {
+            // В случае ошибки создаем пустой объект статистики
+            System.err.println("Ошибка при получении статистики: " + e.getMessage());
+            e.printStackTrace();
+            model.addAttribute("stats", DashboardStatsDto.builder()
+                .totalUsers(0)
+                .totalProducts(0)
+                .totalOrders(0)
+                .totalConfigurations(0)
+                .newUsersThisMonth(0)
+                .newOrdersThisMonth(0)
+                .revenueThisMonth(BigDecimal.ZERO)
+                .totalRevenue(BigDecimal.ZERO)
+                .recentOrders(List.of())
+                .ordersByStatus(Map.of())
+                .lowStockProducts(List.of())
+                .build());
+        }
+        
         model.addAttribute("pageTitle", "Дашборд");
         return "admin/dashboard";
     }
