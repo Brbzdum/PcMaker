@@ -156,7 +156,7 @@ public class CategoryService {
             }
             existingCategory.setSlug(slug);
         }
-        
+
         existingCategory.setName(categoryDto.getName());
         existingCategory.setDescription(categoryDto.getDescription());
         

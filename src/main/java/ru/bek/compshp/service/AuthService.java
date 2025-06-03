@@ -36,7 +36,7 @@ import java.util.UUID;
  * Сервис для аутентификации и регистрации пользователей
  */
 @Service
-public class AuthService implements UserDetailsService {
+public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -264,13 +264,5 @@ public class AuthService implements UserDetailsService {
     public boolean isAdmin(User user) {
         return user.getRoles().stream()
             .anyMatch(role -> role.getName() == RoleName.ROLE_ADMIN);
-    }
-
-    @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-            .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
-        
-        return new CustomUserDetails(user);
     }
 } 

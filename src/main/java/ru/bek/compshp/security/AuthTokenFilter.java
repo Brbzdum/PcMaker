@@ -34,7 +34,7 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     }
     
     @Autowired
-    public void setUserDetailsService(@Qualifier("customUserDetailsService") UserDetailsService userDetailsService) {
+    public void setUserDetailsService(UserDetailsService userDetailsService) {
         this.userDetailsService = userDetailsService;
     }
 

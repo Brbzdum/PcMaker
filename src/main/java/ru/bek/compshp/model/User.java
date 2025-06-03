@@ -80,6 +80,6 @@ public class User {
      * @return true если пользователь активен, иначе false
      */
     public boolean isActive() {
-        return this.active;
+        return this.active != null && this.active;
     }
 }

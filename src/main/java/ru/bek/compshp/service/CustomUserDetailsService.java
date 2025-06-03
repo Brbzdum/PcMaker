@@ -4,11 +4,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.context.annotation.Primary;
 import ru.bek.compshp.model.User;
 import ru.bek.compshp.repository.UserRepository;
 import ru.bek.compshp.security.CustomUserDetails;
 
 @Service
+@Primary
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserRepository userRepository;
@@ -23,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден: " + username));
         
         // Проверяем, активирован ли пользователь
-        if (!user.getActive()) {
+        if (!user.isActive()) {
             throw new UsernameNotFoundException("Пользователь не активирован. Проверьте вашу почту для подтверждения регистрации.");
         }
         

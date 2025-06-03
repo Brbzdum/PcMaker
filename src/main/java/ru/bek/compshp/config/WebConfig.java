@@ -46,18 +46,36 @@ public class WebConfig implements WebMvcConfigurer {
         // Обработчик для загруженных изображений
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/");
+        
+        // Обработчики для корневых статических файлов (по каждому типу файла отдельно)
+        registry.addResourceHandler("/*.js")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.html")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.css")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.ico")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.png")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.jpg")
+                .addResourceLocations("classpath:/static/");
+        registry.addResourceHandler("/*.gif")
+                .addResourceLocations("classpath:/static/");
     }
     
     /**
-     * Настройка контроллеров представлений для маршрутов Vue.js
+     * Настройка контроллеров представлений для маршрутов приложения
      */
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        // Главная страница Vue.js приложения
-        registry.addViewController("/").setViewName("forward:/index.html");
+        // Перенаправляем корневой путь на страницу входа
+        registry.addViewController("/").setViewName("redirect:/login");
         
-        // Обработка маршрутов Vue.js (все маршруты, кроме /api/** и /admin/**)
-        registry.addViewController("/{path:^(?!api|admin).*$}/**").setViewName("forward:/index.html");
+        // Перенаправляем все другие пути (кроме API, admin, static, uploads, login)
+        // на страницу входа
+        registry.addViewController("/{path:^(?!api|admin|static|uploads|login).*$}/**")
+                .setViewName("redirect:/login");
     }
     
     /**
@@ -77,9 +95,9 @@ public class WebConfig implements WebMvcConfigurer {
      * Конфигурация движка шаблонов Thymeleaf
      */
     @Bean
-    public SpringTemplateEngine webTemplateEngine(SpringResourceTemplateResolver templateResolver) {
+    public SpringTemplateEngine templateEngine() {
         SpringTemplateEngine templateEngine = new SpringTemplateEngine();
-        templateEngine.setTemplateResolver(templateResolver);
+        templateEngine.setTemplateResolver(templateResolver());
         templateEngine.setEnableSpringELCompiler(true);
         return templateEngine;
     }
@@ -88,11 +106,12 @@ public class WebConfig implements WebMvcConfigurer {
      * Конфигурация решателя представлений Thymeleaf
      */
     @Bean
-    public ThymeleafViewResolver viewResolver(SpringTemplateEngine webTemplateEngine) {
-        ThymeleafViewResolver viewResolver = new ThymeleafViewResolver();
-        viewResolver.setTemplateEngine(webTemplateEngine);
-        viewResolver.setCharacterEncoding("UTF-8");
-        viewResolver.setViewNames(new String[] {"**/admin/**"});
-        return viewResolver;
+    public ThymeleafViewResolver thymeleafViewResolver() {
+        ThymeleafViewResolver resolver = new ThymeleafViewResolver();
+        resolver.setTemplateEngine(templateEngine());
+        resolver.setCharacterEncoding("UTF-8");
+        resolver.setOrder(1);
+        resolver.setViewNames(new String[] {"*"});
+        return resolver;
     }
 } 
