@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -45,6 +46,10 @@ public class ProductDto {
     private Map<String, String> specs = new HashMap<>();
     
     private boolean isActive;
+    
+    private MultipartFile imageFile;
+    
+    private String imagePath;
     
     /**
      * Получить строковое представление спецификаций для формы

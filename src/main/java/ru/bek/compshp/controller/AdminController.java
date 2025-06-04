@@ -405,6 +405,7 @@ public class AdminController {
                 .categoryId(product.getCategory() != null ? product.getCategory().getId() : null)
                 .specs(product.getSpecs())
                 .isActive(product.getIsActive())
+                .imagePath(product.getImagePath())
                 .build();
         
         model.addAttribute("productDto", productDto);
