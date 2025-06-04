@@ -11,31 +11,121 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        /* Базовые стили для админ-панели */
         body {
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
+            font-family: 'Roboto', sans-serif;
         }
         .sidebar {
-            background-color: #343a40;
+            background-color: #1e2a39;
             color: #fff;
             min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .logo-container {
+            padding: 20px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 15px;
+        }
+        .logo {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+        }
+        .logo i {
+            color: #4f9ffe;
+            margin-right: 10px;
+            font-size: 32px;
         }
         .sidebar a {
-            color: #ced4da;
-            padding: 10px 15px;
+            color: #c8d1e6;
+            padding: 12px 20px;
             display: block;
             text-decoration: none;
+            transition: all 0.3s;
+            border-radius: 5px;
+            margin: 5px 10px;
+            font-weight: 500;
         }
         .sidebar a:hover {
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(79,159,254,0.15);
+            transform: translateX(5px);
         }
         .sidebar a.active {
-            background-color: #007bff;
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
             color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .sidebar .nav-link i {
-            margin-right: 10px;
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 15px 20px;
+        }
+        .card-title {
+            margin-bottom: 0;
+            font-weight: 600;
+            color: #1e2a39;
+            font-family: 'Poppins', sans-serif;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
+            border: none;
+            box-shadow: 0 4px 10px rgba(71,118,230,0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #3a67d6, #7743d9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(71,118,230,0.4);
+        }
+        .btn-outline-primary {
+            border-radius: 8px;
+        }
+        .badge {
+            font-size: 1em;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+        }
+        .table {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            color: #1e2a39;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
         }
     </style>
 </head>
@@ -44,10 +134,13 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
-                        <span>PC Maker</span>
-                    </h6>
+                <div class="position-sticky">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <i class="fas fa-desktop"></i>
+                            <span>PC Maker</span>
+                        </div>
+                    </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/admin}">
@@ -95,15 +188,15 @@
                 </div>
             </nav>
             
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2" th:text="${pageTitle}">Детали категории</h1>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold" th:text="${pageTitle}">Детали категории</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
-                            <a th:href="@{/admin/categories/{id}/edit(id=${category.id})}" class="btn btn-sm btn-outline-secondary">Редактировать</a>
-                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                            <a th:href="@{/admin/categories/{id}/edit(id=${category.id})}" class="btn btn-outline-secondary"><i class="fas fa-pen me-1"></i>Редактировать</a>
+                            <button type="button" class="btn btn-outline-danger" 
                                     data-bs-toggle="modal" data-bs-target="#deleteCategoryModal">
-                                Удалить
+                                <i class="fas fa-trash me-1"></i>Удалить
                             </button>
                         </div>
                     </div>
@@ -122,7 +215,7 @@
                 <!-- Информация о категории -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Информация о категории</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Информация о категории</h5>
                     </div>
                     <div class="card-body">
                         <dl class="row">
@@ -150,7 +243,7 @@
                 <!-- Описание категории -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Описание</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-align-left me-2"></i>Описание</h5>
                     </div>
                     <div class="card-body">
                         <p th:text="${category.description ?: 'Описание отсутствует'}">Описание категории</p>
@@ -160,7 +253,7 @@
                 <!-- Дочерние категории -->
                 <div class="card mb-4" th:if="${category.children != null && !category.children.empty}">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Дочерние категории</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-sitemap me-2"></i>Дочерние категории</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -191,7 +284,7 @@
                 <!-- Продукты в категории -->
                 <div class="card mb-4" th:if="${category.products != null && !category.products.empty}">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Продукты в категории</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>Продукты в категории</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">

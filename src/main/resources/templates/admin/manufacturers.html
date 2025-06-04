@@ -13,31 +13,121 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     
     <style>
-        /* Базовые стили для админ-панели */
         body {
-            background-color: #f8f9fa;
+            background-color: #f0f2f5;
+            font-family: 'Roboto', sans-serif;
         }
         .sidebar {
-            background-color: #343a40;
+            background-color: #1e2a39;
             color: #fff;
             min-height: 100vh;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .logo-container {
+            padding: 20px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 15px;
+        }
+        .logo {
+            color: #fff;
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Poppins', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+        }
+        .logo i {
+            color: #4f9ffe;
+            margin-right: 10px;
+            font-size: 32px;
         }
         .sidebar a {
-            color: #ced4da;
-            padding: 10px 15px;
+            color: #c8d1e6;
+            padding: 12px 20px;
             display: block;
             text-decoration: none;
+            transition: all 0.3s;
+            border-radius: 5px;
+            margin: 5px 10px;
+            font-weight: 500;
         }
         .sidebar a:hover {
             color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(79,159,254,0.15);
+            transform: translateX(5px);
         }
         .sidebar a.active {
-            background-color: #007bff;
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
             color: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
         .sidebar .nav-link i {
-            margin-right: 10px;
+            margin-right: 12px;
+            width: 20px;
+            text-align: center;
+        }
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+        .card-header {
+            background-color: #fff;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 15px 20px;
+        }
+        .card-title {
+            margin-bottom: 0;
+            font-weight: 600;
+            color: #1e2a39;
+            font-family: 'Poppins', sans-serif;
+        }
+        .card-body {
+            padding: 20px;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
+            border: none;
+            box-shadow: 0 4px 10px rgba(71,118,230,0.3);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #3a67d6, #7743d9);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(71,118,230,0.4);
+        }
+        .btn-outline-primary {
+            border-radius: 8px;
+        }
+        .badge {
+            font-size: 1em;
+            padding: 0.5em 1em;
+            border-radius: 8px;
+        }
+        .table {
+            background-color: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .table thead th {
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+            color: #1e2a39;
+            font-weight: 600;
+            font-family: 'Poppins', sans-serif;
+        }
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
         }
     </style>
 </head>
@@ -46,10 +136,13 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
-                        <span>PC Maker</span>
-                    </h6>
+                <div class="position-sticky">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <i class="fas fa-desktop"></i>
+                            <span>PC Maker</span>
+                        </div>
+                    </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/admin}">
@@ -97,12 +190,12 @@
                 </div>
             </nav>
             
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">Производители</h1>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold">Производители</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
-                            <a th:href="@{/admin/manufacturers/new}" class="btn btn-sm btn-outline-secondary">Добавить производителя</a>
+                            <a th:href="@{/admin/manufacturers/new}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Добавить производителя</a>
                         </div>
                     </div>
                 </div>
@@ -118,85 +211,92 @@
                 </div>
                 
                 <!-- Таблица производителей -->
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead>
-                            <tr>
-                                <th scope="col">ID</th>
-                                <th scope="col">Название</th>
-                                <th scope="col">Описание</th>
-                                <th scope="col">Количество продуктов</th>
-                                <th scope="col">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="manufacturer : ${manufacturers}">
-                                <td th:text="${manufacturer.id}">1</td>
-                                <td th:text="${manufacturer.name}">Название производителя</td>
-                                <td th:text="${manufacturer.description ?: '-'}">Описание производителя</td>
-                                <td th:text="${manufacturer.products != null ? manufacturer.products.size() : 0}">0</td>
-                                <td>
-                                    <div class="btn-group">
-                                        <a th:href="@{/admin/manufacturers/{id}(id=${manufacturer.id})}" class="btn btn-sm btn-outline-primary">Просмотр</a>
-                                        <a th:href="@{/admin/manufacturers/{id}/edit(id=${manufacturer.id})}" class="btn btn-sm btn-outline-secondary">Изменить</a>
-                                        <button type="button" class="btn btn-sm btn-outline-danger"
-                                                data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${manufacturer.id}">
-                                            Удалить
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Модальное окно подтверждения удаления -->
-                                    <div class="modal fade" th:id="'deleteModal' + ${manufacturer.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>Вы уверены, что хотите удалить производителя <strong th:text="${manufacturer.name}">Название производителя</strong>?</p>
-                                                    <div class="alert alert-warning" th:if="${manufacturer.products != null && !manufacturer.products.empty}">
-                                                        <i class="bi bi-exclamation-triangle-fill"></i> Внимание! У этого производителя есть продукты, которые останутся без производителя.
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="fas fa-industry me-2"></i>Список производителей</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">ID</th>
+                                        <th scope="col">Название</th>
+                                        <th scope="col">Описание</th>
+                                        <th scope="col">Количество продуктов</th>
+                                        <th scope="col">Действия</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="manufacturer : ${manufacturers}">
+                                        <td th:text="${manufacturer.id}">1</td>
+                                        <td th:text="${manufacturer.name}">Название производителя</td>
+                                        <td th:text="${manufacturer.description ?: '-'}">Описание производителя</td>
+                                        <td th:text="${manufacturer.products != null ? manufacturer.products.size() : 0}">0</td>
+                                        <td>
+                                            <div class="btn-group">
+                                                <a th:href="@{/admin/manufacturers/{id}(id=${manufacturer.id})}" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye me-1"></i>Просмотр</a>
+                                                <a th:href="@{/admin/manufacturers/{id}/edit(id=${manufacturer.id})}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-pen me-1"></i>Изменить</a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                                        data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${manufacturer.id}">
+                                                    <i class="fas fa-trash me-1"></i>Удалить
+                                                </button>
+                                            </div>
+                                            
+                                            <!-- Модальное окно подтверждения удаления -->
+                                            <div class="modal fade" th:id="'deleteModal' + ${manufacturer.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>Вы уверены, что хотите удалить производителя <strong th:text="${manufacturer.name}">Название производителя</strong>?</p>
+                                                            <div class="alert alert-warning" th:if="${manufacturer.products != null && !manufacturer.products.empty}">
+                                                                <i class="bi bi-exclamation-triangle-fill"></i> Внимание! У этого производителя есть продукты, которые останутся без производителя.
+                                                            </div>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                            <form th:action="@{/admin/manufacturers/{id}/delete(id=${manufacturer.id})}" method="post">
+                                                                <button type="submit" class="btn btn-danger">Удалить</button>
+                                                            </form>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                    <form th:action="@{/admin/manufacturers/{id}/delete(id=${manufacturer.id})}" method="post">
-                                                        <button type="submit" class="btn btn-danger">Удалить</button>
-                                                    </form>
-                                                </div>
                                             </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr th:if="${manufacturers.empty}">
-                                <td colspan="5" class="text-center">Нет производителей</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                        </td>
+                                    </tr>
+                                    <tr th:if="${manufacturers.empty}">
+                                        <td colspan="5" class="text-center">Нет производителей</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Пагинация -->
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <li th:class="${currentPage == 0 ? 'page-item disabled' : 'page-item'}">
+                                    <a class="page-link" th:href="@{/admin/manufacturers(page=${currentPage - 1}, size=${manufacturers.size})}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                <li th:each="page : ${#numbers.sequence(0, totalPages - 1)}" 
+                                    th:class="${page == currentPage ? 'page-item active' : 'page-item'}">
+                                    <a class="page-link" th:href="@{/admin/manufacturers(page=${page}, size=${manufacturers.size})}" 
+                                       th:text="${page + 1}"></a>
+                                </li>
+                                <li th:class="${currentPage == totalPages - 1 ? 'page-item disabled' : 'page-item'}">
+                                    <a class="page-link" th:href="@{/admin/manufacturers(page=${currentPage + 1}, size=${manufacturers.size})}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
                 </div>
-                
-                <!-- Пагинация -->
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        <li th:class="${currentPage == 0 ? 'page-item disabled' : 'page-item'}">
-                            <a class="page-link" th:href="@{/admin/manufacturers(page=${currentPage - 1}, size=${manufacturers.size})}" aria-label="Previous">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
-                        </li>
-                        <li th:each="page : ${#numbers.sequence(0, totalPages - 1)}" 
-                            th:class="${page == currentPage ? 'page-item active' : 'page-item'}">
-                            <a class="page-link" th:href="@{/admin/manufacturers(page=${page}, size=${manufacturers.size})}" 
-                               th:text="${page + 1}"></a>
-                        </li>
-                        <li th:class="${currentPage == totalPages - 1 ? 'page-item disabled' : 'page-item'}">
-                            <a class="page-link" th:href="@{/admin/manufacturers(page=${currentPage + 1}, size=${manufacturers.size})}" aria-label="Next">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
             </main>
         </div>
     </div>

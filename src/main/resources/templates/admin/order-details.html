@@ -7,14 +7,10 @@
         <div class="row">
             <div th:replace="admin/layout :: sidebar"></div>
             
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2" th:text="${pageTitle}">Детали заказа</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <a href="/admin/orders" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
-                        </div>
-                    </div>
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold" th:text="${pageTitle}">Детали заказа</h1>
+                    <a href="/admin/orders" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i>Назад к списку</a>
                 </div>
                 
                 <!-- Алерты сообщений и ошибок -->
@@ -30,9 +26,9 @@
                 <!-- Информация о заказе -->
                 <div class="row mb-4">
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Информация о заказе</h5>
+                                <h5 class="card-title mb-0"><i class="fas fa-info-circle me-2"></i>Информация о заказе</h5>
                             </div>
                             <div class="card-body">
                                 <dl class="row">
@@ -62,9 +58,9 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <div class="card">
+                        <div class="card mb-4">
                             <div class="card-header">
-                                <h5 class="card-title mb-0">Информация о клиенте</h5>
+                                <h5 class="card-title mb-0"><i class="fas fa-user me-2"></i>Информация о клиенте</h5>
                             </div>
                             <div class="card-body">
                                 <dl class="row">
@@ -91,7 +87,7 @@
                 <!-- Управление статусом заказа -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Управление статусом заказа</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-tasks me-2"></i>Управление статусом заказа</h5>
                     </div>
                     <div class="card-body">
                         <form th:action="@{/admin/orders/{id}/update-status(id=${order.id})}" method="post">
@@ -120,7 +116,7 @@
                 <!-- Товары в заказе -->
                 <div class="card mb-4">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">Товары в заказе</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>Товары в заказе</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
@@ -166,7 +162,7 @@
                 <!-- История статусов заказа -->
                 <div class="card mb-4" th:if="${order.statusHistory != null && !order.statusHistory.empty}">
                     <div class="card-header">
-                        <h5 class="card-title mb-0">История статусов заказа</h5>
+                        <h5 class="card-title mb-0"><i class="fas fa-history me-2"></i>История статусов заказа</h5>
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
