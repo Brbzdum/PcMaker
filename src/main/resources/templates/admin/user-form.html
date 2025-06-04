@@ -4,41 +4,36 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${pageTitle}">Форма пользователя - Админ-панель PC Maker</title>
-    
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Custom Admin CSS -->
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin.css}">
-    
     <style>
-        /* Базовые стили для админ-панели */
-        body {
-            background-color: #f8f9fa;
-        }
-        .sidebar {
-            background-color: #343a40;
-            color: #fff;
-            min-height: 100vh;
-        }
-        .sidebar a {
-            color: #ced4da;
-            padding: 10px 15px;
-            display: block;
-            text-decoration: none;
-        }
-        .sidebar a:hover {
-            color: #fff;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-        .sidebar a.active {
-            background-color: #007bff;
-            color: #fff;
-        }
-        .sidebar .nav-link i {
-            margin-right: 10px;
-        }
+        body { background-color: #f0f2f5; font-family: 'Roboto', sans-serif; }
+        .sidebar { background-color: #1e2a39; color: #fff; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .logo-container { padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
+        .logo { color: #fff; font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; }
+        .logo i { color: #4f9ffe; margin-right: 10px; font-size: 32px; }
+        .sidebar a { color: #c8d1e6; padding: 12px 20px; display: block; text-decoration: none; transition: all 0.3s; border-radius: 5px; margin: 5px 10px; font-weight: 500; }
+        .sidebar a:hover { color: #fff; background-color: rgba(79,159,254,0.15); transform: translateX(5px); }
+        .sidebar a.active { background: linear-gradient(45deg, #4776E6, #8E54E9); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .sidebar .nav-link i { margin-right: 12px; width: 20px; text-align: center; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; transition: all 0.3s; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .card-header { background-color: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 15px 20px; }
+        .card-title { margin-bottom: 0; font-weight: 600; color: #1e2a39; font-family: 'Poppins', sans-serif; }
+        .card-body { padding: 20px; }
+        .card-footer { background-color: #fff; border-top: 1px solid rgba(0,0,0,0.05); padding: 15px 20px; }
+        .btn-primary { background: linear-gradient(45deg, #4776E6, #8E54E9); border: none; box-shadow: 0 4px 10px rgba(71,118,230,0.3); }
+        .btn-primary:hover { background: linear-gradient(45deg, #3a67d6, #7743d9); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(71,118,230,0.4); }
+        .btn-secondary { background: #e9ecef; color: #343a40; border: none; }
+        .btn-secondary:hover { background: #d1d5db; color: #1e2a39; }
+        .form-label { font-weight: 500; color: #1e2a39; font-family: 'Poppins', sans-serif; }
+        .form-control, .form-select { border-radius: 8px; }
+        .form-check-label { font-weight: 400; }
     </style>
 </head>
 <body>
@@ -46,10 +41,13 @@
         <div class="row">
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
-                        <span>PC Maker</span>
-                    </h6>
+                <div class="position-sticky">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <i class="fas fa-desktop"></i>
+                            <span>PC Maker</span>
+                        </div>
+                    </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link" th:href="@{/admin}">
@@ -96,17 +94,12 @@
                     </ul>
                 </div>
             </nav>
-            
-            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2" th:text="${pageTitle}">Форма пользователя</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <a href="/admin/users" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
-                        </div>
-                    </div>
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold" th:text="${pageTitle}">Форма пользователя</h1>
+                    <a th:href="@{/admin/users}" class="btn btn-secondary">Назад к списку</a>
                 </div>
-                
                 <!-- Алерты сообщений и ошибок -->
                 <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
                     <span th:text="${message}"></span>
@@ -116,7 +109,6 @@
                     <span th:text="${error}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                
                 <!-- Форма пользователя -->
                 <div class="card">
                     <div class="card-header">
@@ -127,9 +119,8 @@
                     <div class="card-body">
                         <form th:object="${userDto}" method="post" th:action="${userDto.id != null} ? @{/admin/users/{id}/edit(id=${userDto.id})} : @{/admin/users/new}">
                             <input type="hidden" th:field="*{id}" />
-                            
                             <div class="mb-3 row">
-                                <label for="username" class="col-sm-2 col-form-label">Имя пользователя</label>
+                                <label for="username" class="col-sm-2 col-form-label form-label">Имя пользователя</label>
                                 <div class="col-sm-10">
                                     <input type="text" th:field="*{username}" class="form-control" id="username" required>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">
@@ -137,9 +128,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row">
-                                <label for="email" class="col-sm-2 col-form-label">Email</label>
+                                <label for="email" class="col-sm-2 col-form-label form-label">Email</label>
                                 <div class="col-sm-10">
                                     <input type="email" th:field="*{email}" class="form-control" id="email" required>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
@@ -147,9 +137,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row">
-                                <label for="name" class="col-sm-2 col-form-label">Имя</label>
+                                <label for="name" class="col-sm-2 col-form-label form-label">Имя</label>
                                 <div class="col-sm-10">
                                     <input type="text" th:field="*{name}" class="form-control" id="name">
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
@@ -157,9 +146,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row" th:if="${userDto.id == null}">
-                                <label for="password" class="col-sm-2 col-form-label">Пароль</label>
+                                <label for="password" class="col-sm-2 col-form-label form-label">Пароль</label>
                                 <div class="col-sm-10">
                                     <input type="password" th:field="*{password}" class="form-control" id="password" th:required="${userDto.id == null}">
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">
@@ -167,9 +155,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row">
-                                <label class="col-sm-2 col-form-label">Роли</label>
+                                <label class="col-sm-2 col-form-label form-label">Роли</label>
                                 <div class="col-sm-10">
                                     <div class="form-check" th:each="role : ${allRoles}">
                                         <input class="form-check-input" type="checkbox" th:field="*{roles}" th:value="${role}" th:id="${'role-' + role}">
@@ -180,9 +167,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row" th:if="${userDto.id != null}">
-                                <label class="col-sm-2 col-form-label">Статус</label>
+                                <label class="col-sm-2 col-form-label form-label">Статус</label>
                                 <div class="col-sm-10">
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" role="switch" th:field="*{active}" id="userActive">
@@ -190,11 +176,10 @@
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="mb-3 row">
                                 <div class="col-sm-10 offset-sm-2">
                                     <button type="submit" class="btn btn-primary">Сохранить</button>
-                                    <a href="/admin/users" class="btn btn-secondary">Отмена</a>
+                                    <a th:href="@{/admin/users}" class="btn btn-secondary">Отмена</a>
                                 </div>
                             </div>
                         </form>
@@ -203,8 +188,6 @@
             </main>
         </div>
     </div>
-    
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 
