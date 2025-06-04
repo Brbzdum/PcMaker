@@ -11,6 +11,8 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.spring6.templateresolver.SpringResourceTemplateResolver;
 import org.thymeleaf.spring6.view.ThymeleafViewResolver;
 import org.thymeleaf.templatemode.TemplateMode;
+import org.springframework.format.FormatterRegistry;
+import ru.bek.compshp.util.StringToMapConverter;
 
 /**
  * Конфигурация веб-интерфейса с поддержкой Thymeleaf для админ-панели
@@ -113,5 +115,15 @@ public class WebConfig implements WebMvcConfigurer {
         resolver.setOrder(1);
         resolver.setViewNames(new String[] {"*"});
         return resolver;
+    }
+
+    /**
+     * Регистрация форматтеров и конвертеров
+     * @param registry реестр форматтеров
+     */
+    @Override
+    public void addFormatters(FormatterRegistry registry) {
+        // Добавляем конвертер для преобразования строки с характеристиками в Map
+        registry.addConverter(new StringToMapConverter());
     }
 } 

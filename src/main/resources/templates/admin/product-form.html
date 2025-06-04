@@ -102,7 +102,7 @@
                     <h1 class="h2" th:text="${pageTitle}">Форма продукта</h1>
                     <div class="btn-toolbar mb-2 mb-md-0">
                         <div class="btn-group me-2">
-                            <a href="/admin/products" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
+                            <a th:href="@{/admin/products}" class="btn btn-sm btn-outline-secondary">Назад к списку</a>
                         </div>
                     </div>
                 </div>
@@ -228,7 +228,7 @@
                             <div class="mb-3 row">
                                 <label for="specs" class="col-sm-2 col-form-label">Характеристики</label>
                                 <div class="col-sm-10">
-                                    <textarea th:field="*{specs}" class="form-control" id="specs" rows="5"></textarea>
+                                    <textarea th:field="*{specsAsString}" class="form-control" id="specs" rows="5"></textarea>
                                     <div class="form-text">Введите характеристики в формате "ключ: значение" по одной на строку</div>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('specs')}" th:errors="*{specs}">
                                         Некорректные характеристики
@@ -257,7 +257,7 @@
                             <div class="mb-3 row">
                                 <div class="col-sm-10 offset-sm-2">
                                     <button type="submit" class="btn btn-primary">Сохранить</button>
-                                    <a href="/admin/products" class="btn btn-secondary">Отмена</a>
+                                    <a th:href="@{/admin/products}" class="btn btn-secondary">Отмена</a>
                                 </div>
                             </div>
                         </form>

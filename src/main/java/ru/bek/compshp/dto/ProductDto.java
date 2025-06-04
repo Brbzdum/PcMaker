@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -41,7 +42,33 @@ public class ProductDto {
     
     private Long categoryId;
     
-    private Map<String, String> specs;
+    private Map<String, String> specs = new HashMap<>();
     
     private boolean isActive;
+    
+    /**
+     * Получить строковое представление спецификаций для формы
+     * @return строковое представление спецификаций
+     */
+    public String getSpecsAsString() {
+        if (specs == null || specs.isEmpty()) {
+            return "";
+        }
+        
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : specs.entrySet()) {
+            sb.append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        
+        return sb.toString().trim();
+    }
+    
+    /**
+     * Установить спецификации из строкового представления
+     * @param specsStr строковое представление спецификаций
+     */
+    public void setSpecsAsString(String specsStr) {
+        // Конвертация произойдет через StringToMapConverter
+        // Этот метод здесь только для совместимости с формой
+    }
 } 

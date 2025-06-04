@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.Type;
 import ru.bek.compshp.model.enums.ComponentType;
+import ru.bek.compshp.util.PostgreSQLEnumConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -59,8 +60,8 @@ public class Product {
     @Schema(description = "Флаг активности товара (доступен ли для продажи)", example = "true")
     private Boolean isActive = true;
 
-    @Enumerated(EnumType.STRING)
     @Column(name = "component_type")
+    @Convert(converter = PostgreSQLEnumConverter.class)
     @Schema(description = "Тип компонента компьютера", example = "GPU")
     private ComponentType componentType;
 

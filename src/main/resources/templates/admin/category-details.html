@@ -1,11 +1,99 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
-<head th:replace="admin/layout :: head(${pageTitle})"></head>
-<body class="bg-light">
-    <div th:replace="admin/layout :: navbar"></div>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Детали категории - Админ-панель PC Maker</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* Базовые стили для админ-панели */
+        body {
+            background-color: #f8f9fa;
+        }
+        .sidebar {
+            background-color: #343a40;
+            color: #fff;
+            min-height: 100vh;
+        }
+        .sidebar a {
+            color: #ced4da;
+            padding: 10px 15px;
+            display: block;
+            text-decoration: none;
+        }
+        .sidebar a:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar a.active {
+            background-color: #007bff;
+            color: #fff;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
     <div class="container-fluid">
         <div class="row">
-            <div th:replace="admin/layout :: sidebar"></div>
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <h6 class="sidebar-heading px-3 mt-4 mb-1 text-muted">
+                        <span>PC Maker</span>
+                    </h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Дашборд
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/users}">
+                                <i class="fas fa-users"></i>
+                                Пользователи
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/products}">
+                                <i class="fas fa-microchip"></i>
+                                Продукты
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/orders}">
+                                <i class="fas fa-shopping-cart"></i>
+                                Заказы
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/admin/categories}">
+                                <i class="fas fa-folder"></i>
+                                Категории
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/manufacturers}">
+                                <i class="fas fa-industry"></i>
+                                Производители
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}" target="_blank">
+                                <i class="fas fa-external-link-alt"></i>
+                                Перейти на сайт
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
             
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -166,6 +254,7 @@
         </div>
     </div>
     
-    <div th:replace="admin/layout :: scripts"></div>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 

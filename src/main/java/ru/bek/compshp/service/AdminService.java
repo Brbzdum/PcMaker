@@ -256,7 +256,13 @@ public class AdminService {
         
         // Установка типа компонента
         if (productDto.getComponentType() != null && !productDto.getComponentType().isEmpty()) {
-            product.setComponentType(ComponentType.valueOf(productDto.getComponentType()));
+            try {
+                ComponentType componentType = ComponentType.valueOf(productDto.getComponentType());
+                product.setComponentType(componentType);
+            } catch (IllegalArgumentException e) {
+                // Если строка не соответствует ни одному из значений перечисления
+                throw new RuntimeException("Неверный тип компонента: " + productDto.getComponentType());
+            }
         }
         
         // Установка производителя
@@ -323,7 +329,13 @@ public class AdminService {
         
         // Обновление типа компонента
         if (productDto.getComponentType() != null && !productDto.getComponentType().isEmpty()) {
-            product.setComponentType(ComponentType.valueOf(productDto.getComponentType()));
+            try {
+                ComponentType componentType = ComponentType.valueOf(productDto.getComponentType());
+                product.setComponentType(componentType);
+            } catch (IllegalArgumentException e) {
+                // Если строка не соответствует ни одному из значений перечисления
+                throw new RuntimeException("Неверный тип компонента: " + productDto.getComponentType());
+            }
         }
         
         // Обновление производителя
@@ -480,6 +492,11 @@ public class AdminService {
             category.setParent(parentCategory);
         }
         
+        // Установка времени создания и обновления
+        LocalDateTime now = LocalDateTime.now();
+        category.setCreatedAt(now);
+        category.setUpdatedAt(now);
+        
         return categoryRepository.save(category);
     }
     
@@ -508,6 +525,9 @@ public class AdminService {
         } else {
             category.setParent(null);
         }
+        
+        // Обновление времени изменения
+        category.setUpdatedAt(LocalDateTime.now());
         
         return categoryRepository.save(category);
     }
@@ -566,6 +586,12 @@ public class AdminService {
         Manufacturer manufacturer = new Manufacturer();
         manufacturer.setName(name);
         manufacturer.setDescription(description);
+        
+        // Установка времени создания и обновления
+        LocalDateTime now = LocalDateTime.now();
+        manufacturer.setCreatedAt(now);
+        manufacturer.setUpdatedAt(now);
+        
         return manufacturerRepository.save(manufacturer);
     }
     
@@ -581,6 +607,10 @@ public class AdminService {
         Manufacturer manufacturer = getManufacturerById(id);
         manufacturer.setName(name);
         manufacturer.setDescription(description);
+        
+        // Обновление времени изменения
+        manufacturer.setUpdatedAt(LocalDateTime.now());
+        
         return manufacturerRepository.save(manufacturer);
     }
     
