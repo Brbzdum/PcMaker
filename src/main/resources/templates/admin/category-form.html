@@ -216,7 +216,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form th:object="${categoryDto}" method="post" th:action="${categoryDto.id != null} ? @{/admin/categories/{id}/edit(id=${categoryDto.id})} : @{/admin/categories/new}">
+                        <form th:object="${categoryDto}" method="post" th:action="@{${categoryDto.id != null ? '/admin/categories/' + categoryDto.id + '/edit' : '/admin/categories/new'}}">
                             <input type="hidden" th:field="*{id}" />
                             
                             <div class="mb-3 row">

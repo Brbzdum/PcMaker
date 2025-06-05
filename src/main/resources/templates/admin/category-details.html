@@ -251,7 +251,7 @@
                 </div>
                 
                 <!-- Дочерние категории -->
-                <div class="card mb-4" th:if="${category.children != null && !category.children.empty}">
+                <div class="card mb-4" th:if="${category.children != null && !category.children.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0"><i class="fas fa-sitemap me-2"></i>Дочерние категории</h5>
                     </div>
@@ -282,7 +282,7 @@
                 </div>
                 
                 <!-- Продукты в категории -->
-                <div class="card mb-4" th:if="${category.products != null && !category.products.empty}">
+                <div class="card mb-4" th:if="${category.products != null && !category.products.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>Продукты в категории</h5>
                     </div>
@@ -327,10 +327,10 @@
                             </div>
                             <div class="modal-body">
                                 <p>Вы уверены, что хотите удалить категорию <strong th:text="${category.name}">Название категории</strong>?</p>
-                                <div class="alert alert-warning" th:if="${category.children != null && !category.children.empty}">
+                                <div class="alert alert-warning" th:if="${category.children != null && !category.children.isEmpty()}">
                                     <i class="bi bi-exclamation-triangle-fill"></i> Внимание! У этой категории есть дочерние категории, которые также будут удалены.
                                 </div>
-                                <div class="alert alert-warning" th:if="${category.products != null && !category.products.empty}">
+                                <div class="alert alert-warning" th:if="${category.products != null && !category.products.isEmpty()}">
                                     <i class="bi bi-exclamation-triangle-fill"></i> Внимание! В этой категории есть продукты, которые останутся без категории.
                                 </div>
                             </div>

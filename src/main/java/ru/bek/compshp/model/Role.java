@@ -1,10 +1,7 @@
 package ru.bek.compshp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.bek.compshp.model.enums.RoleName;
 
 import java.time.LocalDateTime;
@@ -14,7 +11,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "roles")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -30,4 +29,13 @@ public class Role {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Override
+    public String toString() {
+        return "Role{" +
+            "id=" + id +
+            ", name=" + name +
+            ", createdAt=" + createdAt +
+            '}';
+    }
 } 

@@ -200,7 +200,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form method="post" th:action="${manufacturer != null && manufacturer.id != null} ? @{/admin/manufacturers/{id}/edit(id=${manufacturer.id})} : @{/admin/manufacturers/new}">
+                        <form method="post" th:action="@{${manufacturer != null && manufacturer.id != null ? '/admin/manufacturers/' + manufacturer.id + '/edit' : '/admin/manufacturers/new'}}">
                             
                             <div class="mb-3 row">
                                 <label for="name" class="col-sm-2 col-form-label">Название</label>

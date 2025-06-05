@@ -1,10 +1,7 @@
 package ru.bek.compshp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.time.LocalDateTime;
 
 /**
@@ -12,7 +9,9 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "reviews")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"user", "product"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,10 +22,12 @@ public class Review {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @ToString.Exclude
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
+    @ToString.Exclude
     private Product product;
 
     @Column(nullable = false)
@@ -56,4 +57,19 @@ public class Review {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Override
+    public String toString() {
+        return "Review{" +
+            "id=" + id +
+            ", rating=" + rating +
+            ", comment='" + comment + '\'' +
+            ", isApproved=" + isApproved +
+            ", isVerifiedPurchase=" + isVerifiedPurchase +
+            ", reportCount=" + reportCount +
+            ", isModerated=" + isModerated +
+            ", createdAt=" + createdAt +
+            ", updatedAt=" + updatedAt +
+            '}';
+    }
 } 

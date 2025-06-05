@@ -233,18 +233,19 @@
                                         </td>
                                         <td th:text="${#numbers.formatDecimal(order.totalAmount, 0, 'COMMA', 2, 'POINT')} + ' ₽'">1000.00 ₽</td>
                                         <td>
-                                            <span th:class="${'badge bg-' + (order.status.name() == 'PENDING' ? 'warning' : 
-                                                                       (order.status.name() == 'PROCESSING' ? 'info' : 
-                                                                       (order.status.name() == 'SHIPPED' ? 'primary' : 
-                                                                       (order.status.name() == 'DELIVERED' ? 'success' : 
-                                                                       (order.status.name() == 'CANCELED' ? 'danger' : 'secondary'))))}"
+                                            <span class="badge" 
+                                                  th:classappend="${order.status.name() == 'PENDING' ? 'bg-warning' : 
+                                                                 (order.status.name() == 'PROCESSING' ? 'bg-info' : 
+                                                                 (order.status.name() == 'SHIPPED' ? 'bg-primary' : 
+                                                                 (order.status.name() == 'DELIVERED' ? 'bg-success' : 
+                                                                 (order.status.name() == 'CANCELED' ? 'bg-danger' : 'bg-secondary'))))}"
                                                   th:text="${order.status.displayValue}">Статус</span>
                                         </td>
                                         <td>
                                             <a th:href="@{/admin/orders/{id}(id=${order.id})}" class="btn btn-sm btn-primary">Просмотр</a>
                                         </td>
                                     </tr>
-                                    <tr th:if="${orders.empty}">
+                                    <tr th:if="${orders.isEmpty()}">
                                         <td colspan="6" class="text-center">Нет заказов</td>
                                     </tr>
                                 </tbody>

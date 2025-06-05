@@ -15,14 +15,7 @@
     <link rel="stylesheet" th:href="@{/css/admin.css}">
     <style>
         body { background-color: #f0f2f5; font-family: 'Roboto', sans-serif; }
-        .card-counter { padding: 25px 20px; margin: 5px; border-radius: 10px; box-shadow: 0 6px 15px rgba(0,0,0,0.08); transition: .3s linear all; position: relative; overflow: hidden; height: 130px; }
-        .card-counter.primary { background: linear-gradient(45deg, #4776E6, #8E54E9); color: #FFF; }
-        .card-counter.success { background: linear-gradient(45deg, #11998e, #38ef7d); color: #FFF; }
-        .card-counter.info { background: linear-gradient(45deg, #2193b0, #6dd5ed); color: #FFF; }
-        .card-counter.warning { background: linear-gradient(45deg, #f46b45, #eea849); color: #FFF; }
         .card-counter i { font-size: 5em; opacity: 0.3; position: absolute; left: 10px; top: 50%; transform: translateY(-50%); }
-        .card-counter .count-numbers { position: absolute; right: 35px; top: 25px; font-size: 32px; font-weight: 700; display: block; font-family: 'Poppins', sans-serif; }
-        .card-counter .count-name { position: absolute; right: 35px; top: 65px; font-style: normal; font-size: 16px; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; opacity: 0.8; display: block; font-family: 'Poppins', sans-serif; }
         .sidebar { background-color: #1e2a39; color: #fff; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: all 0.3s; }
         .logo-container { padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
         .logo { color: #fff; font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; }
@@ -197,7 +190,7 @@
                                             </form>
                                         </td>
                                     </tr>
-                                    <tr th:if="${users.size() == 0}">
+                                    <tr th:if="${users == null || users.isEmpty()}">
                                         <td colspan="8" class="text-center">Нет пользователей</td>
                                     </tr>
                                 </tbody>
@@ -206,18 +199,18 @@
                     </div>
                     <div class="card-footer d-flex justify-content-between align-items-center">
                         <div>
-                            <span th:text="'Страница ' + (${currentPage} + 1) + ' из ' + totalPages">Страница 1 из 1</span>
+                            <span th:text="${'Страница ' + (currentPage != null ? currentPage + 1 : 1) + ' из ' + (totalPages != null ? totalPages : 1)}">Страница 1 из 1</span>
                         </div>
-                        <nav th:if="${totalPages > 1}">
+                        <nav th:if="${totalPages != null && totalPages > 1}">
                             <ul class="pagination mb-0">
-                                <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
-                                    <a class="page-link" th:href="@{/admin/users(page=${currentPage - 1}, size=${users.size}, search=${search}, status=${status}, role=${role})}">Назад</a>
+                                <li class="page-item" th:classappend="${currentPage == null || currentPage == 0} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/admin/users(page=${(currentPage != null ? currentPage - 1 : 0)}, size=${pageSize != null ? pageSize : 10}, search=${search != null ? search : ''}, status=${status != null ? status : ''}, role=${role != null ? role : ''})}">Назад</a>
                                 </li>
                                 <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${i == currentPage} ? 'active'">
-                                    <a class="page-link" th:href="@{/admin/users(page=${i}, size=${users.size}, search=${search}, status=${status}, role=${role})}" th:text="${i + 1}">1</a>
+                                    <a class="page-link" th:href="@{/admin/users(page=${i}, size=${pageSize != null ? pageSize : 10}, search=${search != null ? search : ''}, status=${status != null ? status : ''}, role=${role != null ? role : ''})}" th:text="${i + 1}">1</a>
                                 </li>
-                                <li class="page-item" th:classappend="${currentPage + 1 >= totalPages} ? 'disabled'">
-                                    <a class="page-link" th:href="@{/admin/users(page=${currentPage + 1}, size=${users.size}, search=${search}, status=${status}, role=${role})}">Вперёд</a>
+                                <li class="page-item" th:classappend="${currentPage == null || currentPage + 1 >= totalPages} ? 'disabled'">
+                                    <a class="page-link" th:href="@{/admin/users(page=${(currentPage != null ? currentPage + 1 : 1)}, size=${pageSize != null ? pageSize : 10}, search=${search != null ? search : ''}, status=${status != null ? status : ''}, role=${role != null ? role : ''})}">Вперёд</a>
                                 </li>
                             </ul>
                         </nav>

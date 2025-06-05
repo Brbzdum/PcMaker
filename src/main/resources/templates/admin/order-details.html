@@ -43,11 +43,12 @@
                                     
                                     <dt class="col-sm-4">Статус:</dt>
                                     <dd class="col-sm-8">
-                                        <span th:class="${'badge bg-' + (order.status.name() == 'PENDING' ? 'warning' : 
-                                                                       (order.status.name() == 'PROCESSING' ? 'info' : 
-                                                                       (order.status.name() == 'SHIPPED' ? 'primary' : 
-                                                                       (order.status.name() == 'DELIVERED' ? 'success' : 
-                                                                       (order.status.name() == 'CANCELED' ? 'danger' : 'secondary'))))}"
+                                        <span class="badge" 
+                                              th:classappend="${order.status.name() == 'PENDING' ? 'bg-warning' : 
+                                                             (order.status.name() == 'PROCESSING' ? 'bg-info' : 
+                                                             (order.status.name() == 'SHIPPED' ? 'bg-primary' : 
+                                                             (order.status.name() == 'DELIVERED' ? 'bg-success' : 
+                                                             (order.status.name() == 'CANCELED' ? 'bg-danger' : 'bg-secondary'))))}"
                                               th:text="${order.status.displayValue}">Статус</span>
                                     </dd>
                                     
@@ -144,7 +145,7 @@
                                         <td th:text="${item.quantity}">1</td>
                                         <td th:text="${#numbers.formatDecimal(item.price * item.quantity, 0, 'COMMA', 2, 'POINT')} + ' ₽'">100.00 ₽</td>
                                     </tr>
-                                    <tr th:if="${order.items.empty}">
+                                    <tr th:if="${order.items.isEmpty()}">
                                         <td colspan="4" class="text-center">Нет товаров в заказе</td>
                                     </tr>
                                 </tbody>
@@ -160,7 +161,7 @@
                 </div>
                 
                 <!-- История статусов заказа -->
-                <div class="card mb-4" th:if="${order.statusHistory != null && !order.statusHistory.empty}">
+                <div class="card mb-4" th:if="${order.statusHistory != null && !order.statusHistory.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0"><i class="fas fa-history me-2"></i>История статусов заказа</h5>
                     </div>
@@ -178,11 +179,12 @@
                                     <tr th:each="history : ${order.statusHistory}">
                                         <td th:text="${#temporals.format(history.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</td>
                                         <td>
-                                            <span th:class="${'badge bg-' + (history.status.name() == 'PENDING' ? 'warning' : 
-                                                                           (history.status.name() == 'PROCESSING' ? 'info' : 
-                                                                           (history.status.name() == 'SHIPPED' ? 'primary' : 
-                                                                           (history.status.name() == 'DELIVERED' ? 'success' : 
-                                                                           (history.status.name() == 'CANCELED' ? 'danger' : 'secondary'))))}"
+                                            <span class="badge" 
+                                                  th:classappend="${history.status.name() == 'PENDING' ? 'bg-warning' : 
+                                                                 (history.status.name() == 'PROCESSING' ? 'bg-info' : 
+                                                                 (history.status.name() == 'SHIPPED' ? 'bg-primary' : 
+                                                                 (history.status.name() == 'DELIVERED' ? 'bg-success' : 
+                                                                 (history.status.name() == 'CANCELED' ? 'bg-danger' : 'bg-secondary'))))}"
                                                   th:text="${history.status.displayValue}">Статус</span>
                                         </td>
                                         <td th:text="${history.comment ?: '-'}">Комментарий</td>

@@ -373,9 +373,9 @@
                                                 <td th:text="${order.id}">1</td>
                                                 <td th:text="${order.user != null ? order.user.username : 'Гость'}">Пользователь</td>
                                                 <td>
-                                                    <span th:class="${'badge bg-' + (order.status == 'PENDING' ? 'warning' : 
+                                                    <span th:class="'badge bg-' + ${order.status == 'PENDING' ? 'warning' : 
                                                                               order.status == 'COMPLETED' ? 'success' : 
-                                                                              order.status == 'CANCELLED' ? 'danger' : 'info')}" 
+                                                                              order.status == 'CANCELLED' ? 'danger' : 'info'}" 
                                                           th:text="${order.status}">Новый</span>
                                                 </td>
                                                 <td th:text="${#numbers.formatDecimal(order.totalPrice, 0, 'COMMA', 2, 'POINT')} + ' ₽'">₽10,000</td>
@@ -424,7 +424,7 @@
                                                 <td th:text="${product.id}">1</td>
                                                 <td th:text="${product.title}">Процессор Intel i9</td>
                                                 <td>
-                                                    <span th:class="${'badge bg-' + (product.stock <= 2 ? 'danger' : 'warning')}" 
+                                                    <span th:class="'badge bg-' + ${product.stock <= 2 ? 'danger' : 'warning'}" 
                                                           th:text="${product.stock}">2</span>
                                                 </td>
                                                 <td>

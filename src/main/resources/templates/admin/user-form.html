@@ -117,13 +117,17 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form th:object="${userDto}" method="post" th:action="${userDto.id != null} ? @{/admin/users/{id}/edit(id=${userDto.id})} : @{/admin/users/new}">
+                        <form th:object="${userDto}" method="post" th:action="@{${userDto.id != null ? '/admin/users/' + userDto.id + '/edit' : '/admin/users/new'}}">
                             <input type="hidden" th:field="*{id}" />
                             <div class="mb-3 row">
                                 <label for="username" class="col-sm-2 col-form-label form-label">Имя пользователя</label>
                                 <div class="col-sm-10">
-                                    <input type="text" th:field="*{username}" class="form-control" id="username" required>
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">
+                                    <input type="text" th:field="*{username}" 
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('username')} ? 'is-invalid' : ''" 
+                                           id="username" 
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('username')}" th:text="${#fields.errors('username')[0]}">
                                         Неверное имя пользователя
                                     </div>
                                 </div>
@@ -131,8 +135,12 @@
                             <div class="mb-3 row">
                                 <label for="email" class="col-sm-2 col-form-label form-label">Email</label>
                                 <div class="col-sm-10">
-                                    <input type="email" th:field="*{email}" class="form-control" id="email" required>
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+                                    <input type="email" th:field="*{email}" 
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''" 
+                                           id="email" 
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:text="${#fields.errors('email')[0]}">
                                         Неверный email
                                     </div>
                                 </div>
@@ -140,8 +148,11 @@
                             <div class="mb-3 row">
                                 <label for="name" class="col-sm-2 col-form-label form-label">Имя</label>
                                 <div class="col-sm-10">
-                                    <input type="text" th:field="*{name}" class="form-control" id="name">
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                    <input type="text" th:field="*{name}" 
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''" 
+                                           id="name">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:text="${#fields.errors('name')[0]}">
                                         Неверное имя
                                     </div>
                                 </div>
@@ -149,9 +160,17 @@
                             <div class="mb-3 row" th:if="${userDto.id == null}">
                                 <label for="password" class="col-sm-2 col-form-label form-label">Пароль</label>
                                 <div class="col-sm-10">
-                                    <input type="password" th:field="*{password}" class="form-control" id="password" th:required="${userDto.id == null}">
-                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:errors="*{password}">
+                                    <input type="password" th:field="*{password}" 
+                                           class="form-control" 
+                                           th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''" 
+                                           id="password" 
+                                           th:required="${userDto.id == null}"
+                                           placeholder="Минимум 6 символов">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('password')}" th:text="${#fields.errors('password')[0]}">
                                         Неверный пароль
+                                    </div>
+                                    <div class="form-text">
+                                        Пароль должен содержать от 6 до 120 символов
                                     </div>
                                 </div>
                             </div>

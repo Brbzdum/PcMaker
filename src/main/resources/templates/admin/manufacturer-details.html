@@ -246,7 +246,7 @@
                 </div>
                 
                 <!-- Продукты производителя -->
-                <div class="card mb-4" th:if="${manufacturer.products != null && !manufacturer.products.empty}">
+                <div class="card mb-4" th:if="${manufacturer.products != null && !manufacturer.products.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0"><i class="fas fa-boxes-stacked me-2"></i>Продукты производителя</h5>
                     </div>
@@ -293,7 +293,7 @@
                             </div>
                             <div class="modal-body">
                                 <p>Вы уверены, что хотите удалить производителя <strong th:text="${manufacturer.name}">Название производителя</strong>?</p>
-                                <div class="alert alert-warning" th:if="${manufacturer.products != null && !manufacturer.products.empty}">
+                                <div class="alert alert-warning" th:if="${manufacturer.products != null && !manufacturer.products.isEmpty()}">
                                     <i class="bi bi-exclamation-triangle-fill"></i> Внимание! У этого производителя есть продукты, которые останутся без производителя.
                                 </div>
                             </div>

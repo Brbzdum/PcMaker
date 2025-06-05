@@ -1,14 +1,14 @@
 package ru.bek.compshp.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
+import lombok.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = "roles")
 @Entity
 @Table(name = "users")
 @NoArgsConstructor
@@ -48,6 +48,7 @@ public class User {
         joinColumns = @JoinColumn(name = "user_id"),
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
+    @ToString.Exclude
     private Set<Role> roles = new HashSet<>();
 
     @Column(name = "created_at")
@@ -81,5 +82,18 @@ public class User {
      */
     public boolean isActive() {
         return this.active != null && this.active;
+    }
+    
+    @Override
+    public String toString() {
+        return "User{" +
+            "id=" + id +
+            ", email='" + email + '\'' +
+            ", name='" + name + '\'' +
+            ", username='" + username + '\'' +
+            ", active=" + active +
+            ", createdAt=" + createdAt +
+            ", updatedAt=" + updatedAt +
+            '}';
     }
 }

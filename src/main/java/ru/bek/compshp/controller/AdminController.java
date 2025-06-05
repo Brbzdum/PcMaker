@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -180,18 +181,44 @@ public class AdminController {
     /**
      * Обработка создания нового пользователя
      * @param userDto данные пользователя
+     * @param bindingResult результат валидации
+     * @param model модель для передачи данных в представление
      * @param redirectAttributes атрибуты для редиректа
-     * @return редирект на страницу пользователей
+     * @return редирект на страницу пользователей или возврат на форму с ошибками
      */
     @PostMapping("/users/new")
-    public String createUser(@Valid @ModelAttribute UserDto userDto, RedirectAttributes redirectAttributes) {
+    public String createUser(
+            @Valid @ModelAttribute UserDto userDto, 
+            BindingResult bindingResult,
+            Model model,
+            RedirectAttributes redirectAttributes) {
+        
+        // Если есть ошибки валидации, возвращаемся на форму
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("userDto", userDto);
+            model.addAttribute("pageTitle", "Создание пользователя");
+            // Добавляем список ролей, который нужен для формы
+            model.addAttribute("allRoles", Arrays.stream(RoleName.values())
+                    .map(RoleName::name)
+                    .collect(Collectors.toList()));
+            
+            return "admin/user-form";
+        }
+        
         try {
             User user = adminService.createUser(userDto);
             redirectAttributes.addFlashAttribute("message", "Пользователь успешно создан");
             return "redirect:/admin/users/" + user.getId();
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при создании пользователя: " + e.getMessage());
-            return "redirect:/admin/users/new";
+            model.addAttribute("userDto", userDto);
+            model.addAttribute("pageTitle", "Создание пользователя");
+            model.addAttribute("error", "Ошибка при создании пользователя: " + e.getMessage());
+            // Добавляем список ролей, который нужен для формы
+            model.addAttribute("allRoles", Arrays.stream(RoleName.values())
+                    .map(RoleName::name)
+                    .collect(Collectors.toList()));
+            
+            return "admin/user-form";
         }
     }
     
@@ -231,22 +258,45 @@ public class AdminController {
      * Обработка обновления пользователя
      * @param id ID пользователя
      * @param userDto новые данные пользователя
+     * @param bindingResult результат валидации
+     * @param model модель для передачи данных в представление
      * @param redirectAttributes атрибуты для редиректа
-     * @return редирект на страницу пользователя
+     * @return редирект на страницу пользователя или возврат на форму с ошибками
      */
     @PostMapping("/users/{id}/edit")
     public String updateUser(
             @PathVariable Long id, 
             @Valid @ModelAttribute UserDto userDto,
+            BindingResult bindingResult,
+            Model model,
             RedirectAttributes redirectAttributes) {
+        
+        // Если есть ошибки валидации, возвращаемся на форму
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("userDto", userDto);
+            model.addAttribute("pageTitle", "Редактирование пользователя");
+            // Добавляем список всех ролей для формы редактирования
+            model.addAttribute("allRoles", Arrays.stream(RoleName.values())
+                    .map(RoleName::name)
+                    .collect(Collectors.toList()));
+            
+            return "admin/user-form";
+        }
         
         try {
             User user = adminService.updateUser(id, userDto);
             redirectAttributes.addFlashAttribute("message", "Пользователь успешно обновлен");
             return "redirect:/admin/users/" + user.getId();
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении пользователя: " + e.getMessage());
-            return "redirect:/admin/users/" + id + "/edit";
+            model.addAttribute("userDto", userDto);
+            model.addAttribute("pageTitle", "Редактирование пользователя");
+            model.addAttribute("error", "Ошибка при обновлении пользователя: " + e.getMessage());
+            // Добавляем список всех ролей для формы редактирования
+            model.addAttribute("allRoles", Arrays.stream(RoleName.values())
+                    .map(RoleName::name)
+                    .collect(Collectors.toList()));
+            
+            return "admin/user-form";
         }
     }
     

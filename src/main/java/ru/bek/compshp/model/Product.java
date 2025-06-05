@@ -3,13 +3,9 @@ package ru.bek.compshp.model;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Type;
 import ru.bek.compshp.model.enums.ComponentType;
-import ru.bek.compshp.util.PostgreSQLEnumConverter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -23,7 +19,9 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "products")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"manufacturer", "category", "reviews"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -61,17 +59,19 @@ public class Product {
     private Boolean isActive = true;
 
     @Column(name = "component_type")
-    @Convert(converter = PostgreSQLEnumConverter.class)
+    @Enumerated(EnumType.STRING)
     @Schema(description = "Тип компонента компьютера", example = "GPU")
     private ComponentType componentType;
 
     @ManyToOne
     @JoinColumn(name = "manufacturer_id", nullable = false)
+    @ToString.Exclude
     @Schema(description = "Производитель товара")
     private Manufacturer manufacturer;
 
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
+    @ToString.Exclude
     @Schema(description = "Категория товара")
     private Category category;
 
@@ -91,6 +91,7 @@ public class Product {
     
     @Builder.Default
     @OneToMany(mappedBy = "product")
+    @ToString.Exclude
     @Schema(description = "Отзывы о товаре")
     private Set<Review> reviews = new HashSet<>();
     
@@ -145,5 +146,19 @@ public class Product {
                 .orElse(0.0);
         
         return BigDecimal.valueOf(averageRating);
+    }
+    
+    @Override
+    public String toString() {
+        return "Product{" +
+            "id=" + id +
+            ", title='" + title + '\'' +
+            ", price=" + price +
+            ", stock=" + stock +
+            ", isActive=" + isActive +
+            ", componentType=" + componentType +
+            ", createdAt=" + createdAt +
+            ", updatedAt=" + updatedAt +
+            '}';
     }
 } 

@@ -1,10 +1,7 @@
 package ru.bek.compshp.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -15,7 +12,9 @@ import java.util.List;
  */
 @Entity
 @Table(name = "categories")
-@Data
+@Getter
+@Setter
+@EqualsAndHashCode(exclude = {"parent", "children", "products"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -36,14 +35,17 @@ public class Category {
 
     @ManyToOne
     @JoinColumn(name = "parent_id")
+    @ToString.Exclude
     private Category parent;
 
     @Builder.Default
     @OneToMany(mappedBy = "parent")
+    @ToString.Exclude
     private List<Category> children = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "category")
+    @ToString.Exclude
     private List<Product> products = new ArrayList<>();
 
     @Column(name = "created_at")
@@ -114,5 +116,18 @@ public class Category {
         }
         
         return false;
+    }
+    
+    @Override
+    public String toString() {
+        return "Category{" +
+            "id=" + id +
+            ", name='" + name + '\'' +
+            ", description='" + description + '\'' +
+            ", slug='" + slug + '\'' +
+            ", isPcComponent=" + isPcComponent +
+            ", createdAt=" + createdAt +
+            ", updatedAt=" + updatedAt +
+            '}';
     }
 } 

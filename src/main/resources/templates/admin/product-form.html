@@ -127,7 +127,7 @@
                         </h5>
                     </div>
                     <div class="card-body">
-                        <form th:object="${productDto}" method="post" th:action="${productDto.id != null} ? @{/admin/products/{id}/edit(id=${productDto.id})} : @{/admin/products/new}" enctype="multipart/form-data">
+                        <form th:object="${productDto}" method="post" th:action="@{${productDto.id != null ? '/admin/products/' + productDto.id + '/edit' : '/admin/products/new'}}" enctype="multipart/form-data">
                             <input type="hidden" th:field="*{id}" />
                             <div class="mb-3 row">
                                 <label for="title" class="col-sm-2 col-form-label">Название</label>
