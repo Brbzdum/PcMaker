@@ -127,7 +127,7 @@
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body text-center">
-                                <img th:if="${product.imagePath}" th:src="${product.imagePath}" alt="Product Image" class="img-fluid mb-3" style="max-height: 200px;">
+                                <img th:if="${product.imagePath}" th:src="@{${product.imagePath}}" alt="Product Image" class="img-fluid mb-3" style="max-height: 200px;">
                                 <div th:unless="${product.imagePath}" class="text-center p-5 bg-light mb-3">
                                     <i class="fas fa-image" style="font-size: 3rem;"></i>
                                     <p>Нет изображения</p>
@@ -189,7 +189,7 @@
                     </div>
                 </div>
                 <!-- Характеристики продукта -->
-                <div class="card mb-4" th:if="${product.specs != null && !product.specs.isEmpty()}">
+                <div class="card mb-4" th:if="${product.componentType != null && product.specs != null && !product.specs.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Характеристики</h5>
                     </div>

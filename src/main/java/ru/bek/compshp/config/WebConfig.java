@@ -47,7 +47,7 @@ public class WebConfig implements WebMvcConfigurer {
         
         // Обработчик для загруженных изображений
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file:uploads/");
+                .addResourceLocations("file:./uploads/");
         
         // Обработчики для корневых статических файлов (по каждому типу файла отдельно)
         registry.addResourceHandler("/*.js")

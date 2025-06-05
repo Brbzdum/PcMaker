@@ -247,67 +247,58 @@ public class AdminService {
     public Product createProduct(ProductDto productDto, MultipartFile imageFile) throws IOException {
         Product product = new Product();
         
-        // Заполнение данных продукта
+        // Устанавливаем основные данные продукта
         product.setTitle(productDto.getTitle());
         product.setDescription(productDto.getDescription());
         product.setPrice(productDto.getPrice());
         product.setStock(productDto.getStock());
-        product.setIsActive(true);
+        product.setIsActive(productDto.isActive());
         
-        // Установка типа компонента
+        // Устанавливаем тип компонента (если есть)
         if (productDto.getComponentType() != null && !productDto.getComponentType().isEmpty()) {
-            try {
-                ComponentType componentType = ComponentType.valueOf(productDto.getComponentType());
-                product.setComponentType(componentType);
-            } catch (IllegalArgumentException e) {
-                // Если строка не соответствует ни одному из значений перечисления
-                throw new RuntimeException("Неверный тип компонента: " + productDto.getComponentType());
-            }
+            product.setComponentType(ComponentType.valueOf(productDto.getComponentType()));
         }
         
-        // Установка производителя
-        if (productDto.getManufacturerId() != null) {
-            Manufacturer manufacturer = manufacturerRepository.findById(productDto.getManufacturerId())
+        // Устанавливаем производителя
+        Manufacturer manufacturer = manufacturerRepository.findById(productDto.getManufacturerId())
                 .orElseThrow(() -> new RuntimeException("Производитель не найден"));
-            product.setManufacturer(manufacturer);
-        }
+        product.setManufacturer(manufacturer);
         
-        // Установка категории
-        if (productDto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(productDto.getCategoryId())
+        // Устанавливаем категорию
+        Category category = categoryRepository.findById(productDto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Категория не найдена"));
-            product.setCategory(category);
-        }
+        product.setCategory(category);
         
-        // Сохранение спецификаций
+        // Устанавливаем спецификации
         if (productDto.getSpecs() != null) {
             product.setSpecs(productDto.getSpecs());
-        } else {
-            product.setSpecs(new HashMap<>());
         }
         
-        // Сохранение продукта для получения ID
-        product = productRepository.save(product);
-        
-        // Обработка изображения
+        // Обрабатываем загрузку изображения (если есть)
         if (imageFile != null && !imageFile.isEmpty()) {
-            String fileName = product.getId() + "_" + imageFile.getOriginalFilename();
-            // Создание директории, если она не существует
+            // Создаем директорию, если она не существует
             Path uploadPath = Paths.get(PRODUCT_IMAGES_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
             
-            // Сохранение файла
+            // Генерируем уникальное имя файла
+            String fileName = UUID.randomUUID() + "-" + imageFile.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
+            
+            // Сохраняем файл
             Files.copy(imageFile.getInputStream(), filePath);
             
-            // Обновление пути к изображению
-            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
-            product = productRepository.save(product);
+            // Устанавливаем путь к изображению с начальным слешем
+            product.setImagePath("/uploads/products/" + fileName);
         }
         
-        return product;
+        // Устанавливаем время создания и обновления
+        LocalDateTime now = LocalDateTime.now();
+        product.setCreatedAt(now);
+        product.setUpdatedAt(now);
+        
+        return productRepository.save(product);
     }
     
     /**
@@ -321,65 +312,59 @@ public class AdminService {
     public Product updateProduct(Long id, ProductDto productDto, MultipartFile imageFile) throws IOException {
         Product product = getProductById(id);
         
-        // Обновление данных продукта
+        // Обновляем основные данные продукта
         product.setTitle(productDto.getTitle());
         product.setDescription(productDto.getDescription());
         product.setPrice(productDto.getPrice());
         product.setStock(productDto.getStock());
+        product.setIsActive(productDto.isActive());
         
-        // Обновление типа компонента
+        // Обновляем тип компонента (если есть)
         if (productDto.getComponentType() != null && !productDto.getComponentType().isEmpty()) {
-            try {
-                ComponentType componentType = ComponentType.valueOf(productDto.getComponentType());
-                product.setComponentType(componentType);
-            } catch (IllegalArgumentException e) {
-                // Если строка не соответствует ни одному из значений перечисления
-                throw new RuntimeException("Неверный тип компонента: " + productDto.getComponentType());
-            }
+            product.setComponentType(ComponentType.valueOf(productDto.getComponentType()));
+        } else {
+            product.setComponentType(null);
         }
         
-        // Обновление производителя
-        if (productDto.getManufacturerId() != null) {
-            Manufacturer manufacturer = manufacturerRepository.findById(productDto.getManufacturerId())
+        // Обновляем производителя
+        Manufacturer manufacturer = manufacturerRepository.findById(productDto.getManufacturerId())
                 .orElseThrow(() -> new RuntimeException("Производитель не найден"));
-            product.setManufacturer(manufacturer);
-        }
+        product.setManufacturer(manufacturer);
         
-        // Обновление категории
-        if (productDto.getCategoryId() != null) {
-            Category category = categoryRepository.findById(productDto.getCategoryId())
+        // Обновляем категорию
+        Category category = categoryRepository.findById(productDto.getCategoryId())
                 .orElseThrow(() -> new RuntimeException("Категория не найдена"));
-            product.setCategory(category);
-        }
+        product.setCategory(category);
         
-        // Обновление спецификаций
+        // Обновляем спецификации
         if (productDto.getSpecs() != null) {
             product.setSpecs(productDto.getSpecs());
         }
         
-        // Обработка нового изображения
+        // Обрабатываем загрузку нового изображения (если есть)
         if (imageFile != null && !imageFile.isEmpty()) {
-            String fileName = product.getId() + "_" + imageFile.getOriginalFilename();
-            // Создание директории, если она не существует
+            // Создаем директорию, если она не существует
             Path uploadPath = Paths.get(PRODUCT_IMAGES_DIR);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
             
-            // Удаление старого изображения, если оно есть
-            if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
-                String oldFileName = product.getImagePath().substring(product.getImagePath().lastIndexOf("/") + 1);
-                Path oldFilePath = uploadPath.resolve(oldFileName);
-                Files.deleteIfExists(oldFilePath);
-            }
-            
-            // Сохранение нового файла
+            // Генерируем уникальное имя файла
+            String fileName = UUID.randomUUID() + "-" + imageFile.getOriginalFilename();
             Path filePath = uploadPath.resolve(fileName);
+            
+            // Сохраняем файл
             Files.copy(imageFile.getInputStream(), filePath);
             
-            // Обновление пути к изображению
-            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
+            // Удаляем старое изображение, если оно есть
+            deleteOldProductImage(product);
+            
+            // Обновляем путь к изображению с начальным слешем
+            product.setImagePath("/uploads/products/" + fileName);
         }
+        
+        // Обновляем время изменения
+        product.setUpdatedAt(LocalDateTime.now());
         
         return productRepository.save(product);
     }
@@ -781,8 +766,8 @@ public class AdminService {
             // Сохраняем файл
             Files.copy(imageFile.getInputStream(), filePath);
             
-            // Обновляем путь к изображению
-            product.setImagePath(PRODUCT_IMAGES_DIR + fileName);
+            // Обновляем путь к изображению с начальным слешем
+            product.setImagePath("/uploads/products/" + fileName);
         }
         
         return productRepository.save(product);
@@ -1009,22 +994,42 @@ public class AdminService {
     public Product deleteProductImage(Long id) throws IOException {
         Product product = getProductById(id);
         
-        // Если у продукта есть изображение
         if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
-            String fileName = product.getImagePath().substring(product.getImagePath().lastIndexOf("/") + 1);
+            // Извлекаем имя файла из пути, игнорируя начальный слеш если он есть
+            String imagePath = product.getImagePath();
+            if (imagePath.startsWith("/")) {
+                imagePath = imagePath.substring(1);
+            }
+            
+            // Получаем имя файла из пути
+            String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
             Path filePath = Paths.get(PRODUCT_IMAGES_DIR).resolve(fileName);
             
             // Удаляем файл
             Files.deleteIfExists(filePath);
             
-            // Сбрасываем путь к изображению
+            // Очищаем путь к изображению
             product.setImagePath(null);
-            product.setImagePath(null);
-            
-            // Сохраняем обновленный продукт
             product = productRepository.save(product);
         }
         
         return product;
+    }
+
+    private void deleteOldProductImage(Product product) throws IOException {
+        if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
+            // Извлекаем имя файла из пути, игнорируя начальный слеш если он есть
+            String imagePath = product.getImagePath();
+            if (imagePath.startsWith("/")) {
+                imagePath = imagePath.substring(1);
+            }
+            
+            // Получаем имя файла из пути
+            String fileName = imagePath.substring(imagePath.lastIndexOf("/") + 1);
+            Path filePath = Paths.get(PRODUCT_IMAGES_DIR).resolve(fileName);
+            
+            // Удаляем файл
+            Files.deleteIfExists(filePath);
+        }
     }
 } 

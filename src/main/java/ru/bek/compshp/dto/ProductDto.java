@@ -43,9 +43,10 @@ public class ProductDto {
     
     private Long categoryId;
     
+    @Builder.Default
     private Map<String, String> specs = new HashMap<>();
     
-    private boolean isActive;
+    private Boolean isActive;
     
     private MultipartFile imageFile;
     
@@ -75,5 +76,13 @@ public class ProductDto {
     public void setSpecsAsString(String specsStr) {
         // Конвертация произойдет через StringToMapConverter
         // Этот метод здесь только для совместимости с формой
+    }
+    
+    /**
+     * Явный геттер для поля isActive для совместимости с AdminService
+     * @return значение поля isActive
+     */
+    public boolean isActive() {
+        return isActive != null ? isActive : false;
     }
 } 
