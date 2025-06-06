@@ -119,6 +119,15 @@
                     <span th:text="${error}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
+                <!-- Отображение ошибок валидации -->
+                <div th:if="${validationErrors != null && !validationErrors.isEmpty()}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Ошибки валидации:</h5>
+                    <hr>
+                    <ul class="mb-0">
+                        <li th:each="error : ${validationErrors}" th:text="${error.key + ': ' + error.value}"></li>
+                    </ul>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
                 <!-- Форма продукта -->
                 <div class="card">
                     <div class="card-header">
@@ -132,18 +141,28 @@
                             <div class="mb-3 row">
                                 <label for="title" class="col-sm-2 col-form-label">Название</label>
                                 <div class="col-sm-10">
-                                    <input type="text" th:field="*{title}" class="form-control" id="title" required>
+                                    <input type="text" th:field="*{title}" class="form-control" 
+                                           th:classappend="${validationErrors != null && validationErrors.containsKey('title')} ? 'is-invalid' : ''"
+                                           id="title" required>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">
                                         Некорректное название
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('title')}" th:text="${validationErrors.get('title')}">
+                                        Ошибка в названии
                                     </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label for="description" class="col-sm-2 col-form-label">Описание</label>
                                 <div class="col-sm-10">
-                                    <textarea th:field="*{description}" class="form-control" id="description" rows="3"></textarea>
+                                    <textarea th:field="*{description}" class="form-control" 
+                                              th:classappend="${validationErrors != null && validationErrors.containsKey('description')} ? 'is-invalid' : ''"
+                                              id="description" rows="3"></textarea>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">
                                         Некорректное описание
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('description')}" th:text="${validationErrors.get('description')}">
+                                        Ошибка в описании
                                     </div>
                                 </div>
                             </div>
@@ -151,11 +170,16 @@
                                 <label for="price" class="col-sm-2 col-form-label">Цена</label>
                                 <div class="col-sm-10">
                                     <div class="input-group">
-                                        <input type="number" th:field="*{price}" class="form-control" id="price" step="0.01" min="0" required>
+                                        <input type="number" th:field="*{price}" class="form-control" 
+                                               th:classappend="${validationErrors != null && validationErrors.containsKey('price')} ? 'is-invalid' : ''"
+                                               id="price" step="0.01" min="0" required>
                                         <span class="input-group-text">₽</span>
                                     </div>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('price')}" th:errors="*{price}">
                                         Некорректная цена
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('price')}" th:text="${validationErrors.get('price')}">
+                                        Ошибка в цене
                                     </div>
                                 </div>
                             </div>
@@ -163,18 +187,25 @@
                                 <label for="stock" class="col-sm-2 col-form-label">Количество</label>
                                 <div class="col-sm-10">
                                     <div class="input-group">
-                                        <input type="number" th:field="*{stock}" class="form-control" id="stock" min="0" required>
+                                        <input type="number" th:field="*{stock}" class="form-control" 
+                                               th:classappend="${validationErrors != null && validationErrors.containsKey('stock')} ? 'is-invalid' : ''"
+                                               id="stock" min="0" required>
                                         <span class="input-group-text">шт.</span>
                                     </div>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('stock')}" th:errors="*{stock}">
                                         Некорректное количество
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('stock')}" th:text="${validationErrors.get('stock')}">
+                                        Ошибка в количестве
                                     </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label for="componentType" class="col-sm-2 col-form-label">Тип компонента</label>
                                 <div class="col-sm-10">
-                                    <select th:field="*{componentType}" class="form-select" id="componentType">
+                                    <select th:field="*{componentType}" class="form-select" 
+                                            th:classappend="${validationErrors != null && validationErrors.containsKey('componentType')} ? 'is-invalid' : ''"
+                                            id="componentType">
                                         <option value="">-- Выберите тип --</option>
                                         <option th:each="type : ${componentTypes}" 
                                                 th:value="${type.name()}" 
@@ -185,12 +216,17 @@
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('componentType')}" th:errors="*{componentType}">
                                         Выберите тип компонента
                                     </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('componentType')}" th:text="${validationErrors.get('componentType')}">
+                                        Ошибка в типе компонента
+                                    </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label for="manufacturerId" class="col-sm-2 col-form-label">Производитель</label>
                                 <div class="col-sm-10">
-                                    <select th:field="*{manufacturerId}" class="form-select" id="manufacturerId">
+                                    <select th:field="*{manufacturerId}" class="form-select" 
+                                            th:classappend="${validationErrors != null && validationErrors.containsKey('manufacturerId')} ? 'is-invalid' : ''"
+                                            id="manufacturerId">
                                         <option value="">-- Выберите производителя --</option>
                                         <option th:each="manufacturer : ${manufacturers}" 
                                                 th:value="${manufacturer.id}" 
@@ -201,12 +237,17 @@
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('manufacturerId')}" th:errors="*{manufacturerId}">
                                         Выберите производителя
                                     </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('manufacturerId')}" th:text="${validationErrors.get('manufacturerId')}">
+                                        Необходимо выбрать производителя
+                                    </div>
                                 </div>
                             </div>
                             <div class="mb-3 row">
                                 <label for="categoryId" class="col-sm-2 col-form-label">Категория</label>
                                 <div class="col-sm-10">
-                                    <select th:field="*{categoryId}" class="form-select" id="categoryId">
+                                    <select th:field="*{categoryId}" class="form-select" 
+                                            th:classappend="${validationErrors != null && validationErrors.containsKey('categoryId')} ? 'is-invalid' : ''"
+                                            id="categoryId">
                                         <option value="">-- Выберите категорию --</option>
                                         <option th:each="category : ${categories}" 
                                                 th:value="${category.id}" 
@@ -216,6 +257,9 @@
                                     </select>
                                     <div class="invalid-feedback" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}">
                                         Выберите категорию
+                                    </div>
+                                    <div class="invalid-feedback" th:if="${validationErrors != null && validationErrors.containsKey('categoryId')}" th:text="${validationErrors.get('categoryId')}">
+                                        Необходимо выбрать категорию
                                     </div>
                                 </div>
                             </div>

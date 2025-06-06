@@ -9,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.HashMap;
 
 /**
  * Контроллер для админ-панели с использованием Thymeleaf
@@ -411,26 +413,82 @@ public class AdminController {
     /**
      * Обработка создания нового продукта
      * @param productDto данные продукта
+     * @param bindingResult результат валидации
      * @param imageFile файл изображения продукта
+     * @param model модель для передачи данных в представление
      * @param redirectAttributes атрибуты для редиректа
-     * @return редирект на страницу продуктов
+     * @return редирект на страницу продуктов или возврат на форму с ошибками
      */
     @PostMapping("/products/new")
     public String createProduct(
             @Valid @ModelAttribute ProductDto productDto,
+            BindingResult bindingResult,
             @RequestParam(required = false) MultipartFile imageFile,
+            Model model,
             RedirectAttributes redirectAttributes) {
+        
+        // Если есть ошибки валидации, возвращаемся на форму
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("productDto", productDto);
+            model.addAttribute("pageTitle", "Создание продукта");
+            model.addAttribute("componentTypes", ComponentType.values());
+            model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            
+            // Собираем ошибки валидации для отображения
+            Map<String, String> validationErrors = bindingResult.getFieldErrors()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            FieldError::getField,
+                            error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Ошибка валидации",
+                            (existing, replacement) -> existing + ", " + replacement
+                    ));
+            
+            model.addAttribute("validationErrors", validationErrors);
+            
+            return "admin/product-form";
+        }
         
         try {
             Product product = adminService.createProduct(productDto, imageFile);
             redirectAttributes.addFlashAttribute("message", "Продукт успешно создан");
             return "redirect:/admin/products/" + product.getId();
-        } catch (IOException e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при загрузке изображения: " + e.getMessage());
-            return "redirect:/admin/products/new";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при создании продукта: " + e.getMessage());
-            return "redirect:/admin/products/new";
+            model.addAttribute("productDto", productDto);
+            model.addAttribute("pageTitle", "Создание продукта");
+            model.addAttribute("componentTypes", ComponentType.values());
+            model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            
+            // Обрабатываем конкретные ошибки и указываем на проблемное поле
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("The given id must not be null")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                
+                if (productDto.getManufacturerId() == null) {
+                    validationErrors.put("manufacturerId", "Необходимо выбрать производителя");
+                }
+                if (productDto.getCategoryId() == null) {
+                    validationErrors.put("categoryId", "Необходимо выбрать категорию");
+                }
+                
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при создании продукта: необходимо заполнить все обязательные поля");
+            } else if (errorMessage.contains("Производитель не найден")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                validationErrors.put("manufacturerId", "Производитель не найден");
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при создании продукта: " + errorMessage);
+            } else if (errorMessage.contains("Категория не найдена")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                validationErrors.put("categoryId", "Категория не найдена");
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при создании продукта: " + errorMessage);
+            } else {
+                model.addAttribute("error", "Ошибка при создании продукта: " + errorMessage);
+            }
+            
+            return "admin/product-form";
         }
     }
     
@@ -471,27 +529,83 @@ public class AdminController {
      * Обработка обновления продукта
      * @param id ID продукта
      * @param productDto новые данные продукта
+     * @param bindingResult результат валидации
      * @param imageFile новый файл изображения продукта
+     * @param model модель для передачи данных в представление
      * @param redirectAttributes атрибуты для редиректа
-     * @return редирект на страницу продукта
+     * @return редирект на страницу продукта или возврат на форму с ошибками
      */
     @PostMapping("/products/{id}/edit")
     public String updateProduct(
             @PathVariable Long id,
             @Valid @ModelAttribute ProductDto productDto,
+            BindingResult bindingResult,
             @RequestParam(required = false) MultipartFile imageFile,
+            Model model,
             RedirectAttributes redirectAttributes) {
+        
+        // Если есть ошибки валидации, возвращаемся на форму
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("productDto", productDto);
+            model.addAttribute("pageTitle", "Редактирование продукта");
+            model.addAttribute("componentTypes", ComponentType.values());
+            model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            
+            // Собираем ошибки валидации для отображения
+            Map<String, String> validationErrors = bindingResult.getFieldErrors()
+                    .stream()
+                    .collect(Collectors.toMap(
+                            FieldError::getField,
+                            error -> error.getDefaultMessage() != null ? error.getDefaultMessage() : "Ошибка валидации",
+                            (existing, replacement) -> existing + ", " + replacement
+                    ));
+            
+            model.addAttribute("validationErrors", validationErrors);
+            
+            return "admin/product-form";
+        }
         
         try {
             Product product = adminService.updateProduct(id, productDto, imageFile);
             redirectAttributes.addFlashAttribute("message", "Продукт успешно обновлен");
             return "redirect:/admin/products/" + product.getId();
-        } catch (IOException e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при загрузке изображения: " + e.getMessage());
-            return "redirect:/admin/products/" + id + "/edit";
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", "Ошибка при обновлении продукта: " + e.getMessage());
-            return "redirect:/admin/products/" + id + "/edit";
+            model.addAttribute("productDto", productDto);
+            model.addAttribute("pageTitle", "Редактирование продукта");
+            model.addAttribute("componentTypes", ComponentType.values());
+            model.addAttribute("manufacturers", manufacturerService.getAllManufacturers());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            
+            // Обрабатываем конкретные ошибки и указываем на проблемное поле
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("The given id must not be null")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                
+                if (productDto.getManufacturerId() == null) {
+                    validationErrors.put("manufacturerId", "Необходимо выбрать производителя");
+                }
+                if (productDto.getCategoryId() == null) {
+                    validationErrors.put("categoryId", "Необходимо выбрать категорию");
+                }
+                
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при обновлении продукта: необходимо заполнить все обязательные поля");
+            } else if (errorMessage.contains("Производитель не найден")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                validationErrors.put("manufacturerId", "Производитель не найден");
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при обновлении продукта: " + errorMessage);
+            } else if (errorMessage.contains("Категория не найдена")) {
+                Map<String, String> validationErrors = new HashMap<>();
+                validationErrors.put("categoryId", "Категория не найдена");
+                model.addAttribute("validationErrors", validationErrors);
+                model.addAttribute("error", "Ошибка при обновлении продукта: " + errorMessage);
+            } else {
+                model.addAttribute("error", "Ошибка при обновлении продукта: " + errorMessage);
+            }
+            
+            return "admin/product-form";
         }
     }
     
