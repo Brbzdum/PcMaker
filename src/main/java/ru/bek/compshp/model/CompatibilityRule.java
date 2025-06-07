@@ -73,10 +73,11 @@ public class CompatibilityRule {
     @Column(name = "value_modifier")
     private String valueModifier;
 
-    @Column
+    @Column(name = "description")
     private String description;
 
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @Column(name = "created_at")

@@ -25,7 +25,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000", "https://pcmaker.com")
+                .allowedOrigins("http://localhost:3000", "http://localhost:5173", "https://pcmaker.com")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -74,9 +74,9 @@ public class WebConfig implements WebMvcConfigurer {
         // Перенаправляем корневой путь на страницу входа
         registry.addViewController("/").setViewName("redirect:/login");
         
-        // Перенаправляем все другие пути (кроме API, admin, static, uploads, login)
+        // Перенаправляем все другие пути (кроме API, admin, static, uploads, login, swagger-ui, v3)
         // на страницу входа
-        registry.addViewController("/{path:^(?!api|admin|static|uploads|login).*$}/**")
+        registry.addViewController("/{path:^(?!api|admin|static|uploads|login|swagger-ui|v3).*$}/**")
                 .setViewName("redirect:/login");
     }
     

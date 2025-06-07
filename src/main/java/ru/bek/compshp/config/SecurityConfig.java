@@ -80,7 +80,9 @@ public class SecurityConfig {
                 // Публичные API эндпоинты
                 .requestMatchers(
                     "/api/auth/**",
-                    "/api/public/**"
+                    "/api/public/**",
+                    "/api/products/**",
+                    "/api/categories/**"
                 ).permitAll()
                 // Остальные API запросы требуют аутентификации
                 .anyRequest().authenticated()
@@ -99,6 +101,7 @@ public class SecurityConfig {
      * Конфигурация для веб-интерфейса (форменная аутентификация)
      */
     @Bean
+    @Order(2)
     public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/", "/admin/**", "/static/**", "/login/**", "/logout/**")
