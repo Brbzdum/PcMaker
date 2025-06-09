@@ -1,0 +1,160 @@
+### Тестирование PC Maker API
+
+### Аутентификация
+### Вход в систему
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+> {% client.global.set("auth_token", response.body.token); %}
+
+### Регистрация нового пользователя
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123",
+  "name": "Test User"
+}
+
+### Продукты
+### Получение всех продуктов
+GET http://localhost:8080/api/products
+Accept: application/json
+
+### Получение продукта по ID
+GET http://localhost:8080/api/products/1
+Accept: application/json
+
+### Поиск продуктов
+GET http://localhost:8080/api/products/search?query=процессор
+Accept: application/json
+
+### Фильтрация продуктов по типу компонента
+GET http://localhost:8080/api/products/filter?componentType=CPU
+Accept: application/json
+
+### Создание нового продукта (требуется авторизация)
+POST http://localhost:8080/api/products
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Процессор Intel Core i7-12700K",
+  "description": "12 ядер, 20 потоков, 3.6 ГГц",
+  "price": 29999.00,
+  "stock": 10,
+  "componentType": "CPU",
+  "manufacturerId": 1,
+  "categoryId": 1,
+  "specs": {
+    "cores": "12",
+    "threads": "20",
+    "frequency": "3.6",
+    "socket": "LGA1700"
+  }
+}
+
+### Обновление продукта (требуется авторизация)
+PUT http://localhost:8080/api/products/1
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "title": "Процессор Intel Core i7-12700K (обновлен)",
+  "description": "12 ядер, 20 потоков, 3.6 ГГц",
+  "price": 28999.00,
+  "stock": 15,
+  "componentType": "CPU",
+  "manufacturerId": 1,
+  "categoryId": 1,
+  "specs": {
+    "cores": "12",
+    "threads": "20",
+    "frequency": "3.6",
+    "socket": "LGA1700"
+  }
+}
+
+### Удаление продукта (требуется авторизация)
+DELETE http://localhost:8080/api/products/1
+Authorization: Bearer {{auth_token}}
+
+### Категории
+### Получение всех категорий
+GET http://localhost:8080/api/categories
+Accept: application/json
+
+### Получение категории по ID
+GET http://localhost:8080/api/categories/1
+Accept: application/json
+
+### Получение продуктов в категории
+GET http://localhost:8080/api/categories/1/products
+Accept: application/json
+
+### Корзина
+### Добавление товара в корзину (требуется авторизация)
+POST http://localhost:8080/api/cart/add
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "productId": 1,
+  "quantity": 1
+}
+
+### Получение корзины (требуется авторизация)
+GET http://localhost:8080/api/cart
+Authorization: Bearer {{auth_token}}
+
+### Конфигуратор
+### Создание новой конфигурации (требуется авторизация)
+POST http://localhost:8080/api/configurator
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "name": "Игровой ПК",
+  "description": "Мощный игровой компьютер"
+}
+
+### Получение всех конфигураций пользователя (требуется авторизация)
+GET http://localhost:8080/api/configurator/user
+Authorization: Bearer {{auth_token}}
+
+### Заказы
+### Создание заказа (требуется авторизация)
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "shippingAddress": "г. Москва, ул. Пушкина, д. 10, кв. 5",
+  "paymentMethod": "CARD"
+}
+
+### Получение заказов пользователя (требуется авторизация)
+GET http://localhost:8080/api/orders
+Authorization: Bearer {{auth_token}}
+
+### Отзывы
+### Добавление отзыва к продукту (требуется авторизация)
+POST http://localhost:8080/api/reviews/product/1
+Content-Type: application/json
+Authorization: Bearer {{auth_token}}
+
+{
+  "rating": 5,
+  "comment": "Отличный процессор, работает быстро и не греется."
+}
+
+### Получение отзывов продукта
+GET http://localhost:8080/api/reviews/product/1
+Accept: application/json 

@@ -6,17 +6,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import ru.bek.compshp.dto.OrderCreateRequest;
-import ru.bek.compshp.dto.OrderResponse;
-import ru.bek.compshp.dto.OrderStatusUpdateRequest;
+import ru.bek.compshp.dto.*;
+import ru.bek.compshp.mapper.OrderDtoMapper;
+import ru.bek.compshp.mapper.OrderMapper;
 import ru.bek.compshp.model.Order;
 import ru.bek.compshp.model.OrderStatusHistory;
 import ru.bek.compshp.model.enums.OrderStatus;
+import ru.bek.compshp.security.CustomUserDetails;
 import ru.bek.compshp.service.OrderService;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,13 +30,15 @@ import java.util.stream.Collectors;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderMapper orderMapper;
+    private final OrderDtoMapper orderDtoMapper;
 
     @GetMapping
     @Operation(summary = "Получить все заказы пользователя")
-    public ResponseEntity<List<OrderResponse>> getUserOrders(@RequestParam Long userId) {
-        List<Order> orders = orderService.getUserOrders(userId);
+    public ResponseEntity<List<OrderResponse>> getUserOrders(@AuthenticationPrincipal CustomUserDetails userPrincipal) {
+        List<Order> orders = orderService.getUserOrders(userPrincipal.getId());
         List<OrderResponse> response = orders.stream()
-                .map(this::mapToOrderResponse)
+                .map(orderMapper::entityToResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
@@ -44,14 +47,41 @@ public class OrderController {
     @Operation(summary = "Получить заказ по ID")
     public ResponseEntity<OrderResponse> getOrder(@PathVariable Long orderId) {
         Order order = orderService.getOrder(orderId);
-        return ResponseEntity.ok(mapToOrderResponse(order));
+        return ResponseEntity.ok(orderMapper.entityToResponse(order));
+    }
+
+    @PostMapping
+    @Operation(summary = "Создать заказ")
+    public ResponseEntity<OrderResponse> createOrder(@RequestBody OrderCreateRequestDto requestDTO,
+                                                    @AuthenticationPrincipal CustomUserDetails userPrincipal) {
+        Map<String, Object> orderData = orderDtoMapper.toOrderCreateMap(requestDTO);
+        
+        // Создаем заказ
+        Order order = orderService.createOrder(
+            userPrincipal.getId(), 
+            (String) orderData.get("address"), 
+            (String) orderData.get("phone"), 
+            (String) orderData.get("fullName"), 
+            (String) orderData.get("paymentMethod"), 
+            (String) orderData.get("comment"), 
+            (List<Map<String, Object>>) orderData.get("items")
+        );
+        
+        return new ResponseEntity<>(orderMapper.entityToResponse(order), HttpStatus.CREATED);
     }
 
     @PostMapping("/from-cart")
     @Operation(summary = "Создать заказ из корзины")
     public ResponseEntity<OrderResponse> createOrderFromCart(@RequestBody OrderCreateRequest request) {
-        Order order = orderService.createOrderFromCart(request.getUserId());
-        return new ResponseEntity<>(mapToOrderResponse(order), HttpStatus.CREATED);
+        Order order = orderService.createOrderFromCart(
+                request.getUserId(),
+                request.getAddress(),
+                request.getPhone(),
+                request.getFullName(),
+                request.getPaymentMethod(),
+                request.getComment()
+        );
+        return new ResponseEntity<>(orderMapper.entityToResponse(order), HttpStatus.CREATED);
     }
 
     @PostMapping("/from-configuration")
@@ -59,18 +89,33 @@ public class OrderController {
     public ResponseEntity<OrderResponse> createOrderFromConfiguration(
             @RequestBody OrderCreateRequest request) {
         Order order = orderService.createOrderFromConfiguration(
-                request.getUserId(), request.getConfigurationId());
-        return new ResponseEntity<>(mapToOrderResponse(order), HttpStatus.CREATED);
+                request.getUserId(),
+                request.getConfigurationId(),
+                request.getAddress(),
+                request.getPhone(),
+                request.getFullName(),
+                request.getPaymentMethod(),
+                request.getComment()
+        );
+        return new ResponseEntity<>(orderMapper.entityToResponse(order), HttpStatus.CREATED);
     }
 
     @PutMapping("/{orderId}/status")
     @Operation(summary = "Обновить статус заказа")
     public ResponseEntity<OrderResponse> updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestBody OrderStatusUpdateRequest request) {
+            @RequestBody OrderStatusUpdateRequestDto requestDTO) {
+        OrderStatusUpdateRequest request = orderDtoMapper.toOrderStatusUpdateRequest(requestDTO);
         Order order = orderService.updateOrderStatus(
                 orderId, request.getStatus(), request.getComment());
-        return ResponseEntity.ok(mapToOrderResponse(order));
+        return ResponseEntity.ok(orderMapper.entityToResponse(order));
+    }
+
+    @PutMapping("/{orderId}/cancel")
+    @Operation(summary = "Отменить заказ")
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable Long orderId) {
+        Order order = orderService.updateOrderStatus(orderId, OrderStatus.CANCELLED, "Заказ отменен пользователем");
+        return ResponseEntity.ok(orderMapper.entityToResponse(order));
     }
 
     @GetMapping("/{orderId}/history")
@@ -88,7 +133,7 @@ public class OrderController {
     public ResponseEntity<List<OrderResponse>> getOrdersByStatus(@RequestParam OrderStatus status) {
         List<Order> orders = orderService.getOrdersByStatus(status);
         List<OrderResponse> response = orders.stream()
-                .map(this::mapToOrderResponse)
+                .map(orderMapper::entityToResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
@@ -100,7 +145,7 @@ public class OrderController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         List<Order> orders = orderService.getOrdersByDateRange(startDate, endDate);
         List<OrderResponse> response = orders.stream()
-                .map(this::mapToOrderResponse)
+                .map(orderMapper::entityToResponse)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(response);
     }
@@ -109,29 +154,6 @@ public class OrderController {
     @Operation(summary = "Получить статистику по заказам")
     public ResponseEntity<Map<String, Object>> getOrderStatistics() {
         return ResponseEntity.ok(orderService.getOrderStatistics());
-    }
-
-    private OrderResponse mapToOrderResponse(Order order) {
-        List<Map<String, Object>> itemsList = new ArrayList<>();
-        order.getItems().forEach(item -> {
-            Map<String, Object> itemMap = new HashMap<>();
-            itemMap.put("productId", item.getProduct().getId());
-            itemMap.put("productName", item.getProduct().getTitle());
-            itemMap.put("quantity", item.getQuantity());
-            itemMap.put("price", item.getPrice());
-            itemsList.add(itemMap);
-        });
-        
-        return OrderResponse.builder()
-                .id(order.getId())
-                .userId(order.getUser().getId())
-                .status(order.getStatus())
-                .totalPrice(order.getTotalPrice())
-                .createdAt(order.getCreatedAt())
-                .updatedAt(order.getUpdatedAt())
-                .deliveryAddress(order.getDeliveryAddress().toString())
-                .items(itemsList)
-                .build();
     }
 
     private Map<String, Object> mapToHistoryResponse(OrderStatusHistory history) {

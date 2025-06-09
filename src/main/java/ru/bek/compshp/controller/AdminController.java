@@ -31,6 +31,7 @@ import ru.bek.compshp.service.ManufacturerService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -776,6 +777,71 @@ public class AdminController {
         redirectAttributes.addFlashAttribute("message", "Статус заказа обновлен");
         
         return "redirect:/admin/orders/" + id;
+    }
+    
+    /**
+     * Страница создания нового заказа
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/orders/new")
+    public String newOrder(Model model) {
+        Order order = new Order();
+        order.setStatus(OrderStatus.PENDING);
+        order.setTotalPrice(BigDecimal.ZERO);
+        order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        model.addAttribute("order", order);
+        model.addAttribute("users", adminService.getAllUsers());
+        model.addAttribute("orderStatuses", OrderStatus.values());
+        model.addAttribute("pageTitle", "Создание заказа");
+        
+        return "admin/order-form";
+    }
+    
+    /**
+     * Страница редактирования заказа
+     * @param id ID заказа
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/orders/{id}/edit")
+    public String editOrder(@PathVariable Long id, Model model) {
+        Order order = adminService.getOrderById(id);
+        
+        model.addAttribute("order", order);
+        model.addAttribute("users", adminService.getAllUsers());
+        model.addAttribute("orderStatuses", OrderStatus.values());
+        model.addAttribute("pageTitle", "Редактирование заказа #" + id);
+        
+        return "admin/order-form";
+    }
+    
+    /**
+     * Сохранение заказа
+     * @param order данные заказа
+     * @param result результат валидации
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу заказов или форму с ошибками
+     */
+    @PostMapping("/orders/save")
+    public String saveOrder(@ModelAttribute @Valid Order order, 
+                           BindingResult result,
+                           RedirectAttributes redirectAttributes) {
+        
+        if (result.hasErrors()) {
+            return "admin/order-form";
+        }
+        
+        try {
+            Order savedOrder = adminService.saveOrder(order);
+            redirectAttributes.addFlashAttribute("message", "Заказ успешно сохранен");
+            return "redirect:/admin/orders/" + savedOrder.getId();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Ошибка при сохранении заказа: " + e.getMessage());
+            return "redirect:/admin/orders";
+        }
     }
     
     //

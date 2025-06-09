@@ -33,6 +33,7 @@ public class OrderService {
     private final CartService cartService;
     private final PCConfigurationRepository pcConfigurationRepository;
     private final ProductService productService;
+    private final ProductRepository productRepository;
 
     public List<Order> getOrdersByUserId(Long userId) {
         return orderRepository.findByUser_Id(userId);
@@ -43,7 +44,85 @@ public class OrderService {
     }
 
     @Transactional
+    public Order createOrder(Long userId, String address, String phone, String fullName, 
+                            String paymentMethod, String comment, List<Map<String, Object>> items) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+            
+        Order order = new Order();
+        order.setUser(user);
+        order.setStatus(OrderStatus.PENDING);
+        order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // Устанавливаем данные доставки
+        Address deliveryAddress = new Address();
+        deliveryAddress.setFullAddress(address);
+        order.setDeliveryAddress(deliveryAddress);
+        
+        // Устанавливаем контактные данные
+        order.setPhone(phone);
+        order.setFullName(fullName);
+        
+        // Устанавливаем способ оплаты и комментарий
+        order.setPaymentMethod(paymentMethod);
+        order.setComment(comment);
+        
+        // Устанавливаем начальное значение для общей стоимости заказа
+        order.setTotalPrice(BigDecimal.ZERO);
+        
+        // Сохраняем заказ
+        order = orderRepository.save(order);
+        
+        // Создаем элементы заказа
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        
+        for (Map<String, Object> item : items) {
+            Long productId = Long.valueOf(item.get("productId").toString());
+            Integer quantity = Integer.valueOf(item.get("quantity").toString());
+            
+            Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
+            
+            // Проверяем наличие товара на складе
+            if (product.getStock() < quantity) {
+                throw new IllegalStateException("Недостаточно товара на складе: " + product.getTitle());
+            }
+            
+            OrderItem orderItem = new OrderItem();
+            OrderItemId orderItemId = new OrderItemId(order.getId(), productId);
+            orderItem.setId(orderItemId);
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantity);
+            orderItem.setPrice(product.getPrice());
+            orderItemRepository.save(orderItem);
+            
+            // Уменьшаем количество товара на складе
+            productService.updateStock(productId, quantity);
+            
+            // Добавляем стоимость товара к общей сумме заказа
+            totalPrice = totalPrice.add(product.getPrice().multiply(BigDecimal.valueOf(quantity)));
+        }
+        
+        // Устанавливаем общую стоимость заказа
+        order.setTotalPrice(totalPrice);
+        order = orderRepository.save(order);
+        
+        // Создаем запись в истории статусов
+        createStatusHistory(order, OrderStatus.PENDING, "Заказ создан");
+        
+        return order;
+    }
+
+    @Transactional
     public Order createOrderFromCart(Long userId) {
+        return createOrderFromCart(userId, null, null, null, null, null);
+    }
+    
+    @Transactional
+    public Order createOrderFromCart(Long userId, String address, String phone, String fullName, 
+                                    String paymentMethod, String comment) {
         final Cart cart = cartService.getCartByUserId(userId);
         if (cart.getItems().isEmpty()) {
             throw new IllegalStateException("Корзина пуста");
@@ -52,8 +131,26 @@ public class OrderService {
         Order order = new Order();
         order.setUser(cart.getUser());
         order.setStatus(OrderStatus.PENDING);
-        order.setTotalPrice(calculateCartTotal(cart));
         order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // Рассчитываем общую стоимость заказа до сохранения
+        BigDecimal totalPrice = calculateCartTotal(cart);
+        order.setTotalPrice(totalPrice);
+        
+        // Устанавливаем данные доставки, если они предоставлены
+        if (address != null) {
+            Address deliveryAddress = new Address();
+            deliveryAddress.setFullAddress(address);
+            order.setDeliveryAddress(deliveryAddress);
+        }
+        
+        // Устанавливаем контактные данные и другую информацию
+        order.setPhone(phone);
+        order.setFullName(fullName);
+        order.setPaymentMethod(paymentMethod);
+        order.setComment(comment);
+        
         order = orderRepository.save(order);
 
         // Создаем элементы заказа из корзины
@@ -83,6 +180,12 @@ public class OrderService {
 
     @Transactional
     public Order createOrderFromConfiguration(Long userId, Long configId) {
+        return createOrderFromConfiguration(userId, configId, null, null, null, null, null);
+    }
+    
+    @Transactional
+    public Order createOrderFromConfiguration(Long userId, Long configId, String address, String phone, 
+                                           String fullName, String paymentMethod, String comment) {
         final PCConfiguration config = pcConfigurationRepository.findById(configId)
             .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
 
@@ -96,8 +199,24 @@ public class OrderService {
         Order order = new Order();
         order.setUser(user);
         order.setStatus(OrderStatus.PENDING);
-        order.setTotalPrice(config.getTotalPrice());
+        order.setTotalPrice(config.getTotalPrice());  // Устанавливаем цену до сохранения
         order.setCreatedAt(LocalDateTime.now());
+        order.setUpdatedAt(LocalDateTime.now());
+        order.setPcConfiguration(config);  // Связываем заказ с конфигурацией
+        
+        // Устанавливаем данные доставки, если они предоставлены
+        if (address != null) {
+            Address deliveryAddress = new Address();
+            deliveryAddress.setFullAddress(address);
+            order.setDeliveryAddress(deliveryAddress);
+        }
+        
+        // Устанавливаем контактные данные и другую информацию
+        order.setPhone(phone);
+        order.setFullName(fullName);
+        order.setPaymentMethod(paymentMethod);
+        order.setComment(comment);
+        
         order = orderRepository.save(order);
 
         // Создаем элементы заказа из конфигурации

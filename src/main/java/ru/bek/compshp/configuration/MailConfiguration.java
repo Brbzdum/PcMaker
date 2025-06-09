@@ -34,6 +34,7 @@ public class MailConfiguration {
         JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
         mailSender.setHost(host);
         mailSender.setPort(port);
+        mailSender.setProtocol("smtps");
         
         if (username != null && !username.isEmpty()) {
             mailSender.setUsername(username);
@@ -41,9 +42,13 @@ public class MailConfiguration {
         }
         
         Properties props = mailSender.getJavaMailProperties();
-        props.put("mail.transport.protocol", "smtp");
-        props.put("mail.smtp.auth", auth);
-        props.put("mail.smtp.starttls.enable", starttls);
+        props.put("mail.transport.protocol", "smtps");
+        props.put("mail.smtps.auth", auth);
+        props.put("mail.smtps.starttls.enable", starttls);
+        props.put("mail.smtps.ssl.enable", "true");
+        props.put("mail.smtps.socketFactory.port", String.valueOf(port));
+        props.put("mail.smtps.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+        props.put("mail.from", username);
         props.put("mail.debug", "true");
         
         return mailSender;

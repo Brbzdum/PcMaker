@@ -3,7 +3,10 @@ package ru.bek.compshp.model;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -15,7 +18,10 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "carts")
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"items"})
+@EqualsAndHashCode(exclude = {"items"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor

@@ -3,6 +3,7 @@ package ru.bek.compshp.service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -21,6 +22,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmailService {
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -28,6 +30,9 @@ public class EmailService {
     
     @Value("${app.base-url:http://localhost:8080}")
     private String baseUrl;
+    
+    @Value("${spring.mail.username}")
+    private String mailUsername;
 
     public void sendOrderConfirmation(Order order) {
         Context context = new Context();
@@ -209,6 +214,7 @@ public class EmailService {
     }
 
     public void sendVerificationEmail(User user, String siteURL) throws MessagingException {
+        log.info("Начинаем отправку письма верификации для пользователя: {}", user.getEmail());
         Context context = new Context();
         context.setVariable("user", user);
         context.setVariable("URL", siteURL + "/api/auth/verify?code=" + user.getActivationCode());
@@ -219,11 +225,20 @@ public class EmailService {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
         
+        helper.setFrom(mailUsername);
         helper.setTo(user.getEmail());
         helper.setSubject("Подтверждение регистрации в PC Maker");
         helper.setText(emailContent, true);
 
+        log.info("Подготовлено письмо для отправки от {} к {}", mailUsername, user.getEmail());
+        
+        try {
         mailSender.send(message);
+            log.info("Письмо успешно отправлено на {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Ошибка при отправке письма: {}", e.getMessage(), e);
+            throw e;
+        }
     }
     
     /**
@@ -277,16 +292,22 @@ public class EmailService {
     }
 
     private void sendHtmlEmail(String to, String subject, String htmlContent) {
+        log.info("Начинаем отправку HTML письма для: {}", to);
         try {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
+            helper.setFrom(mailUsername);
             helper.setTo(to);
             helper.setSubject(subject);
             helper.setText(htmlContent, true);
             
+            log.info("Подготовлено HTML письмо для отправки от {} к {}", mailUsername, to);
+            
             mailSender.send(message);
+            log.info("HTML письмо успешно отправлено на {}", to);
         } catch (MessagingException e) {
+            log.error("Ошибка при отправке HTML письма: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to send email", e);
         }
     }

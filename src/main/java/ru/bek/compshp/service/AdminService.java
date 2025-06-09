@@ -59,6 +59,14 @@ public class AdminService {
     }
 
     /**
+     * Получает список всех пользователей без пагинации
+     * @return список всех пользователей
+     */
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
      * Получает пользователя по ID
      * @param id ID пользователя
      * @return пользователь
@@ -438,6 +446,49 @@ public class AdminService {
     public Order updateOrderStatus(Long id, OrderStatus status) {
         Order order = getOrderById(id);
         order.setStatus(status);
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // Добавляем запись в историю статусов
+        OrderStatusHistory history = new OrderStatusHistory();
+        history.setOrder(order);
+        history.setStatus(status);
+        history.setChangedAt(LocalDateTime.now());
+        order.getStatusHistory().add(history);
+        
+        return orderRepository.save(order);
+    }
+    
+    /**
+     * Сохраняет заказ
+     * @param order заказ для сохранения
+     * @return сохраненный заказ
+     */
+    @Transactional
+    public Order saveOrder(Order order) {
+        if (order.getCreatedAt() == null) {
+            order.setCreatedAt(LocalDateTime.now());
+        }
+        order.setUpdatedAt(LocalDateTime.now());
+        
+        // Если статус изменился, добавляем запись в историю
+        if (order.getId() != null) {
+            Order existingOrder = getOrderById(order.getId());
+            if (existingOrder.getStatus() != order.getStatus()) {
+                OrderStatusHistory history = new OrderStatusHistory();
+                history.setOrder(order);
+                history.setStatus(order.getStatus());
+                history.setChangedAt(LocalDateTime.now());
+                order.getStatusHistory().add(history);
+            }
+        } else {
+            // Новый заказ - добавляем первую запись в историю статусов
+            OrderStatusHistory history = new OrderStatusHistory();
+            history.setOrder(order);
+            history.setStatus(order.getStatus());
+            history.setChangedAt(LocalDateTime.now());
+            order.getStatusHistory().add(history);
+        }
+        
         return orderRepository.save(order);
     }
     

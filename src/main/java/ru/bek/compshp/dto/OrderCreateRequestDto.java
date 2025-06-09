@@ -1,31 +1,24 @@
 package ru.bek.compshp.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 /**
- * DTO для создания заказа
+ * DTO для создания заказа из фронтенда
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderCreateRequest {
-    @NotNull(message = "ID пользователя не может быть пустым")
-    private Long userId;
-    
-    private Long configurationId;
-    
+public class OrderCreateRequestDto {
     private String address;
-    
     private String phone;
-    
     private String fullName;
-    
     private String paymentMethod;
-    
     private String comment;
-} 
+    private List<OrderItemRequestDto> items;
+}

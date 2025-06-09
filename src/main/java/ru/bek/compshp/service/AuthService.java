@@ -1,12 +1,15 @@
 package ru.bek.compshp.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -24,6 +27,7 @@ import ru.bek.compshp.repository.RoleRepository;
 import ru.bek.compshp.repository.UserRepository;
 import ru.bek.compshp.security.JwtUtils;
 import ru.bek.compshp.security.CustomUserDetails;
+import org.springframework.security.authentication.BadCredentialsException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -31,11 +35,13 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
- * Сервис для аутентификации и регистрации пользователей
+ * Сервис для аутентификации и управления пользователями
  */
 @Service
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -46,6 +52,9 @@ public class AuthService {
     
     private ApplicationContext applicationContext;
     private AuthenticationManager authenticationManager;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     @Autowired
     public AuthService(UserRepository userRepository, 
@@ -133,9 +142,11 @@ public class AuthService {
             
             // Отправляем письмо для подтверждения email через EmailService
             try {
-                String siteURL = "http://localhost:8080"; // Базовый URL, может быть изменен через конфигурацию
-                emailService.sendVerificationEmail(user, siteURL);
+                log.info("Отправка письма верификации для пользователя: {}", user.getEmail());
+                emailService.sendVerificationEmail(user, baseUrl);
+                log.info("Письмо верификации успешно отправлено для: {}", user.getEmail());
             } catch (Exception e) {
+                log.error("Ошибка при отправке письма верификации: {}", e.getMessage(), e);
                 // Логирование ошибки, но не прерываем регистрацию
                 // Пользователь может запросить повторную отправку письма
             }
@@ -155,6 +166,7 @@ public class AuthService {
      * @return ResponseEntity с JWT-токеном и информацией о пользователе
      */
     public ResponseEntity<?> authenticateUser(LoginRequest loginRequest) {
+        try {
         Authentication authentication = getAuthenticationManager().authenticate(
             new UsernamePasswordAuthenticationToken(
                 loginRequest.getUsername(), 
@@ -166,6 +178,11 @@ public class AuthService {
         String jwt = jwtUtils.generateJwtToken(authentication);
         
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            
+            // Проверяем, активирован ли аккаунт
+            if (!userDetails.isEnabled()) {
+                return ResponseEntity.status(401).body("Необходимо подтвердить email перед входом");
+            }
         
         Map<String, Object> response = new HashMap<>();
         response.put("token", jwt);
@@ -175,6 +192,64 @@ public class AuthService {
         response.put("roles", userDetails.getAuthorities());
         
         return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            return ResponseEntity.status(401).body("Неверное имя пользователя или пароль");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Ошибка аутентификации: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Верифицирует пользователя по коду и генерирует токен для автоматического входа
+     * @param code код верификации
+     * @return Map с токеном и информацией о пользователе или сообщение об ошибке
+     */
+    @Transactional
+    public Map<String, Object> verifyUserAndLogin(String code) {
+        Map<String, Object> result = new HashMap<>();
+        
+        User user = userRepository.findByActivationCode(code)
+                .orElse(null);
+        
+        if (user == null) {
+            result.put("error", "Недействительный код подтверждения");
+            return result;
+        }
+        
+        // Активация аккаунта
+        user.setActive(true);
+        user.setActivationCode(null);
+        userRepository.save(user);
+        
+        // Отправляем приветственное письмо
+        try {
+            emailService.sendWelcomeEmail(user);
+        } catch (Exception e) {
+            log.error("Ошибка при отправке приветственного письма: {}", e.getMessage());
+        }
+        
+        // Генерируем токен для автоматического входа
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                new CustomUserDetails(user),
+                null,
+                user.getRoles().stream()
+                        .map(role -> new SimpleGrantedAuthority(role.getName().name()))
+                        .collect(Collectors.toList())
+        );
+        
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String jwt = jwtUtils.generateJwtToken(authentication);
+        
+        // Формируем ответ с токеном и информацией о пользователе
+        result.put("token", jwt);
+        result.put("id", user.getId());
+        result.put("username", user.getUsername());
+        result.put("email", user.getEmail());
+        result.put("roles", user.getRoles().stream()
+                .map(role -> role.getName().name())
+                .collect(Collectors.toList()));
+        
+        return result;
     }
 
     /**
@@ -187,10 +262,10 @@ public class AuthService {
         boolean verified = emailService.verifyEmail(code);
         
         if (!verified) {
-            return ResponseEntity.badRequest().body("Invalid verification code");
+            return ResponseEntity.badRequest().body("Недействительный код подтверждения");
         }
         
-        return ResponseEntity.ok("User verified successfully");
+        return ResponseEntity.ok("Пользователь успешно подтвержден");
     }
 
     /**
@@ -201,7 +276,7 @@ public class AuthService {
     @Transactional
     public ResponseEntity<?> forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+            .orElseThrow(() -> new ResourceNotFoundException("Пользователь с email " + email + " не найден"));
         
         String token = UUID.randomUUID().toString();
         // Сохраняем токен сброса пароля и время его истечения
@@ -216,7 +291,7 @@ public class AuthService {
             throw new RuntimeException("Не удалось отправить письмо для сброса пароля", e);
         }
         
-        return ResponseEntity.ok("Password reset link sent to your email");
+        return ResponseEntity.ok("Ссылка для сброса пароля отправлена на ваш email");
     }
 
     /**
@@ -228,7 +303,7 @@ public class AuthService {
     @Transactional
     public ResponseEntity<?> resetPassword(String token, String password) {
         User user = userRepository.findByResetToken(token)
-            .orElseThrow(() -> new ResourceNotFoundException("Invalid token"));
+            .orElseThrow(() -> new ResourceNotFoundException("Недействительный токен"));
         
         if (user.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Токен сброса пароля истек");
@@ -239,7 +314,7 @@ public class AuthService {
         user.setResetTokenExpiry(null);
         userRepository.save(user);
         
-        return ResponseEntity.ok("Password has been reset successfully");
+        return ResponseEntity.ok("Пароль успешно сброшен");
     }
 
     /**

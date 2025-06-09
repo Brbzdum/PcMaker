@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import ru.bek.compshp.model.enums.OrderStatus;
+import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +21,7 @@ public class OrderStatusHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false)
+    @ToString.Exclude
     private Order order;
 
     @Enumerated(EnumType.STRING)

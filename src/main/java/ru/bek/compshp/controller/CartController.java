@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.bek.compshp.dto.CartDto;
+import ru.bek.compshp.dto.CartItemDto;
 import ru.bek.compshp.exception.BusinessException;
 import ru.bek.compshp.exception.CartNotFoundException;
 import ru.bek.compshp.exception.InsufficientStockException;
@@ -15,6 +17,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/cart")
@@ -24,46 +27,54 @@ public class CartController {
     private final CartService cartService;
 
     @GetMapping
-    public ResponseEntity<Cart> getCart(@RequestParam @NotNull Long userId) {
+    public ResponseEntity<CartDto> getCart(@RequestParam @NotNull Long userId) {
         try {
-            return ResponseEntity.ok(cartService.getOrCreateCart(userId));
+            Cart cart = cartService.getOrCreateCart(userId);
+            return ResponseEntity.ok(CartDto.fromEntity(cart));
         } catch (BusinessException e) {
             throw new CartNotFoundException(userId);
         }
     }
 
     @PostMapping("/items")
-    public ResponseEntity<Cart> addToCart(
+    public ResponseEntity<CartDto> addToCart(
             @RequestParam @NotNull Long userId,
             @RequestParam @NotNull Long productId,
             @RequestParam @Min(1) Integer quantity) {
         try {
-            return ResponseEntity.ok(cartService.addToCart(userId, productId, quantity));
+            Cart cart = cartService.addToCart(userId, productId, quantity);
+            return ResponseEntity.ok(CartDto.fromEntity(cart));
         } catch (ProductNotFoundException e) {
             throw new ProductNotFoundException(productId);
         } catch (InsufficientStockException e) {
             throw new InsufficientStockException(productId, e.getAvailable(), e.getRequested());
+        } catch (Exception e) {
+            // Логируем неожиданные ошибки
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
         }
     }
 
     @DeleteMapping("/items/{productId}")
-    public ResponseEntity<Cart> removeFromCart(
+    public ResponseEntity<CartDto> removeFromCart(
             @RequestParam @NotNull Long userId,
             @PathVariable @NotNull Long productId) {
         try {
-            return ResponseEntity.ok(cartService.removeFromCart(userId, productId));
+            Cart cart = cartService.removeFromCart(userId, productId);
+            return ResponseEntity.ok(CartDto.fromEntity(cart));
         } catch (BusinessException e) {
             throw new CartNotFoundException(userId);
         }
     }
 
     @PutMapping("/items/{productId}")
-    public ResponseEntity<Cart> updateQuantity(
+    public ResponseEntity<CartDto> updateQuantity(
             @RequestParam @NotNull Long userId,
             @PathVariable @NotNull Long productId,
             @RequestParam @Min(1) Integer quantity) {
         try {
-            return ResponseEntity.ok(cartService.updateQuantity(userId, productId, quantity));
+            Cart cart = cartService.updateQuantity(userId, productId, quantity);
+            return ResponseEntity.ok(CartDto.fromEntity(cart));
         } catch (ProductNotFoundException e) {
             throw new ProductNotFoundException(productId);
         } catch (InsufficientStockException e) {
@@ -72,9 +83,13 @@ public class CartController {
     }
 
     @GetMapping("/items")
-    public ResponseEntity<List<CartItem>> getCartItems(@RequestParam @NotNull Long userId) {
+    public ResponseEntity<List<CartItemDto>> getCartItems(@RequestParam @NotNull Long userId) {
         try {
-            return ResponseEntity.ok(cartService.getCartItems(userId));
+            List<CartItem> cartItems = cartService.getCartItems(userId);
+            List<CartItemDto> cartItemDtos = cartItems.stream()
+                    .map(CartItemDto::fromEntity)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(cartItemDtos);
         } catch (BusinessException e) {
             throw new CartNotFoundException(userId);
         }

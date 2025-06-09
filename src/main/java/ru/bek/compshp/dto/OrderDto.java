@@ -9,26 +9,25 @@ import ru.bek.compshp.model.enums.OrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
- * DTO для ответа с данными заказа
+ * DTO для передачи данных заказа между слоями
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class OrderResponse {
+public class OrderDto {
     private Long id;
     private Long userId;
     private OrderStatus status;
-    private BigDecimal total;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private BigDecimal totalPrice;
     private String address;
     private String phone;
     private String fullName;
     private String paymentMethod;
     private String comment;
-    private List<Map<String, Object>> items;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private List<OrderItemDto> items;
 } 
