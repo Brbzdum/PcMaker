@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import ru.bek.compshp.dto.ReviewDto;
+import ru.bek.compshp.dto.ReviewResponseDto;
+import ru.bek.compshp.mapper.ReviewMapper;
 import ru.bek.compshp.model.Review;
 import ru.bek.compshp.service.ReviewService;
 
@@ -19,15 +21,17 @@ import java.util.Map;
 public class ReviewController {
 
     private final ReviewService reviewService;
+    private final ReviewMapper reviewMapper;
 
     // Публичные эндпоинты
     @GetMapping("/product/{productId}")
-    public ResponseEntity<List<Review>> getProductReviews(
+    public ResponseEntity<List<ReviewResponseDto>> getProductReviews(
             @PathVariable Long productId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         List<Review> reviews = reviewService.getProductReviews(productId);
-        return ResponseEntity.ok(reviews);
+        List<ReviewResponseDto> reviewDtos = reviewMapper.toDtoList(reviews);
+        return ResponseEntity.ok(reviewDtos);
     }
 
     @GetMapping("/product/{productId}/rating")
@@ -39,7 +43,7 @@ public class ReviewController {
     // Эндпоинты для авторизованных пользователей
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/product/{productId}")
-    public ResponseEntity<Review> createReview(
+    public ResponseEntity<ReviewResponseDto> createReview(
             @PathVariable Long productId,
             @Valid @RequestBody ReviewDto reviewDto) {
         Review newReview = new Review();
@@ -47,12 +51,13 @@ public class ReviewController {
         newReview.setComment(reviewDto.getComment());
         
         Review created = reviewService.createReview(newReview, reviewDto.getUserId(), productId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        ReviewResponseDto responseDto = reviewMapper.toDto(created);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @PreAuthorize("hasRole('USER')")
     @PutMapping("/{reviewId}")
-    public ResponseEntity<Review> updateReview(
+    public ResponseEntity<ReviewResponseDto> updateReview(
             @PathVariable Long reviewId,
             @Valid @RequestBody ReviewDto reviewDto) {
         Review updateData = new Review();
@@ -60,7 +65,8 @@ public class ReviewController {
         updateData.setComment(reviewDto.getComment());
         
         Review updated = reviewService.updateReview(reviewId, updateData);
-        return ResponseEntity.ok(updated);
+        ReviewResponseDto responseDto = reviewMapper.toDto(updated);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PreAuthorize("hasRole('USER')")
@@ -73,35 +79,39 @@ public class ReviewController {
     // Эндпоинты для администраторов
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/pending")
-    public ResponseEntity<List<Review>> getPendingReviews() {
+    public ResponseEntity<List<ReviewResponseDto>> getPendingReviews() {
         List<Review> pendingReviews = reviewService.getPendingReviews();
-        return ResponseEntity.ok(pendingReviews);
+        List<ReviewResponseDto> reviewDtos = reviewMapper.toDtoList(pendingReviews);
+        return ResponseEntity.ok(reviewDtos);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{reviewId}/moderate")
-    public ResponseEntity<Review> moderateReview(
+    public ResponseEntity<ReviewResponseDto> moderateReview(
             @PathVariable Long reviewId,
             @RequestParam boolean approved) {
         Review moderatedReview = reviewService.moderateReview(reviewId, approved);
-        return ResponseEntity.ok(moderatedReview);
+        ReviewResponseDto responseDto = reviewMapper.toDto(moderatedReview);
+        return ResponseEntity.ok(responseDto);
     }
 
     @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/reported")
-    public ResponseEntity<List<Review>> getReportedReviews() {
+    public ResponseEntity<List<ReviewResponseDto>> getReportedReviews() {
         // Получаем отзывы с количеством жалоб > 0
         List<Review> reportedReviews = reviewService.findByModeratedAndApproved(false, false);
-        return ResponseEntity.ok(reportedReviews);
+        List<ReviewResponseDto> reviewDtos = reviewMapper.toDtoList(reportedReviews);
+        return ResponseEntity.ok(reviewDtos);
     }
 
     @PreAuthorize("hasRole('USER')")
     @PostMapping("/{reviewId}/report")
-    public ResponseEntity<Review> reportReview(
+    public ResponseEntity<ReviewResponseDto> reportReview(
             @PathVariable Long reviewId,
             @RequestParam String reason) {
         Review reported = reviewService.reportReview(reviewId);
-        return ResponseEntity.ok(reported);
+        ReviewResponseDto responseDto = reviewMapper.toDto(reported);
+        return ResponseEntity.ok(responseDto);
     }
     
     @GetMapping("/analytics/product/{productId}")

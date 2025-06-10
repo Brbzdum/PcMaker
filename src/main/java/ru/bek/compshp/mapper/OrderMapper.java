@@ -1,6 +1,7 @@
 package ru.bek.compshp.mapper;
 
 import org.springframework.stereotype.Component;
+import ru.bek.compshp.config.DateUtils;
 import ru.bek.compshp.dto.OrderDto;
 import ru.bek.compshp.dto.OrderItemDto;
 import ru.bek.compshp.dto.OrderResponse;
@@ -8,6 +9,7 @@ import ru.bek.compshp.model.Order;
 import ru.bek.compshp.model.OrderItem;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +81,10 @@ public class OrderMapper {
                 .map(this::itemToMap)
                 .collect(Collectors.toList());
         
+        // Форматируем даты в ISO формат
+        LocalDateTime createdAt = dto.getCreatedAt();
+        LocalDateTime updatedAt = dto.getUpdatedAt();
+        
         return OrderResponse.builder()
                 .id(dto.getId())
                 .userId(dto.getUserId())
@@ -89,8 +95,8 @@ public class OrderMapper {
                 .fullName(dto.getFullName())
                 .paymentMethod(dto.getPaymentMethod())
                 .comment(dto.getComment())
-                .createdAt(dto.getCreatedAt())
-                .updatedAt(dto.getUpdatedAt())
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .items(itemsList)
                 .build();
     }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Продукты - Админ-панель PC Maker</title>
+    <title>Отзывы - Админ-панель PC Maker</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome Icons -->
@@ -34,15 +34,16 @@
         .btn-outline-primary { border-radius: 8px; }
         .btn-outline-secondary { border-radius: 8px; }
         .btn-outline-danger { border-radius: 8px; }
-        .form-label { font-weight: 500; color: #1e2a39; font-family: 'Poppins', sans-serif; }
-        .form-control, .form-select { border-radius: 8px; }
-        .form-check-label { font-weight: 400; }
-        .badge { font-size: 1em; padding: 0.5em 1em; border-radius: 8px; }
         .table { background-color: #fff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .table thead th { background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; color: #1e2a39; font-weight: 600; font-family: 'Poppins', sans-serif; }
         .table tbody tr:hover { background-color: #f8f9fa; }
-        .img-thumbnail { border-radius: 8px; transition: all 0.3s; }
-        .img-thumbnail:hover { transform: scale(1.1); }
+        .rating { color: #ffc107; }
+        .rating-count { font-size: 0.9rem; color: #6c757d; }
+        .badge-verified { background-color: #28a745; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-pending { background-color: #ffc107; color: #212529; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-rejected { background-color: #dc3545; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-reported { background-color: #dc3545; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .comment-preview { max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     </style>
 </head>
 <body>
@@ -71,7 +72,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link active" th:href="@{/admin/products}">
+                            <a class="nav-link" th:href="@{/admin/products}">
                                 <i class="fas fa-microchip"></i>
                                 Продукты
                             </a>
@@ -95,7 +96,7 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" th:href="@{/admin/reviews}">
+                            <a class="nav-link active" th:href="@{/admin/reviews}">
                                 <i class="fas fa-star"></i>
                                 Отзывы
                             </a>
@@ -109,44 +110,37 @@
                     </ul>
                 </div>
             </nav>
+            
             <!-- Main content -->
             <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
                 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-                    <h1 class="h2 fw-bold">Продукты</h1>
-                    <a th:href="@{/admin/products/new}" class="btn btn-primary">
-                        <i class="fas fa-plus me-1"></i> Добавить продукт
-                    </a>
+                    <h1 class="h2 fw-bold">Отзывы</h1>
                 </div>
+                
                 <!-- Фильтры -->
                 <div class="card mb-4">
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-6">
-                                <form class="d-flex" th:action="@{/admin/products}" method="get">
-                                    <input class="form-control me-2" type="search" placeholder="Поиск" name="search" th:value="${param.search}">
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-search me-1"></i> Найти
-                                    </button>
-                                </form>
-                            </div>
-                            <div class="col-md-6">
-                                <form class="d-flex" th:action="@{/admin/products}" method="get">
-                                    <select class="form-select me-2" name="componentType">
-                                        <option value="">Все типы</option>
-                                        <option th:each="type : ${componentTypes}" 
-                                                th:value="${type.name()}" 
-                                                th:text="${type.displayName}"
-                                                th:selected="${param.componentType != null && param.componentType[0] == type.name()}">
-                                        </option>
-                                    </select>
-                                    <button class="btn btn-primary" type="submit">
-                                        <i class="fas fa-filter me-1"></i> Фильтровать
-                                    </button>
-                                </form>
+                            <div class="col-md-12">
+                                <div class="d-flex">
+                                    <a th:href="@{/admin/reviews}" class="btn me-2" th:classappend="${status == null ? 'btn-primary' : 'btn-outline-primary'}">
+                                        Ожидающие модерации
+                                    </a>
+                                    <a th:href="@{/admin/reviews(status='approved')}" class="btn me-2" th:classappend="${status == 'approved' ? 'btn-primary' : 'btn-outline-primary'}">
+                                        Одобренные
+                                    </a>
+                                    <a th:href="@{/admin/reviews(status='rejected')}" class="btn me-2" th:classappend="${status == 'rejected' ? 'btn-primary' : 'btn-outline-primary'}">
+                                        Отклоненные
+                                    </a>
+                                    <a th:href="@{/admin/reviews(status='reported')}" class="btn" th:classappend="${status == 'reported' ? 'btn-primary' : 'btn-outline-primary'}">
+                                        С жалобами
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
                 <!-- Алерты сообщений и ошибок -->
                 <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
                     <span th:text="${message}"></span>
@@ -156,70 +150,100 @@
                     <span th:text="${error}"></span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <!-- Таблица продуктов -->
+                
+                <!-- Таблица отзывов -->
                 <div class="card">
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div th:if="${reviews.isEmpty()}" class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Нет отзывов, соответствующих выбранным критериям
+                        </div>
+                        <div th:unless="${reviews.isEmpty()}" class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
                                         <th scope="col">ID</th>
-                                        <th scope="col">Изображение</th>
-                                        <th scope="col">Название</th>
-                                        <th scope="col">Тип</th>
-                                        <th scope="col">Цена</th>
-                                        <th scope="col">На складе</th>
+                                        <th scope="col">Пользователь</th>
+                                        <th scope="col">Продукт</th>
+                                        <th scope="col">Рейтинг</th>
+                                        <th scope="col">Комментарий</th>
                                         <th scope="col">Статус</th>
+                                        <th scope="col">Дата</th>
                                         <th scope="col">Действия</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="product : ${products}">
-                                        <td th:text="${product.id}">1</td>
+                                    <tr th:each="review : ${reviews}">
+                                        <td th:text="${review.id}">1</td>
+                                        <td th:text="${review.user.username}">username</td>
+                                        <td th:text="${review.product.title}">Product Title</td>
                                         <td>
-                                            <img th:if="${product.imagePath}" 
-                                                 th:src="${product.imagePath}" 
-                                                 alt="Product Image" 
-                                                 class="img-thumbnail" 
-                                                 style="max-width: 50px;">
-                                            <span th:unless="${product.imagePath}">-</span>
+                                            <div class="rating">
+                                                <!-- Показываем только 5 звезд, заполненные по рейтингу -->
+                                                <span th:if="${review.rating >= 1}"><i class="fas fa-star"></i></span>
+                                                <span th:unless="${review.rating >= 1}"><i class="far fa-star"></i></span>
+                                                
+                                                <span th:if="${review.rating >= 2}"><i class="fas fa-star"></i></span>
+                                                <span th:unless="${review.rating >= 2}"><i class="far fa-star"></i></span>
+                                                
+                                                <span th:if="${review.rating >= 3}"><i class="fas fa-star"></i></span>
+                                                <span th:unless="${review.rating >= 3}"><i class="far fa-star"></i></span>
+                                                
+                                                <span th:if="${review.rating >= 4}"><i class="fas fa-star"></i></span>
+                                                <span th:unless="${review.rating >= 4}"><i class="far fa-star"></i></span>
+                                                
+                                                <span th:if="${review.rating >= 5}"><i class="fas fa-star"></i></span>
+                                                <span th:unless="${review.rating >= 5}"><i class="far fa-star"></i></span>
+                                            </div>
                                         </td>
-                                        <td th:text="${product.title}">Product Title</td>
-                                        <td th:text="${product.componentType != null ? product.componentType.displayName : '-'}">Component Type</td>
-                                        <td th:text="${product.price}">Price</td>
-                                        <td th:text="${product.stock}">Stock</td>
                                         <td>
-                                            <span th:if="${product.isActive}" class="badge bg-success">Активен</span>
-                                            <span th:unless="${product.isActive}" class="badge bg-danger">Неактивен</span>
+                                            <div class="comment-preview" th:text="${review.comment}">Comment text</div>
                                         </td>
+                                        <td>
+                                            <span th:if="${review.isVerifiedPurchase}" class="badge badge-verified">
+                                                <i class="fas fa-check-circle me-1"></i> Проверенная покупка
+                                            </span>
+                                            <span th:if="${!review.isModerated}" class="badge badge-pending">
+                                                <i class="fas fa-clock me-1"></i> Ожидает модерации
+                                            </span>
+                                            <span th:if="${review.isModerated && review.isApproved}" class="badge bg-success">
+                                                <i class="fas fa-check me-1"></i> Одобрен
+                                            </span>
+                                            <span th:if="${review.isModerated && !review.isApproved}" class="badge bg-danger">
+                                                <i class="fas fa-times me-1"></i> Отклонен
+                                            </span>
+                                            <span th:if="${review.reportCount > 0}" class="badge badge-reported">
+                                                <i class="fas fa-flag me-1"></i> Жалоб: <span th:text="${review.reportCount}"></span>
+                                            </span>
+                                        </td>
+                                        <td th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023</td>
                                         <td>
                                             <div class="btn-group">
-                                                <a th:href="@{/admin/products/{id}(id=${product.id})}" class="btn btn-sm btn-outline-primary">
+                                                <a th:href="@{/admin/reviews/{id}(id=${review.id})}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-eye me-1"></i> Просмотр
                                                 </a>
-                                                <a th:href="@{/admin/products/{id}/edit(id=${product.id})}" class="btn btn-sm btn-outline-secondary">
+                                                <a th:href="@{/admin/reviews/{id}/edit(id=${review.id})}" class="btn btn-sm btn-outline-secondary">
                                                     <i class="fas fa-edit me-1"></i> Изменить
                                                 </a>
                                                 <button type="button" class="btn btn-sm btn-outline-danger"
-                                                        data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${product.id}">
+                                                        data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${review.id}">
                                                     <i class="fas fa-trash-alt me-1"></i> Удалить
                                                 </button>
                                             </div>
                                             
-                                            <!-- Модальное окно подтверждения удаления -->
-                                            <div class="modal fade" th:id="'deleteModal' + ${product.id}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                            <!-- Модальное окно удаления -->
+                                            <div class="modal fade" th:id="'deleteModal' + ${review.id}" tabindex="-1" aria-labelledby="'deleteModalLabel' + ${review.id}" aria-hidden="true">
                                                 <div class="modal-dialog">
                                                     <div class="modal-content">
                                                         <div class="modal-header">
-                                                            <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                                                            <h5 class="modal-title" th:id="'deleteModalLabel' + ${review.id}">Подтверждение удаления</h5>
                                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                         </div>
                                                         <div class="modal-body">
-                                                            Вы уверены, что хотите удалить продукт <strong th:text="${product.title}"></strong>?
+                                                            Вы действительно хотите удалить отзыв #<span th:text="${review.id}"></span>?
                                                         </div>
                                                         <div class="modal-footer">
                                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                                                            <form th:action="@{/admin/products/{id}/delete(id=${product.id})}" method="post">
+                                                            <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}" method="post">
                                                                 <button type="submit" class="btn btn-danger">Удалить</button>
                                                             </form>
                                                         </div>
@@ -236,6 +260,8 @@
             </main>
         </div>
     </div>
+    
+    <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>
+</html> 

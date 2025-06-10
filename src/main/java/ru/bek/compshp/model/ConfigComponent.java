@@ -5,7 +5,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.ToString;
 
 import java.time.LocalDateTime;
 
@@ -22,13 +21,11 @@ public class ConfigComponent {
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("configId")
     @JoinColumn(name = "config_id")
-    @ToString.Exclude
     private PCConfiguration configuration;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
-    @ToString.Exclude
     private Product product;
 
     @Builder.Default

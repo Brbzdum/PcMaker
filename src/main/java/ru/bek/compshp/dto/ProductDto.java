@@ -41,7 +41,13 @@ public class ProductDto {
     
     private Long manufacturerId;
     
+    // Имя производителя для отображения на фронтенде
+    private String manufacturer;
+    
     private Long categoryId;
+    
+    // Имя категории для отображения на фронтенде
+    private String category;
     
     @Builder.Default
     private Map<String, String> specs = new HashMap<>();

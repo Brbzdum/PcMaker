@@ -39,6 +39,17 @@ public class ManufacturerService {
     public Optional<Manufacturer> getManufacturerById(Long id) {
         return manufacturerRepository.findById(id);
     }
+    
+    /**
+     * Получить имя производителя по ID
+     * @param id ID производителя
+     * @return имя производителя или "Неизвестный производитель", если производитель не найден
+     */
+    public String getManufacturerNameById(Long id) {
+        return manufacturerRepository.findById(id)
+                .map(Manufacturer::getName)
+                .orElse("Неизвестный производитель");
+    }
 
     /**
      * Получить производителя по имени

@@ -15,12 +15,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.bek.compshp.dto.DashboardStatsDto;
 import ru.bek.compshp.dto.ProductDto;
+import ru.bek.compshp.dto.ReviewDto;
 import ru.bek.compshp.dto.UserDto;
 import ru.bek.compshp.dto.CategoryDto;
 import ru.bek.compshp.model.Category;
 import ru.bek.compshp.model.Manufacturer;
 import ru.bek.compshp.model.Order;
 import ru.bek.compshp.model.Product;
+import ru.bek.compshp.model.Review;
 import ru.bek.compshp.model.User;
 import ru.bek.compshp.model.enums.ComponentType;
 import ru.bek.compshp.model.enums.RoleName;
@@ -28,6 +30,7 @@ import ru.bek.compshp.model.enums.OrderStatus;
 import ru.bek.compshp.service.AdminService;
 import ru.bek.compshp.service.CategoryService;
 import ru.bek.compshp.service.ManufacturerService;
+import ru.bek.compshp.service.ReviewService;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -51,6 +54,7 @@ public class AdminController {
     private final AdminService adminService;
     private final ManufacturerService manufacturerService;
     private final CategoryService categoryService;
+    private final ReviewService reviewService;
     
     /**
      * Главная страница админ-панели (дашборд)
@@ -713,7 +717,7 @@ public class AdminController {
      * Страница со списком заказов
      * @param page номер страницы
      * @param size размер страницы
-     * @param status фильтр по статусу заказа
+     * @param status фильтр по статусу
      * @param search поисковый запрос
      * @param model модель для передачи данных в представление
      * @return имя представления
@@ -726,10 +730,17 @@ public class AdminController {
             @RequestParam(required = false) String search,
             Model model) {
         
-        OrderStatus orderStatus = status != null ? OrderStatus.valueOf(status) : null;
+        OrderStatus orderStatus = null;
+        if (status != null && !status.isEmpty()) {
+            try {
+                orderStatus = OrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                // Игнорируем некорректный статус
+            }
+        }
         
         Page<Order> orders = adminService.getOrdersWithFilters(
-                PageRequest.of(page, size, Sort.by("createdAt").descending()),
+                PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")),
                 orderStatus,
                 search
         );
@@ -737,10 +748,10 @@ public class AdminController {
         model.addAttribute("orders", orders);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", orders.getTotalPages());
-        model.addAttribute("orderStatuses", OrderStatus.values());
-        model.addAttribute("selectedStatus", status);
-        model.addAttribute("search", search);
         model.addAttribute("pageTitle", "Заказы");
+        model.addAttribute("status", status);
+        model.addAttribute("search", search);
+        model.addAttribute("allStatuses", OrderStatus.values());
         
         return "admin/orders";
     }
@@ -1312,5 +1323,202 @@ public class AdminController {
         model.addAttribute("limit", limit);
         
         return "admin/reports-popular-products";
+    }
+    
+    /**
+     * Вспомогательный метод для добавления общих атрибутов для страниц отзывов
+     * @param model модель для передачи данных в представление
+     */
+    private void addReviewsCommonAttributes(Model model) {
+        model.addAttribute("maxRating", 5); // Максимальное количество звезд
+    }
+    
+    /**
+     * Страница со списком отзывов
+     * @param page номер страницы
+     * @param size размер страницы
+     * @param status фильтр по статусу модерации
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reviews")
+    public String getReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            Model model) {
+        
+        List<Review> reviews;
+        
+        if (status != null) {
+            switch (status) {
+                case "pending":
+                    reviews = reviewService.getPendingReviews();
+                    break;
+                case "approved":
+                    reviews = reviewService.findByModeratedAndApproved(true, true);
+                    break;
+                case "rejected":
+                    reviews = reviewService.findByModeratedAndApproved(true, false);
+                    break;
+                case "reported":
+                    reviews = reviewService.findByModeratedAndApproved(false, false)
+                        .stream()
+                        .filter(review -> review.getReportCount() > 0)
+                        .collect(Collectors.toList());
+                    break;
+                default:
+                    reviews = reviewService.findByModeratedAndApproved(false, false);
+            }
+        } else {
+            reviews = reviewService.getPendingReviews();
+        }
+        
+        model.addAttribute("reviews", reviews);
+        model.addAttribute("status", status);
+        model.addAttribute("pageTitle", "Отзывы");
+        addReviewsCommonAttributes(model);
+        
+        return "admin/reviews";
+    }
+    
+    /**
+     * Страница с деталями отзыва
+     * @param id ID отзыва
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reviews/{id}")
+    public String getReviewDetails(@PathVariable Long id, Model model) {
+        Review review = reviewService.findReviewById(id);
+        model.addAttribute("review", review);
+        model.addAttribute("pageTitle", "Отзыв #" + review.getId());
+        addReviewsCommonAttributes(model);
+        
+        return "admin/review-details";
+    }
+    
+    /**
+     * Обработка модерации отзыва
+     * @param id ID отзыва
+     * @param approved статус одобрения
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу отзывов
+     */
+    @PostMapping("/reviews/{id}/moderate")
+    public String moderateReview(
+            @PathVariable Long id,
+            @RequestParam boolean approved,
+            RedirectAttributes redirectAttributes) {
+        
+        reviewService.moderateReview(id, approved);
+        
+        String message = approved ? 
+            "Отзыв #" + id + " успешно одобрен" : 
+            "Отзыв #" + id + " отклонен";
+        redirectAttributes.addFlashAttribute("message", message);
+        
+        return "redirect:/admin/reviews";
+    }
+    
+    /**
+     * Обработка удаления отзыва
+     * @param id ID отзыва
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу отзывов
+     */
+    @PostMapping("/reviews/{id}/delete")
+    public String deleteReview(
+            @PathVariable Long id, 
+            RedirectAttributes redirectAttributes) {
+        
+        reviewService.deleteReview(id);
+        
+        redirectAttributes.addFlashAttribute("message", "Отзыв #" + id + " успешно удален");
+        
+        return "redirect:/admin/reviews";
+    }
+    
+    /**
+     * Форма редактирования отзыва
+     * @param id ID отзыва
+     * @param model модель для передачи данных в представление
+     * @return имя представления
+     */
+    @GetMapping("/reviews/{id}/edit")
+    public String editReviewForm(@PathVariable Long id, Model model) {
+        Review review = reviewService.findReviewById(id);
+        
+        ReviewDto reviewDto = ReviewDto.builder()
+            .id(review.getId())
+            .userId(review.getUser().getId())
+            .productId(review.getProduct().getId())
+            .rating(Math.min(review.getRating(), 5)) // Ограничиваем рейтинг максимум 5 звездами
+            .comment(review.getComment())
+            .isVerifiedPurchase(review.getIsVerifiedPurchase())
+            .username(review.getUser().getUsername())
+            .productName(review.getProduct().getTitle())
+            .build();
+        
+        model.addAttribute("reviewDto", reviewDto);
+        model.addAttribute("review", review);
+        model.addAttribute("pageTitle", "Редактирование отзыва #" + review.getId());
+        addReviewsCommonAttributes(model);
+        
+        return "admin/review-form";
+    }
+    
+    /**
+     * Обработка редактирования отзыва
+     * @param id ID отзыва
+     * @param reviewDto данные отзыва
+     * @param bindingResult результат валидации
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу отзывов или возврат на форму с ошибками
+     */
+    @PostMapping("/reviews/{id}/edit")
+    public String updateReview(
+            @PathVariable Long id,
+            @Valid @ModelAttribute ReviewDto reviewDto,
+            BindingResult bindingResult,
+            @RequestParam(name = "rating", required = false) Integer rating,
+            RedirectAttributes redirectAttributes) {
+        
+        if (bindingResult.hasErrors()) {
+            return "admin/review-form";
+        }
+        
+        Review updateData = new Review();
+        updateData.setRating(rating != null ? rating : reviewDto.getRating());
+        updateData.setComment(reviewDto.getComment());
+        
+        reviewService.updateReview(id, updateData);
+        
+        redirectAttributes.addFlashAttribute("message", "Отзыв #" + id + " успешно обновлен");
+        
+        return "redirect:/admin/reviews";
+    }
+    
+    /**
+     * Обработка изменения статуса "проверенная покупка"
+     * @param id ID отзыва
+     * @param isVerified новый статус
+     * @param redirectAttributes атрибуты для редиректа
+     * @return редирект на страницу отзывов
+     */
+    @PostMapping("/reviews/{id}/toggle-verified")
+    public String toggleReviewVerified(
+            @PathVariable Long id,
+            @RequestParam boolean isVerified,
+            RedirectAttributes redirectAttributes) {
+        
+        reviewService.setVerifiedPurchase(id, isVerified);
+        
+        String message = isVerified ? 
+            "Отзыв #" + id + " помечен как проверенная покупка" : 
+            "Отзыв #" + id + " помечен как непроверенная покупка";
+        redirectAttributes.addFlashAttribute("message", message);
+        
+        return "redirect:/admin/reviews";
     }
 } 

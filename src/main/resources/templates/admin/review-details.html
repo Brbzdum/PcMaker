@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Отзыв #' + ${review.id} + ' - Админ-панель PC Maker'">Отзыв - Админ-панель PC Maker</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin.css}">
+    <style>
+        body { background-color: #f0f2f5; font-family: 'Roboto', sans-serif; }
+        .sidebar { background-color: #1e2a39; color: #fff; min-height: 100vh; box-shadow: 2px 0 10px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .logo-container { padding: 20px 15px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 15px; }
+        .logo { color: #fff; font-size: 28px; font-weight: 700; font-family: 'Poppins', sans-serif; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; }
+        .logo i { color: #4f9ffe; margin-right: 10px; font-size: 32px; }
+        .sidebar a { color: #c8d1e6; padding: 12px 20px; display: block; text-decoration: none; transition: all 0.3s; border-radius: 5px; margin: 5px 10px; font-weight: 500; }
+        .sidebar a:hover { color: #fff; background-color: rgba(79,159,254,0.15); transform: translateX(5px); }
+        .sidebar a.active { background: linear-gradient(45deg, #4776E6, #8E54E9); color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .sidebar .nav-link i { margin-right: 12px; width: 20px; text-align: center; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; transition: all 0.3s; margin-bottom: 20px; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .card-header { background-color: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); padding: 15px 20px; }
+        .card-title { margin-bottom: 0; font-weight: 600; color: #1e2a39; font-family: 'Poppins', sans-serif; }
+        .card-body { padding: 20px; }
+        .card-footer { background-color: #fff; border-top: 1px solid rgba(0,0,0,0.05); padding: 15px 20px; }
+        .btn-primary { background: linear-gradient(45deg, #4776E6, #8E54E9); border: none; box-shadow: 0 4px 10px rgba(71,118,230,0.3); }
+        .btn-primary:hover { background: linear-gradient(45deg, #3a67d6, #7743d9); transform: translateY(-2px); box-shadow: 0 6px 15px rgba(71,118,230,0.4); }
+        .btn-secondary { background: #e9ecef; color: #343a40; border: none; }
+        .btn-secondary:hover { background: #d1d5db; color: #1e2a39; }
+        .btn-outline-primary { border-radius: 8px; }
+        .btn-outline-secondary { border-radius: 8px; }
+        .btn-outline-danger { border-radius: 8px; }
+        .rating { color: #ffc107; font-size: 1.5rem; }
+        .badge-verified { background-color: #28a745; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-pending { background-color: #ffc107; color: #212529; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-rejected { background-color: #dc3545; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .badge-reported { background-color: #dc3545; color: white; padding: 0.25em 0.6em; border-radius: 0.25rem; font-size: 0.75em; }
+        .review-comment { background-color: #f8f9fa; border-radius: 10px; padding: 15px; margin-top: 10px; }
+        .info-label { font-weight: 500; color: #6c757d; }
+        .info-value { font-weight: 400; color: #212529; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky">
+                    <div class="logo-container">
+                        <div class="logo">
+                            <i class="fas fa-desktop"></i>
+                            <span>PC Maker</span>
+                        </div>
+                    </div>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Дашборд
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/users}">
+                                <i class="fas fa-users"></i>
+                                Пользователи
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/products}">
+                                <i class="fas fa-microchip"></i>
+                                Продукты
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/orders}">
+                                <i class="fas fa-shopping-cart"></i>
+                                Заказы
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/categories}">
+                                <i class="fas fa-folder"></i>
+                                Категории
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/admin/manufacturers}">
+                                <i class="fas fa-industry"></i>
+                                Производители
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" th:href="@{/admin/reviews}">
+                                <i class="fas fa-star"></i>
+                                Отзывы
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" th:href="@{/}" target="_blank">
+                                <i class="fas fa-external-link-alt"></i>
+                                Перейти на сайт
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <!-- Main content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+                    <h1 class="h2 fw-bold" th:text="'Отзыв #' + ${review.id}">Отзыв #1</h1>
+                    <div>
+                        <a th:href="@{/admin/reviews}" class="btn btn-outline-secondary me-2">
+                            <i class="fas fa-arrow-left me-1"></i> К списку отзывов
+                        </a>
+                        <a th:href="@{/admin/reviews/{id}/edit(id=${review.id})}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Редактировать
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Алерты сообщений и ошибок -->
+                <div th:if="${message}" class="alert alert-success alert-dismissible fade show" role="alert">
+                    <span th:text="${message}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <span th:text="${error}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                
+                <!-- Информация об отзыве -->
+                <div class="row">
+                    <!-- Основная информация -->
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Информация об отзыве</h5>
+                                <div class="badges">
+                                    <span th:if="${review.isVerifiedPurchase}" class="badge badge-verified">
+                                        <i class="fas fa-check-circle me-1"></i> Проверенная покупка
+                                    </span>
+                                    <span th:if="${!review.isModerated}" class="badge badge-pending">
+                                        <i class="fas fa-clock me-1"></i> Ожидает модерации
+                                    </span>
+                                    <span th:if="${review.isModerated && review.isApproved}" class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i> Одобрен
+                                    </span>
+                                    <span th:if="${review.isModerated && !review.isApproved}" class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i> Отклонен
+                                    </span>
+                                    <span th:if="${review.reportCount > 0}" class="badge badge-reported">
+                                        <i class="fas fa-flag me-1"></i> Жалоб: <span th:text="${review.reportCount}"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-4">
+                                    <div class="rating mb-2">
+                                        <!-- Показываем только 5 звезд, заполненные по рейтингу -->
+                                        <span th:if="${review.rating >= 1}"><i class="fas fa-star"></i></span>
+                                        <span th:unless="${review.rating >= 1}"><i class="far fa-star"></i></span>
+                                        
+                                        <span th:if="${review.rating >= 2}"><i class="fas fa-star"></i></span>
+                                        <span th:unless="${review.rating >= 2}"><i class="far fa-star"></i></span>
+                                        
+                                        <span th:if="${review.rating >= 3}"><i class="fas fa-star"></i></span>
+                                        <span th:unless="${review.rating >= 3}"><i class="far fa-star"></i></span>
+                                        
+                                        <span th:if="${review.rating >= 4}"><i class="fas fa-star"></i></span>
+                                        <span th:unless="${review.rating >= 4}"><i class="far fa-star"></i></span>
+                                        
+                                        <span th:if="${review.rating >= 5}"><i class="fas fa-star"></i></span>
+                                        <span th:unless="${review.rating >= 5}"><i class="far fa-star"></i></span>
+                                    </div>
+                                    <div class="review-comment">
+                                        <p th:text="${review.comment}">Текст отзыва</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <span class="info-label">Пользователь:</span>
+                                            <a th:href="@{/admin/users/{id}(id=${review.user.id})}" class="info-value" th:text="${review.user.username}">username</a>
+                                        </p>
+                                        <p class="mb-1">
+                                            <span class="info-label">Продукт:</span>
+                                            <a th:href="@{/admin/products/{id}(id=${review.product.id})}" class="info-value" th:text="${review.product.title}">Product Title</a>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="mb-1">
+                                            <span class="info-label">Дата создания:</span>
+                                            <span class="info-value" th:text="${#temporals.format(review.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2023 12:00</span>
+                                        </p>
+                                        <p class="mb-1" th:if="${review.updatedAt != null}">
+                                            <span class="info-label">Дата обновления:</span>
+                                            <span class="info-value" th:text="${#temporals.format(review.updatedAt, 'dd.MM.yyyy HH:mm')}">01.01.2023 12:00</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <div class="d-flex justify-content-between">
+                                    <div class="btn-group">
+                                        <a th:href="@{/admin/reviews/{id}/edit(id=${review.id})}" class="btn btn-outline-primary">
+                                            <i class="fas fa-edit me-1"></i> Редактировать
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                                            <i class="fas fa-trash-alt me-1"></i> Удалить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Действия и статусы -->
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title">Действия</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Модерация отзыва -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-3">Модерация</h6>
+                                    <div class="d-grid gap-2">
+                                        <form th:action="@{/admin/reviews/{id}/moderate(id=${review.id})}" method="post">
+                                            <input type="hidden" name="approved" value="true">
+                                            <button type="submit" class="btn btn-success w-100 mb-2">
+                                                <i class="fas fa-check me-1"></i> Одобрить отзыв
+                                            </button>
+                                        </form>
+                                        <form th:action="@{/admin/reviews/{id}/moderate(id=${review.id})}" method="post">
+                                            <input type="hidden" name="approved" value="false">
+                                            <button type="submit" class="btn btn-danger w-100">
+                                                <i class="fas fa-times me-1"></i> Отклонить отзыв
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                
+                                <!-- Статус проверенной покупки -->
+                                <div class="mb-4">
+                                    <h6 class="fw-bold mb-3">Статус покупки</h6>
+                                    <div class="d-grid gap-2">
+                                        <form th:action="@{/admin/reviews/{id}/toggle-verified(id=${review.id})}" method="post">
+                                            <input type="hidden" name="isVerified" th:value="${!review.isVerifiedPurchase}">
+                                            <button type="submit" class="btn" th:classappend="${review.isVerifiedPurchase ? 'btn-outline-success' : 'btn-outline-secondary'}">
+                                                <i class="fas" th:classappend="${review.isVerifiedPurchase ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                                                <span th:text="${review.isVerifiedPurchase ? 'Отменить статус проверенной покупки' : 'Пометить как проверенную покупку'}"></span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Модальное окно удаления -->
+                <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                Вы действительно хотите удалить отзыв #<span th:text="${review.id}"></span>?
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                <form th:action="@{/admin/reviews/{id}/delete(id=${review.id})}" method="post">
+                                    <button type="submit" class="btn btn-danger">Удалить</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

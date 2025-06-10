@@ -209,4 +209,14 @@ public class ReviewService {
         review.setReportCount(review.getReportCount() + 1);
         return reviewRepository.save(review);
     }
+
+    /**
+     * Найти отзыв по ID
+     * @param id ID отзыва
+     * @return отзыв
+     */
+    public Review findReviewById(Long id) {
+        return reviewRepository.findReviewById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Review", "id", id));
+    }
 } 
