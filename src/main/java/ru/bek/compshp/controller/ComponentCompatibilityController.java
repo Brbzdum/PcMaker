@@ -3,6 +3,10 @@ package ru.bek.compshp.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import ru.bek.compshp.dto.CompatibilityRuleDto;
+import ru.bek.compshp.dto.ProductDto;
+import ru.bek.compshp.mapper.CompatibilityRuleMapper;
+import ru.bek.compshp.mapper.ProductMapper;
 import ru.bek.compshp.model.CompatibilityRule;
 import ru.bek.compshp.model.Product;
 import ru.bek.compshp.model.enums.ComponentType;
@@ -10,12 +14,15 @@ import ru.bek.compshp.service.ComponentCompatibilityService;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/compatibility")
 @RequiredArgsConstructor
 public class ComponentCompatibilityController {
     private final ComponentCompatibilityService compatibilityService;
+    private final ProductMapper productMapper;
+    private final CompatibilityRuleMapper ruleMapper;
 
     @PostMapping("/check")
     public ResponseEntity<Boolean> checkCompatibility(
@@ -38,38 +45,48 @@ public class ComponentCompatibilityController {
     }
 
     @GetMapping("/compatible/{sourceId}")
-    public ResponseEntity<List<Product>> getCompatibleComponents(
+    public ResponseEntity<List<ProductDto>> getCompatibleComponents(
             @PathVariable Long sourceId,
             @RequestParam ComponentType targetType) {
         Product source = compatibilityService.getProductById(sourceId);
-        return ResponseEntity.ok(compatibilityService.getCompatibleComponents(source, targetType));
+        List<Product> compatibleProducts = compatibilityService.getCompatibleComponents(source, targetType);
+        List<ProductDto> compatibleProductDtos = compatibleProducts.stream()
+                .map(productMapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(compatibleProductDtos);
     }
 
     @PostMapping("/rules")
-    public ResponseEntity<?> createRule(@RequestBody CompatibilityRule rule) {
+    public ResponseEntity<?> createRule(@RequestBody CompatibilityRuleDto ruleDto) {
+        CompatibilityRule rule = ruleMapper.toEntity(ruleDto);
         List<String> conflicts = compatibilityService.checkRuleConflicts(rule);
         if (!conflicts.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("conflicts", conflicts));
         }
-        return ResponseEntity.ok(compatibilityService.saveCompatibilityRule(rule));
+        CompatibilityRule savedRule = compatibilityService.saveCompatibilityRule(rule);
+        return ResponseEntity.ok(ruleMapper.toDto(savedRule));
     }
 
     @PutMapping("/rules/{id}")
     public ResponseEntity<?> updateRule(
             @PathVariable Long id,
-            @RequestBody CompatibilityRule rule) {
-        rule.setId(id);
+            @RequestBody CompatibilityRuleDto ruleDto) {
+        ruleDto.setId(id);
+        CompatibilityRule rule = ruleMapper.toEntity(ruleDto);
         List<String> conflicts = compatibilityService.checkRuleConflicts(rule);
         if (!conflicts.isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("conflicts", conflicts));
         }
-        return ResponseEntity.ok(compatibilityService.saveCompatibilityRule(rule));
+        CompatibilityRule savedRule = compatibilityService.saveCompatibilityRule(rule);
+        return ResponseEntity.ok(ruleMapper.toDto(savedRule));
     }
 
     @GetMapping("/rules/{componentType}")
-    public ResponseEntity<List<CompatibilityRule>> getRulesForComponentType(
+    public ResponseEntity<List<CompatibilityRuleDto>> getRulesForComponentType(
             @PathVariable ComponentType componentType) {
-        return ResponseEntity.ok(compatibilityService.getRulesForComponentType(componentType));
+        List<CompatibilityRule> rules = compatibilityService.getRulesForComponentType(componentType);
+        List<CompatibilityRuleDto> ruleDtos = ruleMapper.toDtoList(rules);
+        return ResponseEntity.ok(ruleDtos);
     }
 
     @PostMapping("/update-compatibility")

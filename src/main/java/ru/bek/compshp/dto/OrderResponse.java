@@ -1,5 +1,6 @@
 package ru.bek.compshp.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,8 +24,13 @@ public class OrderResponse {
     private Long userId;
     private OrderStatus status;
     private BigDecimal total;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime createdAt;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", timezone = "UTC")
     private LocalDateTime updatedAt;
+    
     private String address;
     private String phone;
     private String fullName;

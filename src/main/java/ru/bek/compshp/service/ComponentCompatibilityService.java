@@ -13,6 +13,8 @@ import ru.bek.compshp.repository.CompatibilityRuleRepository;
 import ru.bek.compshp.repository.ProductRepository;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -77,7 +79,8 @@ public class ComponentCompatibilityService {
             }
             
             // Проверяем соответствие правилу
-            switch (rule.getComparisonOperator()) {
+            CompatibilityRule.Operator operator = CompatibilityRule.Operator.fromString(rule.getComparisonOperator());
+            switch (operator) {
                 case EQUALS:
                     if (!sourceValue.equals(targetValue)) {
                         return false;
@@ -137,6 +140,22 @@ public class ComponentCompatibilityService {
                         return false;
                     }
                     break;
+                case BALANCED:
+                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                        boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
+                        if (!isBalanced) {
+                            return false;
+                        }
+                    }
+                    break;
+                case CONDITION:
+                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                        boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
+                        if (!conditionMet) {
+                            return false;
+                        }
+                    }
+                    break;
                 default:
                     break;
             }
@@ -144,6 +163,256 @@ public class ComponentCompatibilityService {
         
         // Если все правила прошли проверку, компоненты совместимы
         return true;
+    }
+    
+    /**
+     * Оценивает условие баланса между компонентами
+     * @param expression выражение для оценки
+     * @param source первый компонент
+     * @param target второй компонент
+     * @return true, если условие баланса выполнено
+     */
+    private boolean evaluateBalancedCondition(String expression, Product source, Product target) {
+        try {
+            // Пример выражения: "CPU.performance * 0.8 <= GPU.performance AND CPU.performance * 1.2 >= GPU.performance"
+            // Разбиваем на части по AND/OR
+            String[] parts = expression.split("\\s+AND\\s+|\\s+OR\\s+");
+            boolean isAnd = expression.contains(" AND ");
+            
+            boolean result = isAnd; // Для AND начальное значение true, для OR - false
+            
+            for (String part : parts) {
+                boolean partResult = evaluateSimpleExpression(part, source, target);
+                if (isAnd) {
+                    result = result && partResult;
+                } else {
+                    result = result || partResult;
+                }
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("Ошибка при оценке условия баланса: {}", expression, e);
+            return true; // По умолчанию считаем, что условие выполнено
+        }
+    }
+    
+    /**
+     * Оценивает условное выражение
+     * @param expression выражение для оценки
+     * @param source первый компонент
+     * @param target второй компонент
+     * @return true, если условие выполнено
+     */
+    private boolean evaluateCondition(String expression, Product source, Product target) {
+        try {
+            // Пример выражения: "IF CPU.workload_type = \"ML\" THEN GPU.memory >= 12"
+            if (expression.startsWith("IF ")) {
+                // Извлекаем условие и следствие
+                Pattern pattern = Pattern.compile("IF\\s+(.+?)\\s+THEN\\s+(.+)");
+                Matcher matcher = pattern.matcher(expression);
+                
+                if (matcher.find()) {
+                    String condition = matcher.group(1);
+                    String consequence = matcher.group(2);
+                    
+                    // Оцениваем условие
+                    boolean conditionMet = evaluateSimpleExpression(condition, source, target);
+                    
+                    // Если условие выполнено, проверяем следствие
+                    if (conditionMet) {
+                        return evaluateSimpleExpression(consequence, source, target);
+                    } else {
+                        return true; // Если условие не выполнено, правило не применяется
+                    }
+                }
+            }
+            
+            // Если формат не соответствует IF-THEN, оцениваем как простое выражение
+            return evaluateSimpleExpression(expression, source, target);
+        } catch (Exception e) {
+            log.error("Ошибка при оценке условного выражения: {}", expression, e);
+            return true; // По умолчанию считаем, что условие выполнено
+        }
+    }
+    
+    /**
+     * Оценивает простое выражение сравнения
+     * @param expression выражение для оценки
+     * @param source первый компонент
+     * @param target второй компонент
+     * @return true, если выражение истинно
+     */
+    private boolean evaluateSimpleExpression(String expression, Product source, Product target) {
+        try {
+            // Поддерживаемые операторы: =, !=, >, <, >=, <=, IN, CONTAINS
+            Pattern pattern = Pattern.compile("(.+?)\\s*(=|!=|>|<|>=|<=|IN|CONTAINS)\\s*(.+)");
+            Matcher matcher = pattern.matcher(expression);
+            
+            if (matcher.find()) {
+                String leftPart = matcher.group(1).trim();
+                String operator = matcher.group(2).trim();
+                String rightPart = matcher.group(3).trim();
+                
+                // Получаем значения из компонентов
+                Object leftValue = extractValue(leftPart, source, target);
+                Object rightValue = extractValue(rightPart, source, target);
+                
+                // Если не удалось извлечь значения, считаем условие выполненным
+                if (leftValue == null || rightValue == null) {
+                    return true;
+                }
+                
+                // Оцениваем выражение в зависимости от оператора
+                return compareValues(leftValue, operator, rightValue);
+            }
+            
+            return true; // Если не удалось разобрать выражение, считаем условие выполненным
+        } catch (Exception e) {
+            log.error("Ошибка при оценке простого выражения: {}", expression, e);
+            return true; // По умолчанию считаем, что условие выполнено
+        }
+    }
+    
+    /**
+     * Извлекает значение из компонента по указанному пути
+     * @param path путь к значению (например, "CPU.cores" или "12")
+     * @param source первый компонент
+     * @param target второй компонент
+     * @return извлеченное значение или null, если не удалось извлечь
+     */
+    private Object extractValue(String path, Product source, Product target) {
+        try {
+            // Проверяем, является ли значение числом
+            if (path.matches("-?\\d+(\\.\\d+)?")) {
+                return Double.parseDouble(path);
+            }
+            
+            // Проверяем, является ли значение строкой в кавычках
+            if (path.startsWith("\"") && path.endsWith("\"")) {
+                return path.substring(1, path.length() - 1);
+            }
+            
+            // Проверяем, является ли значение списком
+            if (path.startsWith("[") && path.endsWith("]")) {
+                String[] items = path.substring(1, path.length() - 1).split(",\\s*");
+                List<String> list = new ArrayList<>();
+                for (String item : items) {
+                    if (item.startsWith("\"") && item.endsWith("\"")) {
+                        list.add(item.substring(1, item.length() - 1));
+                    } else {
+                        list.add(item);
+                    }
+                }
+                return list;
+            }
+            
+            // Извлекаем значение из компонента
+            if (path.contains(".")) {
+                String[] parts = path.split("\\.");
+                String componentType = parts[0];
+                String property = parts[1];
+                
+                Product component = null;
+                if (componentType.equalsIgnoreCase(source.getComponentType().toString())) {
+                    component = source;
+                } else if (componentType.equalsIgnoreCase(target.getComponentType().toString())) {
+                    component = target;
+                }
+                
+                if (component != null) {
+                    String value = component.getSpec(property);
+                    if (value.isEmpty()) {
+                        return null;
+                    }
+                    
+                    // Пытаемся преобразовать в число, если возможно
+                    try {
+                        return Double.parseDouble(value);
+                    } catch (NumberFormatException e) {
+                        return value;
+                    }
+                }
+            }
+            
+            return null;
+        } catch (Exception e) {
+            log.error("Ошибка при извлечении значения из пути: {}", path, e);
+            return null;
+        }
+    }
+    
+    /**
+     * Сравнивает два значения с использованием указанного оператора
+     * @param left левое значение
+     * @param operator оператор сравнения
+     * @param right правое значение
+     * @return результат сравнения
+     */
+    private boolean compareValues(Object left, String operator, Object right) {
+        try {
+            // Если оба значения числа, выполняем числовое сравнение
+            if (left instanceof Number && right instanceof Number) {
+                double leftNum = ((Number) left).doubleValue();
+                double rightNum = ((Number) right).doubleValue();
+                
+                switch (operator) {
+                    case "=":
+                        return leftNum == rightNum;
+                    case "!=":
+                        return leftNum != rightNum;
+                    case ">":
+                        return leftNum > rightNum;
+                    case "<":
+                        return leftNum < rightNum;
+                    case ">=":
+                        return leftNum >= rightNum;
+                    case "<=":
+                        return leftNum <= rightNum;
+                    default:
+                        return false;
+                }
+            }
+            
+            // Если оба значения строки, выполняем строковое сравнение
+            if (left instanceof String && right instanceof String) {
+                String leftStr = (String) left;
+                String rightStr = (String) right;
+                
+                switch (operator) {
+                    case "=":
+                        return leftStr.equals(rightStr);
+                    case "!=":
+                        return !leftStr.equals(rightStr);
+                    case "CONTAINS":
+                        return leftStr.contains(rightStr);
+                    case "IN":
+                        return rightStr.contains(leftStr);
+                    default:
+                        return false;
+                }
+            }
+            
+            // Если правое значение список, проверяем вхождение левого значения в список
+            if (right instanceof List) {
+                List<?> rightList = (List<?>) right;
+                
+                if (operator.equals("IN")) {
+                    for (Object item : rightList) {
+                        if (item.toString().equals(left.toString())) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+            }
+            
+            // По умолчанию считаем условие невыполненным
+            return false;
+        } catch (Exception e) {
+            log.error("Ошибка при сравнении значений: {} {} {}", left, operator, right, e);
+            return false;
+        }
     }
     
     /**
@@ -179,7 +448,8 @@ public class ComponentCompatibilityService {
             }
             
             // Проверяем соответствие правилу
-            switch (rule.getComparisonOperator()) {
+            CompatibilityRule.Operator operator = CompatibilityRule.Operator.fromString(rule.getComparisonOperator());
+            switch (operator) {
                 case EQUALS:
                     if (!sourceValue.equals(targetValue)) {
                         return String.format("%s должен быть равен %s (текущие значения: %s и %s)",
@@ -244,6 +514,22 @@ public class ComponentCompatibilityService {
                     if (!sourceValue.contains(targetValue)) {
                         return String.format("%s должен содержать %s (текущие значения: %s и %s)",
                                 sourceProperty, targetProperty, sourceValue, targetValue);
+                    }
+                    break;
+                case BALANCED:
+                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                        boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
+                        if (!isBalanced) {
+                            return String.format("Компоненты не сбалансированы по производительности: %s", rule.getDescription());
+                        }
+                    }
+                    break;
+                case CONDITION:
+                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                        boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
+                        if (!conditionMet) {
+                            return String.format("Не выполнено условие: %s", rule.getDescription());
+                        }
                     }
                     break;
                 default:
@@ -360,7 +646,8 @@ public class ComponentCompatibilityService {
                 }
                 
                 boolean isCompatible = true;
-                switch (rule.getComparisonOperator()) {
+                CompatibilityRule.Operator operator = CompatibilityRule.Operator.fromString(rule.getComparisonOperator());
+                switch (operator) {
                     case EQUALS: {
                         isCompatible = sourceValue.equals(targetValue);
                         break;
@@ -413,6 +700,22 @@ public class ComponentCompatibilityService {
                         isCompatible = sourceValue.contains(targetValue);
                         break;
                     }
+                    case BALANCED:
+                        if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                            boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
+                            if (!isBalanced) {
+                                isCompatible = false;
+                            }
+                        }
+                        break;
+                    case CONDITION:
+                        if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                            boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
+                            if (!conditionMet) {
+                                isCompatible = false;
+                            }
+                        }
+                        break;
                     default: {
                         break;
                     }
@@ -484,7 +787,10 @@ public class ComponentCompatibilityService {
      * @param op2 второй оператор
      * @return true, если операторы конфликтуют
      */
-    private boolean isConflictingOperator(CompatibilityRule.Operator op1, CompatibilityRule.Operator op2) {
+    private boolean isConflictingOperator(String op1Str, String op2Str) {
+        CompatibilityRule.Operator op1 = CompatibilityRule.Operator.fromString(op1Str);
+        CompatibilityRule.Operator op2 = CompatibilityRule.Operator.fromString(op2Str);
+        
         // Простая проверка на конфликт - если операторы одинаковые или противоположные
         if (op1 == op2) {
             return true;
@@ -554,7 +860,7 @@ public class ComponentCompatibilityService {
             rule.setTargetType(targetType);
             rule.setSourceProperty("compatibility");
             rule.setTargetProperty("compatibility");
-            rule.setComparisonOperator(CompatibilityRule.Operator.EQUALS);
+            rule.setComparisonOperator("EQUALS");
             rule.setDescription("Совместимость между " + source.getTitle() + " и " + target.getTitle());
             
             // Проверяем наличие конфликтов

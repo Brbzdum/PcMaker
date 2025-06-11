@@ -1,7 +1,9 @@
 package ru.bek.compshp.config;
 
 import lombok.RequiredArgsConstructor;
+import org.flywaydb.core.Flyway;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import ru.bek.compshp.model.Category;
@@ -24,6 +26,7 @@ import java.util.Set;
  */
 @Component
 @RequiredArgsConstructor
+@DependsOn("flyway") // Гарантирует, что DataInitializer запустится после выполнения Flyway миграций
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -34,36 +37,35 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Инициализируем все роли
-        initRoles();
+        // Проверяем, существуют ли роли в базе данных
+        boolean hasRoles = roleRepository.count() > 0;
         
         // Создаем администратора если его еще нет
         createAdminIfNotExists();
         
         // Инициализируем базовые категории и производителей
         initBasicData();
+        
+        // Выводим информацию о работе инициализатора
+        if (!hasRoles) {
+            System.out.println("DataInitializer: Роли отсутствовали, но должны были быть созданы в миграции.");
+        } else {
+            System.out.println("DataInitializer: Роли существуют в базе данных.");
+        }
+        
+        System.out.println("DataInitializer: Инициализация данных завершена (после выполнения всех миграций)");
     }
     
-    /**
-     * Инициализирует все роли в системе
-     */
-    private void initRoles() {
-        for (RoleName roleName : RoleName.values()) {
-            roleRepository.findByName(roleName)
-                .orElseGet(() -> {
-                    Role newRole = new Role();
-                    newRole.setName(roleName);
-                    Role savedRole = roleRepository.save(newRole);
-                    System.out.println("Создана роль: " + roleName);
-                    return savedRole;
-                });
-        }
-    }
-
     /**
      * Создает администратора в базе данных, если его нет
      */
     private void createAdminIfNotExists() {
+        // Проверяем, есть ли роли в базе данных
+        if (roleRepository.count() == 0) {
+            System.out.println("ОШИБКА: Роли отсутствуют в базе данных! Проверьте выполнение миграций.");
+            return;
+        }
+        
         // Получаем роль ADMIN из базы
         Role adminRole = roleRepository.findByName(RoleName.ROLE_ADMIN)
                 .orElseThrow(() -> new RuntimeException("Роль ROLE_ADMIN не найдена"));
