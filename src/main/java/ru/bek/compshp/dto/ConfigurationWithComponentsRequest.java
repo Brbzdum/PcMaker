@@ -25,6 +25,8 @@ public class ConfigurationWithComponentsRequest {
     
     private String description;
     
+    private String category;
+    
     @NotNull(message = "Список компонентов не может быть пустым")
     private List<Long> componentIds;
 } 

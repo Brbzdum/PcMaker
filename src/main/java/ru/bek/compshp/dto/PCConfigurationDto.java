@@ -32,6 +32,9 @@ public class PCConfigurationDto {
     @Size(max = 1000, message = "Описание не должно превышать 1000 символов")
     private String description;
     
+    @Size(max = 50, message = "Категория не должна превышать 50 символов")
+    private String category;
+    
     @NotNull(message = "Процессор обязателен")
     private Long cpuId;
     

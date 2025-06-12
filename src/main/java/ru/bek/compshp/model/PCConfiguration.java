@@ -43,6 +43,12 @@ public class PCConfiguration {
     @Column(name = "is_compatible")
     private Boolean isCompatible;
 
+    @Column(name = "is_public")
+    private Boolean isPublic = false;
+
+    @Column(name = "category")
+    private String category;
+
     // Поле для хранения общей производительности
     @Builder.Default
     @Column(name = "total_performance")

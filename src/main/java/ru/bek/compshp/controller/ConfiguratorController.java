@@ -41,8 +41,9 @@ public class ConfiguratorController {
     public ResponseEntity<PCConfigurationDto> createConfiguration(
             @RequestParam @NotNull Long userId,
             @RequestParam @NotBlank String name,
-            @RequestParam(required = false) String description) {
-        PCConfiguration config = configuratorService.createConfiguration(userId, name, description);
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String category) {
+        PCConfiguration config = configuratorService.createConfiguration(userId, name, description, category);
         return new ResponseEntity<>(mapToConfigurationDto(config), HttpStatus.CREATED);
     }
 
@@ -69,8 +70,9 @@ public class ConfiguratorController {
     public ResponseEntity<PCConfigurationDto> updateConfiguration(
             @PathVariable @NotNull Long configId,
             @RequestParam @NotBlank String name,
-            @RequestParam(required = false) String description) {
-        PCConfiguration config = configuratorService.updateConfiguration(configId, name, description);
+            @RequestParam(required = false) String description,
+            @RequestParam(required = false) String category) {
+        PCConfiguration config = configuratorService.updateConfiguration(configId, name, description, category);
         return ResponseEntity.ok(mapToConfigurationDto(config));
     }
 
@@ -243,9 +245,27 @@ public class ConfiguratorController {
             request.getUserId(),
             request.getName(),
             request.getDescription(),
+            request.getCategory(),
             request.getComponentIds()
         );
         return new ResponseEntity<>(mapToConfigurationDto(config), HttpStatus.CREATED);
+    }
+
+    @GetMapping("/public")
+    @Operation(summary = "Получить публичные конфигурации")
+    public ResponseEntity<List<PCConfigurationDto>> getPublicConfigurations() {
+        List<PCConfiguration> configs = configuratorService.getPublicConfigurations();
+        List<PCConfigurationDto> response = configs.stream()
+                .map(this::mapToConfigurationDto)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{configId}/toggle-publication")
+    @Operation(summary = "Переключить статус публикации конфигурации")
+    public ResponseEntity<PCConfigurationDto> toggleConfigurationPublication(@PathVariable @NotNull Long configId) {
+        PCConfiguration config = configuratorService.toggleConfigurationPublication(configId);
+        return ResponseEntity.ok(mapToConfigurationDto(config));
     }
 
     private PCConfigurationDto mapToConfigurationDto(PCConfiguration config) {
@@ -254,9 +274,11 @@ public class ConfiguratorController {
                 .userId(config.getUser().getId())
                 .name(config.getName())
                 .description(config.getDescription())
+                .category(config.getCategory())
                 .totalPrice(config.getTotalPrice())
                 .totalPerformance(config.getTotalPerformance())
                 .isCompatible(config.getIsCompatible())
+                .isPublic(config.getIsPublic())
                 .createdAt(config.getCreatedAt())
                 .updatedAt(config.getUpdatedAt())
                 .build();
@@ -271,6 +293,8 @@ public class ConfiguratorController {
                             .productName(product.getTitle())
                             .type(product.getComponentType())
                             .price(product.getPrice())
+                            .manufacturerName(product.getManufacturer() != null ? product.getManufacturer().getName() : "")
+                            .manufacturerId(product.getManufacturer() != null ? product.getManufacturer().getId() : null)
                             .build();
                     
                     // Добавляем спецификации продукта

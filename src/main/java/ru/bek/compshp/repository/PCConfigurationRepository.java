@@ -104,4 +104,7 @@ public interface PCConfigurationRepository extends JpaRepository<PCConfiguration
         )
     """)
     List<PCConfiguration> findIncompleteConfigurations(@Param("componentCount") int componentCount);
+
+    // Поиск публичных конфигураций
+    List<PCConfiguration> findByIsPublicTrue();
 } 

@@ -23,6 +23,8 @@ public class ConfigComponentDto {
     private String productName;
     private ComponentType type;
     private BigDecimal price;
+    private String manufacturerName;
+    private Long manufacturerId;
     
     @Builder.Default
     private Map<String, String> specs = new HashMap<>();

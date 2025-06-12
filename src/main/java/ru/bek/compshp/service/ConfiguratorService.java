@@ -73,10 +73,11 @@ public class ConfiguratorService {
      * @param userId ID пользователя
      * @param name название конфигурации
      * @param description описание конфигурации
+     * @param category категория конфигурации
      * @return созданная конфигурация
      */
     @Transactional
-    public PCConfiguration createConfiguration(Long userId, String name, String description) {
+    public PCConfiguration createConfiguration(Long userId, String name, String description, String category) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
@@ -84,6 +85,7 @@ public class ConfiguratorService {
         config.setUser(user);
         config.setName(name);
         config.setDescription(description);
+        config.setCategory(category);
         config.setTotalPrice(BigDecimal.ZERO);
         config.setTotalPerformance(0.0);
         config.setIsCompatible(true);
@@ -96,11 +98,12 @@ public class ConfiguratorService {
      * @param userId ID пользователя
      * @param name название конфигурации
      * @param description описание конфигурации
+     * @param category категория конфигурации
      * @param componentIds список ID компонентов
      * @return созданная конфигурация
      */
     @Transactional
-    public PCConfiguration createConfigurationWithComponents(Long userId, String name, String description, List<Long> componentIds) {
+    public PCConfiguration createConfigurationWithComponents(Long userId, String name, String description, String category, List<Long> componentIds) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
         
@@ -109,6 +112,7 @@ public class ConfiguratorService {
         config.setUser(user);
         config.setName(name);
         config.setDescription(description);
+        config.setCategory(category);
         config.setTotalPrice(BigDecimal.ZERO);
         config.setTotalPerformance(0.0);
         config.setIsCompatible(true);
@@ -160,15 +164,17 @@ public class ConfiguratorService {
      * @param configId ID конфигурации
      * @param name новое название
      * @param description новое описание
+     * @param category новая категория
      * @return обновленная конфигурация
      */
     @Transactional
-    public PCConfiguration updateConfiguration(Long configId, String name, String description) {
+    public PCConfiguration updateConfiguration(Long configId, String name, String description, String category) {
         PCConfiguration config = pcConfigurationRepository.findById(configId)
             .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
         
         config.setName(name);
         config.setDescription(description);
+        config.setCategory(category);
         
         return pcConfigurationRepository.save(config);
     }
@@ -731,5 +737,33 @@ public class ConfiguratorService {
         }
         
         return result;
+    }
+
+    /**
+     * Получает список публичных конфигураций
+     * @return список публичных конфигураций
+     */
+    public List<PCConfiguration> getPublicConfigurations() {
+        return pcConfigurationRepository.findByIsPublicTrue();
+    }
+
+    /**
+     * Переключает статус публикации конфигурации
+     * @param configId ID конфигурации
+     * @return обновленная конфигурация
+     */
+    @Transactional
+    public PCConfiguration toggleConfigurationPublication(Long configId) {
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        
+        // Инвертируем текущее значение isPublic
+        boolean currentPublicStatus = config.getIsPublic() != null ? config.getIsPublic() : false;
+        config.setIsPublic(!currentPublicStatus);
+        
+        log.info("Toggling publication status for configuration {}: {} -> {}", 
+            configId, currentPublicStatus, !currentPublicStatus);
+            
+        return pcConfigurationRepository.save(config);
     }
 } 
