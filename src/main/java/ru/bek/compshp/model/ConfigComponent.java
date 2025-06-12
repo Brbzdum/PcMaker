@@ -18,12 +18,12 @@ public class ConfigComponent {
     @EmbeddedId
     private ConfigComponentId id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("configId")
     @JoinColumn(name = "config_id")
     private PCConfiguration configuration;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @MapsId("productId")
     @JoinColumn(name = "product_id")
     private Product product;

@@ -49,7 +49,7 @@ public class PCConfiguration {
     private Double totalPerformance = 0.0;
 
     @Builder.Default
-    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "configuration", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @ToString.Exclude
     private Set<ConfigComponent> components = new HashSet<>();
 

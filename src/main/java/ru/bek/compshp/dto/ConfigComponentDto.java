@@ -21,4 +21,7 @@ public class ConfigComponentDto {
     private String productName;
     private ComponentType type;
     private BigDecimal price;
+    
+    @Builder.Default
+    private Integer quantity = 1;
 } 

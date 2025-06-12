@@ -48,121 +48,121 @@ public class ComponentCompatibilityService {
      * @return true, если компоненты совместимы
      */
     public boolean checkComponentsCompatibility(Product source, Product target) {
+        // Если один из компонентов - периферийное устройство (component_type == null),
+        // считаем, что оно совместимо со всеми компонентами
+        if (source.getComponentType() == null || target.getComponentType() == null) {
+            return true;
+        }
+        
         ComponentType sourceType = source.getComponentType();
         ComponentType targetType = target.getComponentType();
         
-        // Если компоненты одного типа, они не могут быть совместимы для одной сборки
+        // Если компоненты одного типа, проверяем, поддерживают ли они множественные экземпляры
         if (sourceType == targetType) {
-            return false;
+            return sourceType.allowsMultiple();
         }
         
         // Ищем правила совместимости для этих типов компонентов
-        List<CompatibilityRule> rules = compatibilityRuleRepository
-                .findBySourceTypeAndTargetType(sourceType, targetType);
+        List<CompatibilityRule> rules = compatibilityRuleRepository.findBySourceTypeAndTargetType(sourceType, targetType);
         
-        // Если правил нет, считаем, что компоненты совместимы
+        // Если правил нет, проверяем в обратном порядке (target -> source)
+        if (rules.isEmpty()) {
+            rules = compatibilityRuleRepository.findBySourceTypeAndTargetType(targetType, sourceType);
+        }
+        
+        // Если правил совместимости нет вообще, считаем компоненты совместимыми
         if (rules.isEmpty()) {
             return true;
         }
         
         // Проверяем каждое правило
         for (CompatibilityRule rule : rules) {
-            String sourceProperty = rule.getSourceProperty();
-            String targetProperty = rule.getTargetProperty();
+            // Определяем, какой компонент является источником, а какой целью
+            Product sourceProduct = (rule.getSourceType() == sourceType) ? source : target;
+            Product targetProduct = (rule.getSourceType() == sourceType) ? target : source;
             
-            String sourceValue = source.getSpec(sourceProperty);
-            String targetValue = target.getSpec(targetProperty);
-            
-            // Если у одного из компонентов нет нужной характеристики, пропускаем правило
-            if (sourceValue.isEmpty() || targetValue.isEmpty()) {
-                continue;
-            }
-            
-            // Проверяем соответствие правилу
-            CompatibilityRule.Operator operator = CompatibilityRule.Operator.fromString(rule.getComparisonOperator());
-            switch (operator) {
-                case EQUALS:
-                    if (!sourceValue.equals(targetValue)) {
-                        return false;
-                    }
-                    break;
-                case NOT_EQUALS:
-                    if (sourceValue.equals(targetValue)) {
-                        return false;
-                    }
-                    break;
-                case GREATER_THAN:
-                    try {
-                        double sourceNum = Double.parseDouble(sourceValue);
-                        double targetNum = Double.parseDouble(targetValue);
-                        if (sourceNum <= targetNum) {
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Если не числа, пропускаем правило
-                    }
-                    break;
-                case LESS_THAN:
-                    try {
-                        double sourceNum = Double.parseDouble(sourceValue);
-                        double targetNum = Double.parseDouble(targetValue);
-                        if (sourceNum >= targetNum) {
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Если не числа, пропускаем правило
-                    }
-                    break;
-                case LESS_THAN_EQUALS:
-                    try {
-                        double sourceNum = Double.parseDouble(sourceValue);
-                        double targetNum = Double.parseDouble(targetValue);
-                        if (sourceNum > targetNum) {
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Если не числа, пропускаем правило
-                    }
-                    break;
-                case GREATER_THAN_EQUALS:
-                    try {
-                        double sourceNum = Double.parseDouble(sourceValue);
-                        double targetNum = Double.parseDouble(targetValue);
-                        if (sourceNum < targetNum) {
-                            return false;
-                        }
-                    } catch (NumberFormatException e) {
-                        // Если не числа, пропускаем правило
-                    }
-                    break;
-                case CONTAINS:
-                    if (!sourceValue.contains(targetValue)) {
-                        return false;
-                    }
-                    break;
-                case BALANCED:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
-                        if (!isBalanced) {
-                            return false;
-                        }
-                    }
-                    break;
-                case CONDITION:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
-                        if (!conditionMet) {
-                            return false;
-                        }
-                    }
-                    break;
-                default:
-                    break;
+            // Проверяем совместимость по правилу
+            if (!isCompatibleByRule(sourceProduct, targetProduct, rule)) {
+                return false;
             }
         }
         
-        // Если все правила прошли проверку, компоненты совместимы
         return true;
+    }
+    
+    /**
+     * Проверяет совместимость компонентов по конкретному правилу
+     * @param sourceProduct исходный компонент
+     * @param targetProduct целевой компонент
+     * @param rule правило совместимости
+     * @return true, если компоненты совместимы по данному правилу
+     */
+    private boolean isCompatibleByRule(Product sourceProduct, Product targetProduct, CompatibilityRule rule) {
+        String sourceProperty = rule.getSourceProperty();
+        String targetProperty = rule.getTargetProperty();
+        
+        String sourceValue = sourceProduct.getSpec(sourceProperty);
+        String targetValue = targetProduct.getSpec(targetProperty);
+        
+        // Если у одного из компонентов нет нужной характеристики, пропускаем правило
+        if (sourceValue.isEmpty() || targetValue.isEmpty()) {
+            return true; // Считаем совместимыми, если нет данных для проверки
+        }
+        
+        // Проверяем соответствие правилу
+        CompatibilityRule.Operator operator = CompatibilityRule.Operator.fromString(rule.getComparisonOperator());
+        switch (operator) {
+            case EQUALS:
+                return sourceValue.equals(targetValue);
+            case NOT_EQUALS:
+                return !sourceValue.equals(targetValue);
+            case GREATER_THAN:
+                try {
+                    double sourceNum = Double.parseDouble(sourceValue);
+                    double targetNum = Double.parseDouble(targetValue);
+                    return sourceNum > targetNum;
+                } catch (NumberFormatException e) {
+                    return true; // Если не числа, пропускаем правило
+                }
+            case LESS_THAN:
+                try {
+                    double sourceNum = Double.parseDouble(sourceValue);
+                    double targetNum = Double.parseDouble(targetValue);
+                    return sourceNum < targetNum;
+                } catch (NumberFormatException e) {
+                    return true; // Если не числа, пропускаем правило
+                }
+            case LESS_THAN_EQUALS:
+                try {
+                    double sourceNum = Double.parseDouble(sourceValue);
+                    double targetNum = Double.parseDouble(targetValue);
+                    return sourceNum <= targetNum;
+                } catch (NumberFormatException e) {
+                    return true; // Если не числа, пропускаем правило
+                }
+            case GREATER_THAN_EQUALS:
+                try {
+                    double sourceNum = Double.parseDouble(sourceValue);
+                    double targetNum = Double.parseDouble(targetValue);
+                    return sourceNum >= targetNum;
+                } catch (NumberFormatException e) {
+                    return true; // Если не числа, пропускаем правило
+                }
+            case CONTAINS:
+                return sourceValue.contains(targetValue);
+            case BALANCED:
+                if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                    return evaluateBalancedCondition(rule.getValueModifier(), sourceProduct, targetProduct);
+                }
+                return true;
+            case CONDITION:
+                if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
+                    return evaluateCondition(rule.getValueModifier(), sourceProduct, targetProduct);
+                }
+                return true;
+            default:
+                return true;
+        }
     }
     
     /**
@@ -591,6 +591,12 @@ public class ComponentCompatibilityService {
             return true;
         }
         
+        // Если это периферийное устройство (component_type == null),
+        // считаем, что оно совместимо со всеми компонентами
+        if (product.getComponentType() == null) {
+            return true;
+        }
+        
         // Преобразуем ConfigComponent в Product
         List<Product> products = existingComponents.stream()
                 .map(ConfigComponent::getProduct)
@@ -612,12 +618,24 @@ public class ComponentCompatibilityService {
             return result;
         }
         
+        // Если это периферийное устройство, оно всегда совместимо
+        if (product.getComponentType() == null) {
+            return result;
+        }
+        
         for (ConfigComponent component : existingComponents) {
             Product existingProduct = component.getProduct();
             
-            // Если компоненты одного типа
+            // Если существующий компонент - периферия, пропускаем проверку
+            if (existingProduct.getComponentType() == null) {
+                continue;
+            }
+            
+            // Если компоненты одного типа, проверяем, поддерживает ли тип множественные экземпляры
             if (product.getComponentType() == existingProduct.getComponentType()) {
-                result.put(existingProduct, "Компоненты одного типа не могут быть добавлены в одну конфигурацию");
+                if (!product.getComponentType().allowsMultiple()) {
+                    result.put(existingProduct, "Компоненты данного типа не могут быть добавлены в конфигурацию более одного раза");
+                }
                 continue;
             }
             

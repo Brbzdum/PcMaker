@@ -12,6 +12,7 @@ import ru.bek.compshp.model.Product;
 import ru.bek.compshp.model.enums.ComponentType;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 // TODO: Репозиторий для конфигураций ПК
 @Repository
@@ -41,14 +42,26 @@ public interface PCConfigurationRepository extends JpaRepository<PCConfiguration
 
     List<PCConfiguration> findByUserId(Long userId);
     
+    @Query("SELECT DISTINCT pc FROM PCConfiguration pc LEFT JOIN FETCH pc.components c LEFT JOIN FETCH c.product WHERE pc.user.id = :userId")
+    List<PCConfiguration> findByUserIdWithComponents(@Param("userId") Long userId);
+    
+    @Query("SELECT DISTINCT pc FROM PCConfiguration pc LEFT JOIN FETCH pc.components c LEFT JOIN FETCH c.product")
+    List<PCConfiguration> findAllWithComponents();
+    
+    @Query("SELECT DISTINCT pc FROM PCConfiguration pc LEFT JOIN FETCH pc.components c LEFT JOIN FETCH c.product WHERE pc.id = :id")
+    Optional<PCConfiguration> findByIdWithComponents(@Param("id") Long id);
+    
     @Query("SELECT pc FROM PCConfiguration pc WHERE pc.totalPrice BETWEEN :minPrice AND :maxPrice")
-    List<PCConfiguration> findByPriceRange(
-        @Param("minPrice") BigDecimal minPrice,
-        @Param("maxPrice") BigDecimal maxPrice
-    );
+    List<PCConfiguration> findByPriceRange(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
     
     @Query("SELECT pc FROM PCConfiguration pc WHERE pc.totalPerformance >= :minPerformance")
     List<PCConfiguration> findByMinPerformance(@Param("minPerformance") Double minPerformance);
+    
+    @Query("SELECT pc FROM PCConfiguration pc WHERE SIZE(pc.components) = :componentCount")
+    List<PCConfiguration> findCompleteConfigurations(@Param("componentCount") int componentCount);
+    
+    @Query("SELECT pc FROM PCConfiguration pc WHERE SIZE(pc.components) < :componentCount")
+    List<PCConfiguration> findIncompleteConfigurations(@Param("componentCount") int componentCount);
     
     @Query("""
         SELECT p FROM Product p 
@@ -82,26 +95,4 @@ public interface PCConfigurationRepository extends JpaRepository<PCConfiguration
         @Param("product1Id") Long product1Id,
         @Param("product2Id") Long product2Id
     );
-    
-    @Query("""
-        SELECT pc FROM PCConfiguration pc 
-        WHERE pc.id IN (
-            SELECT c.configuration.id 
-            FROM ConfigComponent c 
-            GROUP BY c.configuration.id 
-            HAVING COUNT(c) = :componentCount
-        )
-    """)
-    List<PCConfiguration> findCompleteConfigurations(@Param("componentCount") int componentCount);
-    
-    @Query("""
-        SELECT pc FROM PCConfiguration pc 
-        WHERE pc.id IN (
-            SELECT c.configuration.id 
-            FROM ConfigComponent c 
-            GROUP BY c.configuration.id 
-            HAVING COUNT(c) < :componentCount
-        )
-    """)
-    List<PCConfiguration> findIncompleteConfigurations(@Param("componentCount") int componentCount);
 } 

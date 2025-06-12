@@ -12,6 +12,7 @@ import ru.bek.compshp.model.enums.ComponentType;
 import ru.bek.compshp.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Сервис для работы с конфигуратором ПК
@@ -37,13 +38,14 @@ public class ConfiguratorService {
     }
     
     /**
-     * Получает конфигурацию по ID
+     * Получает конфигурацию по ID с загруженными компонентами
      * @param configId ID конфигурации
-     * @return конфигурация
+     * @return конфигурация с компонентами
      * @throws ResourceNotFoundException если конфигурация не найдена
      */
-    public PCConfiguration getConfiguration(Long configId) {
-        return pcConfigurationRepository.findById(configId)
+    @Transactional(readOnly = true)
+    public PCConfiguration getConfigurationWithComponents(Long configId) {
+        return pcConfigurationRepository.findByIdWithComponents(configId)
             .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
     }
 
@@ -131,50 +133,50 @@ public class ConfiguratorService {
         Product product = productRepository.findById(productId)
             .orElseThrow(() -> new ResourceNotFoundException("Product", "id", productId));
 
-        // Проверяем, нет ли уже компонента такого типа
-        if (configComponentRepository.existsByIdConfigIdAndProduct_ComponentType(
-            configId, product.getComponentType())) {
-            throw new IllegalStateException("Component of this type already exists in configuration");
-        }
-
-        // Проверяем совместимость с существующими компонентами
-        List<ConfigComponent> existingComponents = configComponentRepository.findByConfigId(configId);
-        if (!compatibilityService.isCompatibleWithConfiguration(product, existingComponents)) {
-            Map<Product, String> incompatibilityDetails = 
-                compatibilityService.getIncompatibilityDetails(product, existingComponents);
-            
-            if (!incompatibilityDetails.isEmpty()) {
-                String errorMessage = "Компонент несовместим с существующей конфигурацией: " + 
-                    incompatibilityDetails.values().iterator().next();
-                throw new IllegalStateException(errorMessage);
-            } else {
-                throw new IllegalStateException("Компонент несовместим с существующей конфигурацией");
+        // Проверяем, является ли продукт периферийным устройством (component_type == null)
+        boolean isPeripheral = product.getComponentType() == null;
+        
+        // Если это компонент ПК (не периферия), проверяем, можно ли добавить несколько таких компонентов
+        if (!isPeripheral) {
+            // Проверяем, нет ли уже компонента такого типа, который не поддерживает множественные экземпляры
+            if (!product.getComponentType().allowsMultiple() && 
+                configComponentRepository.existsByIdConfigIdAndProduct_ComponentType(configId, product.getComponentType())) {
+                throw new IllegalStateException("Компонент такого типа уже существует в конфигурации");
             }
-        }
-
-        ConfigComponent component = new ConfigComponent();
-        ConfigComponentId componentId = new ConfigComponentId(configId, productId);
-        component.setId(componentId);
-        component.setConfiguration(config);
-        component.setProduct(product);
-        configComponentRepository.save(component);
-
-        // Обновляем общую стоимость и производительность
-        config.setTotalPrice(config.getTotalPrice().add(product.getPrice()));
-        // Обновляем производительность если у продукта есть такая характеристика
-        try {
-            Double currentPerformance = config.getTotalPerformance();
-            String performanceStr = product.getSpec("performance");
-            if (performanceStr != null && !performanceStr.isEmpty()) {
-                double productPerformance = Double.parseDouble(performanceStr);
-                config.setTotalPerformance(currentPerformance + productPerformance);
-            }
-        } catch (Exception e) {
-            // Если характеристики нет или она не числовая, игнорируем
         }
         
-        // Проверяем совместимость всей конфигурации
-        config.setIsCompatible(validateConfiguration(config));
+        // Проверяем совместимость с существующими компонентами
+        List<ConfigComponent> existingComponents = configComponentRepository.findByConfigId(configId);
+        Map<Product, String> incompatibilities = compatibilityService.getIncompatibilityDetails(product, existingComponents);
+        
+        if (!incompatibilities.isEmpty()) {
+            String incompatibilityDetails = incompatibilities.entrySet().stream()
+                .map(entry -> "Несовместим с " + entry.getKey().getTitle() + ": " + entry.getValue())
+                .collect(Collectors.joining("; "));
+            throw new IllegalStateException("Компонент несовместим с текущей конфигурацией: " + incompatibilityDetails);
+        }
+        
+        // Проверяем, есть ли уже такой же продукт в конфигурации
+        ConfigComponentId componentId = new ConfigComponentId(configId, productId);
+        Optional<ConfigComponent> existingComponent = configComponentRepository.findById(componentId);
+        
+        if (existingComponent.isPresent()) {
+            // Если компонент уже есть, увеличиваем его количество
+            ConfigComponent component = existingComponent.get();
+            component.setQuantity(component.getQuantity() + 1);
+            configComponentRepository.save(component);
+        } else {
+            // Иначе создаем новый компонент
+            ConfigComponent component = new ConfigComponent();
+            component.setId(componentId);
+            component.setConfiguration(config);
+            component.setProduct(product);
+            component.setQuantity(1);
+            configComponentRepository.save(component);
+        }
+        
+        // Обновляем общую стоимость конфигурации и другие показатели
+        updateTotals(config);
         
         return pcConfigurationRepository.save(config);
     }
@@ -194,6 +196,21 @@ public class ConfiguratorService {
         ConfigComponent component = configComponentRepository.findById(componentId)
             .orElseThrow(() -> new ResourceNotFoundException("Component", "id", componentId));
 
+        // Если количество больше 1, уменьшаем количество
+        if (component.getQuantity() > 1) {
+            component.setQuantity(component.getQuantity() - 1);
+            configComponentRepository.save(component);
+            
+            // Обновляем общую стоимость
+            config.setTotalPrice(config.getTotalPrice().subtract(component.getProduct().getPrice()));
+            
+            // Проверяем совместимость оставшейся конфигурации
+            config.setIsCompatible(validateConfiguration(config));
+            
+            return pcConfigurationRepository.save(config);
+        }
+
+        // Если количество 1, удаляем компонент
         // Обновляем общую стоимость и производительность
         config.setTotalPrice(config.getTotalPrice().subtract(component.getProduct().getPrice()));
         
@@ -254,11 +271,34 @@ public class ConfiguratorService {
             return issues; // Пустой список - нет проблем
         }
 
+        // Группируем компоненты по типу для проверки на дублирование
+        Map<ComponentType, List<ConfigComponent>> componentsByType = components.stream()
+            .collect(Collectors.groupingBy(c -> c.getProduct().getComponentType()));
+            
+        // Проверяем, что компоненты, не поддерживающие множественные экземпляры, 
+        // представлены только в одном экземпляре
+        for (Map.Entry<ComponentType, List<ConfigComponent>> entry : componentsByType.entrySet()) {
+            ComponentType type = entry.getKey();
+            List<ConfigComponent> componentsOfType = entry.getValue();
+            
+            if (!type.allowsMultiple() && componentsOfType.size() > 1) {
+                issues.add(String.format("Компонент типа %s не может быть добавлен в нескольких экземплярах", 
+                    type.getDisplayName()));
+            }
+        }
+
         // Проверяем каждую пару компонентов
         for (int i = 0; i < components.size(); i++) {
             for (int j = i + 1; j < components.size(); j++) {
                 Product product1 = components.get(i).getProduct();
                 Product product2 = components.get(j).getProduct();
+                
+                // Если компоненты одного типа и тип поддерживает множественные экземпляры,
+                // пропускаем проверку совместимости между ними
+                if (product1.getComponentType() == product2.getComponentType() && 
+                    product1.getComponentType().allowsMultiple()) {
+                    continue;
+                }
                 
                 String reason = compatibilityService.getIncompatibilityReason(product1, product2);
                 if (reason != null) {
@@ -365,13 +405,36 @@ public class ConfiguratorService {
         int totalPower = 0;
         
         for (ConfigComponent component : components) {
-            try {
-                String powerSpec = component.getProduct().getSpec("power");
-                if (powerSpec != null) {
-                    totalPower += Integer.parseInt(powerSpec);
+            Product product = component.getProduct();
+            String powerStr = "";
+            
+            // В зависимости от типа компонента, получаем мощность из разных полей
+            switch (product.getComponentType()) {
+                case CPU:
+                    powerStr = product.getSpec("tdp");
+                    break;
+                case GPU:
+                    powerStr = product.getSpec("power");
+                    break;
+                case RAM:
+                    powerStr = product.getSpec("power_consumption");
+                    break;
+                case STORAGE:
+                    powerStr = product.getSpec("power_consumption");
+                    break;
+                default:
+                    powerStr = product.getSpec("power_consumption");
+                    break;
+            }
+            
+            if (powerStr != null && !powerStr.isEmpty()) {
+                try {
+                    int power = Integer.parseInt(powerStr);
+                    // Умножаем мощность на количество компонентов
+                    totalPower += power * component.getQuantity();
+                } catch (NumberFormatException e) {
+                    // Если не удалось преобразовать, игнорируем
                 }
-            } catch (Exception e) {
-                // Игнорируем компоненты без спецификации мощности
             }
         }
         
@@ -379,56 +442,162 @@ public class ConfiguratorService {
     }
     
     /**
-     * Рассчитывает общую производительность конфигурации
+     * Рассчитывает оценку производительности конфигурации
      * @param configId ID конфигурации
-     * @return значение производительности
+     * @return оценка производительности
      */
     public Double calculatePerformanceScore(Long configId) {
-        PCConfiguration config = pcConfigurationRepository.findById(configId)
-            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        List<ConfigComponent> components = configComponentRepository.findByConfigId(configId);
+        double totalScore = 0.0;
         
-        return config.getTotalPerformance();
+        for (ConfigComponent component : components) {
+            Product product = component.getProduct();
+            String performanceStr = product.getSpec("performance");
+            
+            if (performanceStr != null && !performanceStr.isEmpty()) {
+                try {
+                    double performance = Double.parseDouble(performanceStr);
+                    // Для некоторых компонентов, таких как RAM и STORAGE, производительность может зависеть от количества
+                    if (product.getComponentType() == ComponentType.RAM || 
+                        product.getComponentType() == ComponentType.STORAGE) {
+                        totalScore += performance * component.getQuantity();
+                    } else {
+                        // Для других компонентов берем максимальную производительность
+                        totalScore += performance;
+                    }
+                } catch (NumberFormatException e) {
+                    // Если не удалось преобразовать, игнорируем
+                }
+            }
+        }
+        
+        return totalScore;
     }
     
     /**
      * Получает спецификации конфигурации
      * @param configId ID конфигурации
-     * @return карта со спецификациями
+     * @return карта с характеристиками конфигурации
      */
     public Map<String, Object> getConfigurationSpecs(Long configId) {
         PCConfiguration config = pcConfigurationRepository.findById(configId)
             .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
             
-        Map<String, Object> specs = new HashMap<>();
         List<ConfigComponent> components = configComponentRepository.findByConfigId(configId);
+        Map<String, Object> specs = new HashMap<>();
         
-        // Общая информация
-        specs.put("id", config.getId());
+        // Общие характеристики
         specs.put("name", config.getName());
         specs.put("description", config.getDescription());
         specs.put("totalPrice", config.getTotalPrice());
-        specs.put("performanceScore", config.getTotalPerformance());
         specs.put("isCompatible", config.getIsCompatible());
+        specs.put("totalPerformance", calculatePerformanceScore(configId));
+        specs.put("powerRequirement", calculatePowerRequirement(configId));
         
-        // Информация по компонентам
-        Map<ComponentType, Map<String, Object>> componentsMap = new HashMap<>();
+        // Группируем компоненты по типу
+        Map<ComponentType, List<Map<String, Object>>> componentsByType = new HashMap<>();
         
         for (ConfigComponent component : components) {
             Product product = component.getProduct();
-            Map<String, Object> componentInfo = new HashMap<>();
+            Map<String, Object> componentData = new HashMap<>();
             
-            componentInfo.put("id", product.getId());
-            componentInfo.put("name", product.getName());
-            componentInfo.put("price", product.getPrice());
-            componentInfo.put("manufacturer", product.getManufacturer().getName());
-            componentInfo.put("specs", product.getSpecifications());
+            componentData.put("id", product.getId());
+            componentData.put("name", product.getTitle());
+            componentData.put("price", product.getPrice());
+            componentData.put("specs", product.getSpecs());
+            componentData.put("quantity", component.getQuantity());
             
-            componentsMap.put(product.getComponentType(), componentInfo);
+            ComponentType type = product.getComponentType();
+            if (!componentsByType.containsKey(type)) {
+                componentsByType.put(type, new ArrayList<>());
+            }
+            
+            componentsByType.get(type).add(componentData);
         }
         
-        specs.put("components", componentsMap);
+        specs.put("components", componentsByType);
+        
+        // Добавляем специфичные характеристики в зависимости от наличия компонентов
+        if (componentsByType.containsKey(ComponentType.CPU)) {
+            Map<String, Object> cpu = componentsByType.get(ComponentType.CPU).get(0);
+            specs.put("cpu", cpu.get("name"));
+            specs.put("cpuCores", getSpecValue(cpu, "cores"));
+            specs.put("cpuFrequency", getSpecValue(cpu, "frequency"));
+        }
+        
+        if (componentsByType.containsKey(ComponentType.GPU)) {
+            Map<String, Object> gpu = componentsByType.get(ComponentType.GPU).get(0);
+            specs.put("gpu", gpu.get("name"));
+            specs.put("gpuMemory", getSpecValue(gpu, "memory"));
+        }
+        
+        if (componentsByType.containsKey(ComponentType.RAM)) {
+            // Если RAM несколько, суммируем объем и берем минимальную частоту
+            List<Map<String, Object>> ramList = componentsByType.get(ComponentType.RAM);
+            int totalCapacity = 0;
+            int minFrequency = Integer.MAX_VALUE;
+            
+            for (Map<String, Object> ram : ramList) {
+                int quantity = (int) ram.get("quantity");
+                int capacity = parseIntSpec(getSpecValue(ram, "capacity"));
+                int frequency = parseIntSpec(getSpecValue(ram, "frequency"));
+                
+                totalCapacity += capacity * quantity;
+                if (frequency < minFrequency) {
+                    minFrequency = frequency;
+                }
+            }
+            
+            specs.put("ramCapacity", totalCapacity);
+            specs.put("ramFrequency", minFrequency == Integer.MAX_VALUE ? null : minFrequency);
+        }
+        
+        if (componentsByType.containsKey(ComponentType.STORAGE)) {
+            // Если накопителей несколько, суммируем объем
+            List<Map<String, Object>> storageList = componentsByType.get(ComponentType.STORAGE);
+            int totalCapacity = 0;
+            
+            for (Map<String, Object> storage : storageList) {
+                int quantity = (int) storage.get("quantity");
+                int capacity = parseIntSpec(getSpecValue(storage, "capacity"));
+                totalCapacity += capacity * quantity;
+            }
+            
+            specs.put("storageCapacity", totalCapacity);
+        }
         
         return specs;
+    }
+    
+    /**
+     * Получает значение спецификации из карты компонента
+     * @param component карта с данными компонента
+     * @param specName имя спецификации
+     * @return значение спецификации или null
+     */
+    @SuppressWarnings("unchecked")
+    private String getSpecValue(Map<String, Object> component, String specName) {
+        Map<String, Object> specs = (Map<String, Object>) component.get("specs");
+        return specs != null ? (String) specs.get(specName) : null;
+    }
+    
+    /**
+     * Преобразует строковое значение спецификации в целое число
+     * @param value строковое значение
+     * @return целое число или 0, если преобразование невозможно
+     */
+    private int parseIntSpec(String value) {
+        if (value == null || value.isEmpty()) {
+            return 0;
+        }
+        
+        try {
+            // Удаляем все нецифровые символы (например, "16 ГБ" -> "16")
+            String numericValue = value.replaceAll("[^0-9]", "");
+            return Integer.parseInt(numericValue);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
     
     // Рекомендации
@@ -604,12 +773,30 @@ public class ConfiguratorService {
             return true;
         }
         
+        // Отделяем компоненты ПК от периферии
+        List<ConfigComponent> pcComponents = new ArrayList<>();
+        List<ConfigComponent> peripheralComponents = new ArrayList<>();
+        
+        for (ConfigComponent component : components) {
+            Product product = component.getProduct();
+            if (product.getComponentType() == null) {
+                peripheralComponents.add(component);
+            } else {
+                pcComponents.add(component);
+            }
+        }
+        
+        // Если нет компонентов ПК, конфигурация не валидна
+        if (pcComponents.isEmpty()) {
+            return false;
+        }
+        
         // Проверяем наличие всех необходимых компонентов
         Set<ComponentType> requiredTypes = Arrays.stream(ComponentType.values())
             .filter(ComponentType::isRequired)
             .collect(HashSet::new, HashSet::add, HashSet::addAll);
             
-        Set<ComponentType> presentTypes = components.stream()
+        Set<ComponentType> presentTypes = pcComponents.stream()
             .map(c -> c.getProduct().getComponentType())
             .collect(HashSet::new, HashSet::add, HashSet::addAll);
         
@@ -617,17 +804,120 @@ public class ConfiguratorService {
             return false;
         }
 
-        // Проверяем совместимость между всеми компонентами
-        for (int i = 0; i < components.size(); i++) {
-            for (int j = i + 1; j < components.size(); j++) {
-                if (!compatibilityService.checkComponentsCompatibility(
-                    components.get(i).getProduct(),
-                    components.get(j).getProduct())) {
+        // Группируем компоненты по типу для проверки совместимости
+        Map<ComponentType, List<ConfigComponent>> componentsByType = pcComponents.stream()
+            .collect(Collectors.groupingBy(c -> c.getProduct().getComponentType()));
+            
+        // Проверяем, что компоненты, не поддерживающие множественные экземпляры, 
+        // представлены только в одном экземпляре
+        for (Map.Entry<ComponentType, List<ConfigComponent>> entry : componentsByType.entrySet()) {
+            ComponentType type = entry.getKey();
+            List<ConfigComponent> componentsOfType = entry.getValue();
+            
+            if (!type.allowsMultiple() && componentsOfType.size() > 1) {
+                return false;
+            }
+        }
+
+        // Проверяем совместимость между всеми компонентами ПК
+        for (int i = 0; i < pcComponents.size(); i++) {
+            for (int j = i + 1; j < pcComponents.size(); j++) {
+                Product product1 = pcComponents.get(i).getProduct();
+                Product product2 = pcComponents.get(j).getProduct();
+                
+                // Если компоненты одного типа и тип поддерживает множественные экземпляры,
+                // пропускаем проверку совместимости между ними
+                if (product1.getComponentType() == product2.getComponentType() && 
+                    product1.getComponentType().allowsMultiple()) {
+                    continue;
+                }
+                
+                if (!compatibilityService.checkComponentsCompatibility(product1, product2)) {
                     return false;
                 }
             }
         }
 
         return true;
+    }
+
+    /**
+     * Получает все публичные конфигурации с загруженными компонентами
+     * @return список публичных конфигураций с компонентами
+     */
+    public List<PCConfiguration> getPublicConfigurationsWithComponents() {
+        return pcConfigurationRepository.findAllWithComponents().stream()
+            .limit(20)
+            .toList();
+    }
+
+    /**
+     * Получает компоненты конфигурации по ID
+     * @param configId ID конфигурации
+     * @return список компонентов
+     */
+    public List<ConfigComponent> getConfigComponents(Long configId) {
+        return configComponentRepository.findByConfigId(configId);
+    }
+
+    /**
+     * Получает все конфигурации пользователя с загруженными компонентами
+     * @param userId ID пользователя
+     * @return список конфигураций с компонентами
+     */
+    @Transactional(readOnly = true)
+    public List<PCConfiguration> getUserConfigurationsWithComponents(Long userId) {
+        return pcConfigurationRepository.findByUserIdWithComponents(userId);
+    }
+
+    /**
+     * Получает конфигурацию по ID
+     * @param configId ID конфигурации
+     * @return конфигурация
+     * @throws ResourceNotFoundException если конфигурация не найдена
+     */
+    public PCConfiguration getConfiguration(Long configId) {
+        return pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+    }
+
+    /**
+     * Обновляет общую стоимость и производительность конфигурации
+     * @param config конфигурация для обновления
+     */
+    private void updateTotals(PCConfiguration config) {
+        List<ConfigComponent> components = configComponentRepository.findByConfigId(config.getId());
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        double totalPerformance = 0.0;
+        
+        for (ConfigComponent component : components) {
+            Product product = component.getProduct();
+            // Учитываем количество компонентов при расчете стоимости
+            BigDecimal componentPrice = product.getPrice().multiply(BigDecimal.valueOf(component.getQuantity()));
+            totalPrice = totalPrice.add(componentPrice);
+            
+            // Учитываем производительность только для компонентов ПК, не для периферии
+            if (product.getComponentType() != null) {
+                try {
+                    String performanceStr = product.getSpec("performance");
+                    if (performanceStr != null && !performanceStr.isEmpty()) {
+                        double productPerformance = Double.parseDouble(performanceStr);
+                        // Для RAM и STORAGE учитываем количество
+                        if (product.getComponentType() != null && 
+                            (product.getComponentType() == ComponentType.RAM || 
+                             product.getComponentType() == ComponentType.STORAGE)) {
+                            productPerformance *= component.getQuantity();
+                        }
+                        totalPerformance += productPerformance;
+                    }
+                } catch (Exception e) {
+                    // Если характеристики нет или она не числовая, игнорируем
+                }
+            }
+        }
+        
+        config.setTotalPrice(totalPrice);
+        config.setTotalPerformance(totalPerformance);
+        config.setIsCompatible(validateConfiguration(config));
     }
 } 
