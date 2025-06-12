@@ -56,4 +56,10 @@ public interface ConfigComponentRepository extends JpaRepository<ConfigComponent
      */
     @Query("SELECT c FROM ConfigComponent c WHERE c.id.configId = :configId AND c.id.productId = :productId")
     ConfigComponent findByConfigIdAndProductId(@Param("configId") Long configId, @Param("productId") Long productId);
+
+    /**
+     * Удаляет все компоненты конфигурации по ID конфигурации
+     * @param configId ID конфигурации
+     */
+    void deleteByIdConfigId(Long configId);
 } 

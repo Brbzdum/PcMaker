@@ -78,4 +78,13 @@ public class PCConfiguration {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
+    /**
+     * Добавляет компонент в конфигурацию с правильной установкой двусторонней связи
+     * @param component компонент для добавления
+     */
+    public void addComponent(ConfigComponent component) {
+        components.add(component);
+        component.setConfiguration(this);
+    }
 } 

@@ -12,6 +12,8 @@ import ru.bek.compshp.model.enums.ComponentType;
 import ru.bek.compshp.exception.ResourceNotFoundException;
 import java.math.BigDecimal;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Сервис для работы с конфигуратором ПК
@@ -25,6 +27,7 @@ public class ConfiguratorService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final ComponentCompatibilityService compatibilityService;
+    private static final Logger log = LoggerFactory.getLogger(ConfiguratorService.class);
 
     // Базовые операции с конфигурациями
     /**
@@ -86,6 +89,60 @@ public class ConfiguratorService {
         config.setIsCompatible(true);
         
         return pcConfigurationRepository.save(config);
+    }
+
+    /**
+     * Создает новую конфигурацию с компонентами
+     * @param userId ID пользователя
+     * @param name название конфигурации
+     * @param description описание конфигурации
+     * @param componentIds список ID компонентов
+     * @return созданная конфигурация
+     */
+    @Transactional
+    public PCConfiguration createConfigurationWithComponents(Long userId, String name, String description, List<Long> componentIds) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        
+        // Создаем конфигурацию без компонентов
+        PCConfiguration config = new PCConfiguration();
+        config.setUser(user);
+        config.setName(name);
+        config.setDescription(description);
+        config.setTotalPrice(BigDecimal.ZERO);
+        config.setTotalPerformance(0.0);
+        config.setIsCompatible(true);
+        config.setComponents(new HashSet<>());
+        
+        // Сначала сохраняем конфигурацию
+        PCConfiguration savedConfig = pcConfigurationRepository.save(config);
+        
+        // Собираем информацию о компонентах и считаем общую цену
+        BigDecimal totalPrice = BigDecimal.ZERO;
+        double totalPerformance = 0.0;
+        
+        // Группируем компоненты по ID для учета количества
+        Map<Long, Integer> componentQuantities = new HashMap<>();
+        for (Long productId : componentIds) {
+            componentQuantities.put(productId, componentQuantities.getOrDefault(productId, 0) + 1);
+        }
+        
+        // Добавляем компоненты по одному
+        for (Map.Entry<Long, Integer> entry : componentQuantities.entrySet()) {
+            Long productId = entry.getKey();
+            
+            try {
+                // Используем существующий метод для добавления компонента
+                PCConfiguration updatedConfig = addComponent(savedConfig.getId(), productId);
+                savedConfig = updatedConfig;
+            } catch (Exception e) {
+                log.warn("Не удалось добавить компонент {} в конфигурацию {}: {}", 
+                    productId, savedConfig.getId(), e.getMessage());
+            }
+        }
+        
+        // Возвращаем обновленную конфигурацию
+        return savedConfig;
     }
 
     /**
@@ -629,5 +686,50 @@ public class ConfiguratorService {
         }
 
         return true;
+    }
+
+    /**
+     * Загружает сохраненную конфигурацию в конфигуратор
+     * @param configId ID сохраненной конфигурации
+     * @return Загруженная конфигурация с полной информацией о продуктах
+     */
+    @Transactional
+    public PCConfiguration loadSavedConfiguration(Long configId) {
+        PCConfiguration config = pcConfigurationRepository.findById(configId)
+            .orElseThrow(() -> new ResourceNotFoundException("Configuration", "id", configId));
+        
+        // Загружаем все компоненты конфигурации с полной информацией о продуктах
+        List<ConfigComponent> components = configComponentRepository.findByConfigId(configId);
+        
+        // Убедимся, что все продукты полностью загружены (решение проблемы с "подсосом продуктов")
+        for (ConfigComponent component : components) {
+            Product product = productRepository.findById(component.getProduct().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Product", "id", component.getProduct().getId()));
+            
+            // Обновляем ссылку на продукт в компоненте
+            component.setProduct(product);
+        }
+        
+        // Обновляем ссылки на компоненты в конфигурации
+        config.setComponents(new HashSet<>(components));
+        
+        return config;
+    }
+
+    /**
+     * Получает все продукты из сохраненной конфигурации для отображения в конфигураторе
+     * @param configId ID конфигурации
+     * @return Карта, где ключ - тип компонента, значение - продукт
+     */
+    public Map<ComponentType, Product> getConfigurationProducts(Long configId) {
+        PCConfiguration config = loadSavedConfiguration(configId);
+        Map<ComponentType, Product> result = new HashMap<>();
+        
+        for (ConfigComponent component : config.getComponents()) {
+            Product product = component.getProduct();
+            result.put(product.getComponentType(), product);
+        }
+        
+        return result;
     }
 } 

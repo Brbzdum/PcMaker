@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import ru.bek.compshp.model.enums.ComponentType;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * DTO для компонента конфигурации компьютера
@@ -21,4 +23,7 @@ public class ConfigComponentDto {
     private String productName;
     private ComponentType type;
     private BigDecimal price;
+    
+    @Builder.Default
+    private Map<String, String> specs = new HashMap<>();
 } 

@@ -1,4 +1,4 @@
-package ru.bek.compshp.model;
+package ru.bek.compshp.model.future;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -7,34 +7,38 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
+import ru.bek.compshp.model.PCConfiguration;
+import ru.bek.compshp.model.Product;
 
 import java.time.LocalDateTime;
 
+/**
+ * Модель компонента конфигурации с поддержкой дубликатов.
+ * Этот класс заменит существующий ConfigComponent после миграции базы данных.
+ */
 @Data
 @Entity
 @Table(name = "config_components")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ConfigComponent {
-    @EmbeddedId
-    private ConfigComponentId id;
+public class ConfigComponentWithId {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("configId")
-    @JoinColumn(name = "config_id")
+    @JoinColumn(name = "config_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private PCConfiguration configuration;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @MapsId("productId")
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private Product product;
 
-    @Builder.Default
     @Column(nullable = false)
     private Integer quantity = 1;
 
@@ -53,18 +57,5 @@ public class ConfigComponent {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
-    }
-    
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConfigComponent that = (ConfigComponent) o;
-        return id != null && id.equals(that.id);
-    }
-    
-    @Override
-    public int hashCode() {
-        return id != null ? id.hashCode() : 0;
     }
 } 
