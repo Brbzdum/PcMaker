@@ -123,7 +123,13 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <form class="d-flex" th:action="@{/admin/products}" method="get">
-                                    <input class="form-control me-2" type="search" placeholder="Поиск" name="search" th:value="${param.search}">
+                                    <!-- Сохраняем параметр фильтрации по типу, если он есть -->
+                                    <input type="hidden" name="componentType" th:if="${selectedComponentType != null}" th:value="${selectedComponentType}">
+                                    <!-- Сбрасываем пагинацию при поиске -->
+                                    <input type="hidden" name="page" value="0">
+                                    <input type="hidden" name="size" value="10">
+                                    
+                                    <input class="form-control me-2" type="search" placeholder="Поиск" name="search" th:value="${search}">
                                     <button class="btn btn-primary" type="submit">
                                         <i class="fas fa-search me-1"></i> Найти
                                     </button>
@@ -131,12 +137,18 @@
                             </div>
                             <div class="col-md-6">
                                 <form class="d-flex" th:action="@{/admin/products}" method="get">
+                                    <!-- Сохраняем параметр поиска, если он есть -->
+                                    <input type="hidden" name="search" th:if="${search != null}" th:value="${search}">
+                                    <!-- Сбрасываем пагинацию при фильтрации -->
+                                    <input type="hidden" name="page" value="0">
+                                    <input type="hidden" name="size" value="10">
+                                    
                                     <select class="form-select me-2" name="componentType">
                                         <option value="">Все типы</option>
                                         <option th:each="type : ${componentTypes}" 
                                                 th:value="${type.name()}" 
                                                 th:text="${type.displayName}"
-                                                th:selected="${param.componentType != null && param.componentType[0] == type.name()}">
+                                                th:selected="${selectedComponentType != null && selectedComponentType == type.name()}">
                                         </option>
                                     </select>
                                     <button class="btn btn-primary" type="submit">
@@ -230,6 +242,32 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                        
+                        <!-- Пагинация -->
+                        <div class="d-flex justify-content-center mt-4" th:if="${totalPages > 1}">
+                            <nav aria-label="Навигация по страницам">
+                                <ul class="pagination">
+                                    <!-- Кнопка "Предыдущая" -->
+                                    <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled' : ''">
+                                        <a class="page-link" th:href="@{/admin/products(page=${currentPage - 1}, size=10, search=${search}, componentType=${selectedComponentType})}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    
+                                    <!-- Номера страниц -->
+                                    <li class="page-item" th:each="i : ${#numbers.sequence(0, totalPages - 1)}" th:classappend="${currentPage == i} ? 'active' : ''">
+                                        <a class="page-link" th:href="@{/admin/products(page=${i}, size=10, search=${search}, componentType=${selectedComponentType})}" th:text="${i + 1}"></a>
+                                    </li>
+                                    
+                                    <!-- Кнопка "Следующая" -->
+                                    <li class="page-item" th:classappend="${currentPage == totalPages - 1} ? 'disabled' : ''">
+                                        <a class="page-link" th:href="@{/admin/products(page=${currentPage + 1}, size=10, search=${search}, componentType=${selectedComponentType})}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </nav>
                         </div>
                     </div>
                 </div>

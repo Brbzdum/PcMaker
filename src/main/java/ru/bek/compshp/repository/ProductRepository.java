@@ -133,6 +133,27 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
            nativeQuery = true)
     List<Product> findByMinDiscount(@Param("minDiscount") Integer minDiscount);
     
+    // Методы для админки - поиск и фильтрация
+    
+    /**
+     * Поиск продуктов по названию или описанию с пагинацией
+     * @param search строка поиска
+     * @param pageable параметры пагинации
+     * @return страница продуктов
+     */
+    @Query("SELECT p FROM Product p WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))")
+    Page<Product> findByTitleOrDescriptionContaining(@Param("search") String search, Pageable pageable);
+    
+    /**
+     * Поиск продуктов по названию или описанию и типу компонента с пагинацией
+     * @param search строка поиска
+     * @param componentType тип компонента
+     * @param pageable параметры пагинации
+     * @return страница продуктов
+     */
+    @Query("SELECT p FROM Product p WHERE (LOWER(p.title) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.description) LIKE LOWER(CONCAT('%', :search, '%'))) AND p.componentType = :componentType")
+    Page<Product> findByTitleOrDescriptionContainingAndComponentType(@Param("search") String search, @Param("componentType") ComponentType componentType, Pageable pageable);
+    
     // Методы для готовых сборок
     @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.componentType IS NULL AND p.isActive = true")
     List<Product> findReadyPCs(@Param("categoryId") Long categoryId);

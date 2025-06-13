@@ -164,29 +164,28 @@ public class Product {
         if (componentType != null) {
             return componentType.name();
         } else if (category != null && category.getIsPeripheral()) {
-            // Для периферии используем категорию
-            // Здесь должен использоваться PeripheralTypeMapper, но для простоты
-            // и избежания зависимости от сервиса в модели, используем известные соответствия
-            Long categoryId = category.getId();
-            if (categoryId != null) {
-                // Карта соответствия ID категорий типам периферии
-                switch (categoryId.intValue()) {
-                    case 38: return "monitor";
-                    case 39: return "keyboard";
-                    case 40: return "mouse";
-                    case 41: return "headset";
-                    case 42: return "speakers";
-                    case 43: return "mousepad";
-                    case 44: return "microphone";
-                    default: break;
+            // Для периферии используем slug категории в нижнем регистре
+            if (category.getSlug() != null) {
+                String slug = category.getSlug().toLowerCase();
+                // Маппинг известных slug'ов к типам периферии
+                switch (slug) {
+                    case "monitors": return "monitor";
+                    case "keyboards": return "keyboard";
+                    case "mice": return "mouse";
+                    case "headsets": case "headphones": return "headset";
+                    case "speakers": return "speakers";
+                    case "mousepads": return "mousepad";
+                    case "microphones": return "microphone";
+                    default: return slug; // Используем slug как тип, если нет специального маппинга
                 }
             }
-            // Если не нашли соответствия, возвращаем slug категории в нижнем регистре
-            if (category.getSlug() != null) {
-                return category.getSlug().toLowerCase();
+            // Если slug отсутствует, возвращаем имя категории в нижнем регистре
+            if (category.getName() != null) {
+                return category.getName().toLowerCase();
             }
         }
-        return "UNKNOWN";
+        
+        return "unknown";
     }
     
     @Override

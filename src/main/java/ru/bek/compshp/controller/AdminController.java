@@ -704,7 +704,12 @@ public class AdminController {
             RedirectAttributes redirectAttributes) {
         
         try {
-            Product product = adminService.updateProductImage(id, imageFile);
+            // Получаем продукт до обновления изображения
+            Product product = adminService.getProductById(id);
+            
+            // Обновляем изображение
+            product = adminService.updateProductImage(id, imageFile);
+            
             redirectAttributes.addFlashAttribute("message", "Изображение продукта успешно обновлено");
             return "redirect:/admin/products/" + id;
         } catch (IOException e) {

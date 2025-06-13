@@ -533,6 +533,216 @@
                                         </div>
                                     </div>
 
+                                    <!-- Периферийные устройства -->
+                                    <!-- Поля для мыши -->
+                                    <div id="peripheral-specs-mouse" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-mouse me-2"></i>
+                                            Характеристики мыши
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-dpi" class="form-label">DPI</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-mouse-dpi" name="spec-mouse-dpi" placeholder="8000, 16000...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-sensor" class="form-label">Сенсор</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-mouse-sensor" name="spec-mouse-sensor" placeholder="PixArt PMW3389, TrueMove Air...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-mouse-connection" name="spec-mouse-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Wired">Проводная</option>
+                                                    <option value="Wireless">Беспроводная</option>
+                                                    <option value="Wireless/Bluetooth">Беспроводная/Bluetooth</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-weight" class="form-label">Вес (г)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-mouse-weight" name="spec-mouse-weight" min="1">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-buttons" class="form-label">Количество кнопок</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-mouse-buttons" name="spec-mouse-buttons" min="1">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-rgb" class="form-label">Подсветка</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-mouse-rgb" name="spec-mouse-rgb">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-polling-rate" class="form-label">Частота опроса (Гц)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-mouse-polling-rate" name="spec-mouse-polling-rate" placeholder="500, 1000...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mouse-grip-style" class="form-label">Тип хвата</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-mouse-grip-style" name="spec-mouse-grip-style" placeholder="Palm, Claw, Fingertip...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Поля для клавиатуры -->
+                                    <div id="peripheral-specs-keyboard" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-keyboard me-2"></i>
+                                            Характеристики клавиатуры
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-switch-type" class="form-label">Тип переключателей</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-keyboard-switch-type" name="spec-keyboard-switch-type" placeholder="Cherry MX Red, Blue...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-layout" class="form-label">Раскладка</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-keyboard-layout" name="spec-keyboard-layout">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Full-size">Полноразмерная</option>
+                                                    <option value="TKL">TKL (без цифрового блока)</option>
+                                                    <option value="60%">60%</option>
+                                                    <option value="65%">65%</option>
+                                                    <option value="75%">75%</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-keyboard-connection" name="spec-keyboard-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Wired">Проводная</option>
+                                                    <option value="Wireless">Беспроводная</option>
+                                                    <option value="Wireless/Bluetooth">Беспроводная/Bluetooth</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-rgb" class="form-label">Подсветка</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-keyboard-rgb" name="spec-keyboard-rgb">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">RGB</option>
+                                                    <option value="Single Color">Одноцветная</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-hotswap" class="form-label">Горячая замена переключателей</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-keyboard-hotswap" name="spec-keyboard-hotswap">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Да</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-keyboard-keycaps" class="form-label">Материал кейкапов</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-keyboard-keycaps" name="spec-keyboard-keycaps" placeholder="PBT, ABS...">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Поля для наушников -->
+                                    <div id="peripheral-specs-headset" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-headphones me-2"></i>
+                                            Характеристики наушников
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-driver-size" class="form-label">Размер динамиков (мм)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-headset-driver-size" name="spec-headset-driver-size" placeholder="40, 50...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-frequency-response" class="form-label">Частотная характеристика</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-headset-frequency-response" name="spec-headset-frequency-response" placeholder="20Hz-20kHz...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-headset-connection" name="spec-headset-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Wired">Проводные</option>
+                                                    <option value="Wireless">Беспроводные</option>
+                                                    <option value="Bluetooth">Bluetooth</option>
+                                                    <option value="Wireless/Bluetooth">Беспроводные/Bluetooth</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-microphone" class="form-label">Микрофон</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-headset-microphone" name="spec-headset-microphone">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                    <option value="Detachable">Съемный</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-impedance" class="form-label">Импеданс (Ом)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-headset-impedance" name="spec-headset-impedance">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-headset-weight" class="form-label">Вес (г)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-headset-weight" name="spec-headset-weight">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Поля для мониторов -->
+                                    <div id="peripheral-specs-monitor" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-desktop me-2"></i>
+                                            Характеристики монитора
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-resolution" class="form-label">Разрешение</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-monitor-resolution" name="spec-monitor-resolution" placeholder="1920x1080, 2560x1440...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-refresh-rate" class="form-label">Частота обновления (Гц)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-monitor-refresh-rate" name="spec-monitor-refresh-rate" placeholder="60, 144, 240...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-panel-type" class="form-label">Тип панели</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-monitor-panel-type" name="spec-monitor-panel-type">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="IPS">IPS</option>
+                                                    <option value="TN">TN</option>
+                                                    <option value="VA">VA</option>
+                                                    <option value="OLED">OLED</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-response-time" class="form-label">Время отклика (мс)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-monitor-response-time" name="spec-monitor-response-time" placeholder="1, 4...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-size" class="form-label">Диагональ (дюймы)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-monitor-size" name="spec-monitor-size" placeholder="24, 27...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-monitor-aspect-ratio" class="form-label">Соотношение сторон</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-monitor-aspect-ratio" name="spec-monitor-aspect-ratio" placeholder="16:9, 21:9...">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Скрытое поле для хранения JSON спецификаций -->
                                     <textarea th:field="*{specs}" class="form-control" id="specs" rows="3" style="display: none;"></textarea>
                                     <div class="form-text">Спецификации будут сохранены в JSON формате для использования в конфигураторе.</div>
@@ -562,53 +772,156 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // Функция для отображения полей спецификаций в зависимости от типа компонента
+        // Маппинг категорий периферии к типам спецификаций
+        const peripheralCategoryMap = {
+            // Мыши
+            'Мыши': 'mouse',
+            'мыши': 'mouse',
+            'mouse': 'mouse',
+            'mice': 'mouse',
+            // Клавиатуры
+            'Клавиатуры': 'keyboard',
+            'клавиатуры': 'keyboard',
+            'keyboard': 'keyboard',
+            'keyboards': 'keyboard',
+            // Наушники
+            'Наушники': 'headset',
+            'наушники': 'headset',
+            'Гарнитуры': 'headset',
+            'гарнитуры': 'headset',
+            'headset': 'headset',
+            'headsets': 'headset',
+            'headphones': 'headset',
+            // Мониторы
+            'Мониторы': 'monitor',
+            'мониторы': 'monitor',
+            'monitor': 'monitor',
+            'monitors': 'monitor'
+        };
+
+        // Функция для определения типа периферии по категории
+        function getPeripheralTypeByCategory(categoryId, categoryName) {
+            // Если есть название категории, проверяем его
+            if (categoryName) {
+                for (const [key, value] of Object.entries(peripheralCategoryMap)) {
+                    if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+                        return value;
+                    }
+                }
+            }
+            
+            // Маппинг по ID категории
+            const categoryIdMap = {
+                38: 'monitor',
+                39: 'keyboard',
+                40: 'mouse',
+                41: 'headset',
+                42: 'speakers',
+                43: 'mousepad',
+                44: 'microphone',
+                49: 'headset',
+                50: 'mousepad',
+                51: 'microphone'
+            };
+            
+            return categoryIdMap[categoryId] || null;
+        }
+        
+        // Функция для отображения полей спецификаций в зависимости от типа компонента или категории
         function showSpecFields() {
-            // Скрываем все поля спецификаций
-            const specDivs = document.querySelectorAll('.component-specs');
-            specDivs.forEach(div => {
+            // Скрываем все поля спецификаций компонентов и периферии
+            document.querySelectorAll('.component-specs, .peripheral-specs').forEach(div => {
                 div.style.display = 'none';
             });
             
-            // Получаем выбранный тип компонента
+            // Получаем выбранный тип компонента и категорию
             const componentType = document.getElementById('componentType').value;
+            const categoryId = document.getElementById('categoryId').value;
             
-            // Если тип выбран, показываем соответствующие поля
+            // Если выбран тип компонента, показываем соответствующие поля компонентов
             if (componentType) {
                 const targetDiv = document.getElementById('specs-' + componentType);
                 if (targetDiv) {
                     targetDiv.style.display = 'block';
+                }
+                return;
+            }
+            
+            // Если выбрана категория, определяем тип периферии и показываем соответствующие поля
+            if (categoryId) {
+                // Получаем название выбранной категории
+                const categorySelect = document.getElementById('categoryId');
+                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                const categoryName = selectedOption ? selectedOption.text : '';
+                
+                // Определяем тип периферии
+                const peripheralType = getPeripheralTypeByCategory(categoryId, categoryName);
+                
+                if (peripheralType) {
+                    const targetDiv = document.getElementById('peripheral-specs-' + peripheralType);
+                    if (targetDiv) {
+                        targetDiv.style.display = 'block';
+                    }
                 }
             }
         }
         
         // Функция для преобразования полей формы в JSON
         function updateSpecsJson() {
-            const componentType = document.getElementById('componentType').value;
-            if (!componentType) return;
-            
             const specsObject = {};
             
             // Добавляем универсальные поля
             const modelName = document.getElementById('spec-name').value;
             if (modelName) specsObject['model'] = modelName;
             
-            // Получаем все видимые поля спецификаций
-            const visibleSpecsDiv = document.getElementById('specs-' + componentType);
-            if (visibleSpecsDiv) {
-                const specFields = visibleSpecsDiv.querySelectorAll('.spec-field');
+            // Получаем выбранный тип компонента и категорию
+            const componentType = document.getElementById('componentType').value;
+            const categoryId = document.getElementById('categoryId').value;
+            
+            // Обрабатываем спецификации компонентов
+            if (componentType) {
+                const visibleSpecsDiv = document.getElementById('specs-' + componentType);
+                if (visibleSpecsDiv) {
+                    const specFields = visibleSpecsDiv.querySelectorAll('.spec-field');
+                    
+                    specFields.forEach(field => {
+                        if (field.value) {
+                            // Извлекаем ключ из id поля (например, из "spec-cpu-cores" получаем "cores")
+                            const key = field.id.replace('spec-' + componentType.toLowerCase() + '-', '');
+                            specsObject[key] = field.value;
+                        }
+                    });
+                }
+            } 
+            // Обрабатываем спецификации периферии
+            else if (categoryId) {
+                // Получаем название выбранной категории
+                const categorySelect = document.getElementById('categoryId');
+                const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                const categoryName = selectedOption ? selectedOption.text : '';
                 
-                specFields.forEach(field => {
-                    if (field.value) {
-                        // Извлекаем ключ из id поля (например, из "spec-cpu-cores" получаем "cores")
-                        const key = field.id.replace('spec-' + componentType.toLowerCase() + '-', '');
-                        specsObject[key] = field.value;
+                // Определяем тип периферии
+                const peripheralType = getPeripheralTypeByCategory(categoryId, categoryName);
+                
+                if (peripheralType) {
+                    const visibleSpecsDiv = document.getElementById('peripheral-specs-' + peripheralType);
+                    if (visibleSpecsDiv) {
+                        const specFields = visibleSpecsDiv.querySelectorAll('.peripheral-spec-field');
+                        
+                        specFields.forEach(field => {
+                            if (field.value) {
+                                // Извлекаем ключ из id поля (например, из "spec-mouse-dpi" получаем "dpi")
+                                const key = field.id.replace('spec-' + peripheralType + '-', '');
+                                specsObject[key] = field.value;
+                            }
+                        });
                     }
-                });
+                }
             }
             
             // Сохраняем JSON в скрытое поле
             document.getElementById('specs').value = JSON.stringify(specsObject);
+            console.log('Сохранены спецификации:', specsObject);
         }
         
         // Функция загрузки спецификаций из JSON в поля формы
@@ -618,33 +931,83 @@
             
             try {
                 const specsObject = JSON.parse(specsJson);
+                console.log('Загружены спецификации:', specsObject);
                 
                 // Заполняем универсальные поля
                 if (specsObject.model) {
                     document.getElementById('spec-name').value = specsObject.model;
                 }
                 
-                // Получаем тип компонента
+                // Получаем выбранный тип компонента и категорию
                 const componentType = document.getElementById('componentType').value;
-                if (!componentType) return;
+                const categoryId = document.getElementById('categoryId').value;
                 
-                // Заполняем поля спецификаций для выбранного типа
-                Object.keys(specsObject).forEach(key => {
-                    if (key !== 'model') {
-                        const fieldId = 'spec-' + componentType.toLowerCase() + '-' + key;
-                        const field = document.getElementById(fieldId);
-                        if (field) {
-                            field.value = specsObject[key];
+                // Заполняем поля спецификаций для компонентов
+                if (componentType) {
+                    Object.keys(specsObject).forEach(key => {
+                        if (key !== 'model') {
+                            const fieldId = 'spec-' + componentType.toLowerCase() + '-' + key;
+                            const field = document.getElementById(fieldId);
+                            if (field) {
+                                field.value = specsObject[key];
+                            }
                         }
+                    });
+                } 
+                // Заполняем поля спецификаций для периферии
+                else if (categoryId) {
+                    // Получаем название выбранной категории
+                    const categorySelect = document.getElementById('categoryId');
+                    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+                    const categoryName = selectedOption ? selectedOption.text : '';
+                    
+                    // Определяем тип периферии
+                    const peripheralType = getPeripheralTypeByCategory(categoryId, categoryName);
+                    
+                    if (peripheralType) {
+                        Object.keys(specsObject).forEach(key => {
+                            if (key !== 'model') {
+                                const fieldId = 'spec-' + peripheralType + '-' + key;
+                                const field = document.getElementById(fieldId);
+                                if (field) {
+                                    field.value = specsObject[key];
+                                }
+                            }
+                        });
                     }
-                });
+                }
             } catch (e) {
                 console.error('Ошибка при разборе JSON спецификаций:', e);
             }
         }
         
-        // Слушатель события изменения типа компонента
+        // Функция для обработки взаимоисключающего выбора типа компонента и категории
+        function handleComponentTypeAndCategorySelection() {
+            const componentTypeSelect = document.getElementById('componentType');
+            const categorySelect = document.getElementById('categoryId');
+            
+            // Если выбран тип компонента, сбрасываем категорию
+            if (componentTypeSelect.value) {
+                categorySelect.value = '';
+            }
+            
+            showSpecFields();
+            loadSpecsFromJson();
+        }
+        
+        // Слушатели событий изменения типа компонента и категории
         document.getElementById('componentType').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('categoryId').value = '';
+            }
+            showSpecFields();
+            loadSpecsFromJson();
+        });
+        
+        document.getElementById('categoryId').addEventListener('change', function() {
+            if (this.value) {
+                document.getElementById('componentType').value = '';
+            }
             showSpecFields();
             loadSpecsFromJson();
         });
@@ -654,15 +1017,15 @@
             updateSpecsJson();
         });
         
-        // Слушатели событий изменения полей спецификаций
-        document.querySelectorAll('.spec-field').forEach(field => {
-            field.addEventListener('change', updateSpecsJson);
-        });
-        
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             showSpecFields();
             loadSpecsFromJson();
+            
+            // Добавляем слушатели событий ко всем полям спецификаций
+            document.querySelectorAll('.spec-field, .peripheral-spec-field').forEach(field => {
+                field.addEventListener('change', updateSpecsJson);
+            });
         });
     </script>
 </body>

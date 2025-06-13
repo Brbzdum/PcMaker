@@ -189,12 +189,25 @@
                     </div>
                 </div>
                 <!-- Характеристики продукта -->
-                <div class="card mb-4" th:if="${product.componentType != null && product.specs != null && !product.specs.isEmpty()}">
+                <div class="card mb-4" th:if="${product.specs != null && !product.specs.isEmpty()}">
                     <div class="card-header">
                         <h5 class="card-title mb-0">Характеристики</h5>
                     </div>
                     <div class="card-body">
-                        <pre class="p-3 bg-light rounded" th:text="${product.specs}">Характеристики продукта</pre>
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Параметр</th>
+                                    <th>Значение</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="spec : ${product.specs}">
+                                    <td th:text="${spec.key}">Параметр</td>
+                                    <td th:text="${spec.value}">Значение</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
                 <!-- Управление продуктом -->

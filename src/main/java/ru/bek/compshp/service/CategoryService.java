@@ -90,10 +90,48 @@ public class CategoryService {
             return "";
         }
         
-        String normalized = Normalizer.normalize(name, Normalizer.Form.NFD);
+        // Транслитерация кириллицы в латиницу
+        String transliterated = transliterateRussian(name);
+        
+        // Нормализация и удаление специальных символов
+        String normalized = Normalizer.normalize(transliterated, Normalizer.Form.NFD);
         String noWhitespace = WHITESPACE.matcher(normalized).replaceAll("-");
         String slug = NONLATIN.matcher(noWhitespace).replaceAll("");
+        
         return slug.toLowerCase(Locale.ENGLISH);
+    }
+
+    /**
+     * Транслитерирует русский текст в латиницу
+     * @param text исходный текст на русском
+     * @return транслитерированный текст
+     */
+    private String transliterateRussian(String text) {
+        char[] cyrillic = {'а','б','в','г','д','е','ё','ж','з','и','й','к','л','м','н','о','п','р','с','т','у','ф','х','ц','ч','ш','щ','ъ','ы','ь','э','ю','я',
+                          'А','Б','В','Г','Д','Е','Ё','Ж','З','И','Й','К','Л','М','Н','О','П','Р','С','Т','У','Ф','Х','Ц','Ч','Ш','Щ','Ъ','Ы','Ь','Э','Ю','Я'};
+        String[] latin = {"a","b","v","g","d","e","yo","zh","z","i","y","k","l","m","n","o","p","r","s","t","u","f","kh","ts","ch","sh","sch","","y","","e","yu","ya",
+                         "A","B","V","G","D","E","YO","ZH","Z","I","Y","K","L","M","N","O","P","R","S","T","U","F","KH","TS","CH","SH","SCH","","Y","","E","YU","YA"};
+        
+        StringBuilder sb = new StringBuilder();
+        
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            boolean replaced = false;
+            
+            for (int j = 0; j < cyrillic.length; j++) {
+                if (c == cyrillic[j]) {
+                    sb.append(latin[j]);
+                    replaced = true;
+                    break;
+                }
+            }
+            
+            if (!replaced) {
+                sb.append(c);
+            }
+        }
+        
+        return sb.toString();
     }
 
     @Transactional

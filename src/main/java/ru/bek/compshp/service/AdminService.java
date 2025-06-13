@@ -746,10 +746,27 @@ public class AdminService {
      * @return отфильтрованный список продуктов
      */
     public Page<Product> getProductsWithFilters(Pageable pageable, String search, String componentType) {
-        // Здесь нужно реализовать фильтрацию через Specification или кастомный репозиторий
-        // Временная реализация - возвращаем все продукты
-        // TODO: Реализовать полноценную фильтрацию
-        return productRepository.findAll(pageable);
+        if (search != null && !search.isEmpty() && componentType != null && !componentType.isEmpty()) {
+            try {
+                ComponentType type = ComponentType.valueOf(componentType);
+                return productRepository.findByTitleOrDescriptionContainingAndComponentType(search, type, pageable);
+            } catch (IllegalArgumentException e) {
+                // Если тип компонента не найден, игнорируем его и ищем только по поисковому запросу
+                return productRepository.findByTitleOrDescriptionContaining(search, pageable);
+            }
+        } else if (search != null && !search.isEmpty()) {
+            return productRepository.findByTitleOrDescriptionContaining(search, pageable);
+        } else if (componentType != null && !componentType.isEmpty()) {
+            try {
+                ComponentType type = ComponentType.valueOf(componentType);
+                return productRepository.findByComponentType(type, pageable);
+            } catch (IllegalArgumentException e) {
+                // Если тип компонента не найден, возвращаем все продукты
+                return productRepository.findAll(pageable);
+            }
+        } else {
+            return productRepository.findAll(pageable);
+        }
     }
 
     /**
@@ -803,6 +820,9 @@ public class AdminService {
     public Product updateProductImage(Long id, MultipartFile imageFile) throws IOException {
         Product product = getProductById(id);
         
+        // Сохраняем текущие спецификации
+        Map<String, String> currentSpecs = product.getSpecs();
+        
         if (imageFile != null && !imageFile.isEmpty()) {
             // Создаем директорию, если она не существует
             Path uploadPath = Paths.get(PRODUCT_IMAGES_DIR);
@@ -817,9 +837,20 @@ public class AdminService {
             // Сохраняем файл
             Files.copy(imageFile.getInputStream(), filePath);
             
+            // Удаляем старое изображение, если оно есть
+            if (product.getImagePath() != null && !product.getImagePath().isEmpty()) {
+                deleteOldProductImage(product);
+            }
+            
             // Обновляем путь к изображению с начальным слешем
             product.setImagePath("/uploads/products/" + fileName);
         }
+        
+        // Явно устанавливаем спецификации обратно
+        product.setSpecs(currentSpecs);
+        
+        // Обновляем время изменения
+        product.setUpdatedAt(LocalDateTime.now());
         
         return productRepository.save(product);
     }
