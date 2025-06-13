@@ -18,6 +18,7 @@ import ru.bek.compshp.model.Product;
 import ru.bek.compshp.model.enums.ComponentType;
 import ru.bek.compshp.service.ConfiguratorService;
 import ru.bek.compshp.service.ConfiguratorServiceFixed;
+import ru.bek.compshp.util.PeripheralTypeMapper;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -35,6 +36,7 @@ public class ConfiguratorController {
 
     private final ConfiguratorService configuratorService;
     private final ConfiguratorServiceFixed configuratorServiceFixed;
+    private final PeripheralTypeMapper peripheralTypeMapper;
 
     @PostMapping
     @Operation(summary = "Создать новую конфигурацию")
@@ -287,11 +289,29 @@ public class ConfiguratorController {
         List<ConfigComponentDto> componentDtos = config.getComponents().stream()
                 .map(component -> {
                     Product product = component.getProduct();
+                    
+                    // Определяем тип компонента
+                    String componentType = null;
+                    if (product.getComponentType() != null) {
+                        // Это обычный компонент ПК
+                        componentType = product.getComponentType().name();
+                    } else if (product.getCategory() != null && product.getCategory().getIsPeripheral()) {
+                        // Это периферия, определяем тип по ID категории
+                        Long categoryId = product.getCategory().getId();
+                        componentType = peripheralTypeMapper.getPeripheralTypeByCategoryId(categoryId);
+                        
+                        // Если маппинг не найден, используем slug категории в нижнем регистре
+                        if (componentType == null && product.getCategory().getSlug() != null) {
+                            componentType = product.getCategory().getSlug().toLowerCase();
+                        }
+                    }
+                    
                     ConfigComponentDto componentDto = ConfigComponentDto.builder()
                             .id(component.getId().getProductId())
                             .productId(product.getId())
                             .productName(product.getTitle())
                             .type(product.getComponentType())
+                            .peripheralType(componentType) // Добавляем тип периферии
                             .price(product.getPrice())
                             .manufacturerName(product.getManufacturer() != null ? product.getManufacturer().getName() : "")
                             .manufacturerId(product.getManufacturer() != null ? product.getManufacturer().getId() : null)
@@ -310,8 +330,49 @@ public class ConfiguratorController {
         
         // Устанавливаем ID компонентов по типам для совместимости с существующим кодом
         for (ConfigComponentDto component : componentDtos) {
-            if (component.getType() == null) continue;
+            if (component.getType() == null) {
+                // Это периферия, обрабатываем по peripheralType
+                String peripheralType = component.getPeripheralType();
+                if (peripheralType != null) {
+                    // Добавляем периферию в соответствующий список
+                    switch (peripheralType.toLowerCase()) {
+                        case "monitor":
+                            if (dto.getMonitorIds() == null) dto.setMonitorIds(new HashSet<>());
+                            dto.getMonitorIds().add(component.getProductId());
+                            break;
+                        case "keyboard":
+                            if (dto.getKeyboardIds() == null) dto.setKeyboardIds(new HashSet<>());
+                            dto.getKeyboardIds().add(component.getProductId());
+                            break;
+                        case "mouse":
+                            if (dto.getMouseIds() == null) dto.setMouseIds(new HashSet<>());
+                            dto.getMouseIds().add(component.getProductId());
+                            break;
+                        case "headset":
+                            if (dto.getHeadsetIds() == null) dto.setHeadsetIds(new HashSet<>());
+                            dto.getHeadsetIds().add(component.getProductId());
+                            break;
+                        case "speakers":
+                            if (dto.getSpeakersIds() == null) dto.setSpeakersIds(new HashSet<>());
+                            dto.getSpeakersIds().add(component.getProductId());
+                            break;
+                        case "mousepad":
+                            if (dto.getMousepadIds() == null) dto.setMousepadIds(new HashSet<>());
+                            dto.getMousepadIds().add(component.getProductId());
+                            break;
+                        case "microphone":
+                            if (dto.getMicrophoneIds() == null) dto.setMicrophoneIds(new HashSet<>());
+                            dto.getMicrophoneIds().add(component.getProductId());
+                            break;
+                        default:
+                            // Неизвестный тип периферии
+                            break;
+                    }
+                }
+                continue;
+            }
             
+            // Обработка обычных компонентов ПК
             switch (component.getType()) {
                 case CPU:
                     dto.setCpuId(component.getProductId());

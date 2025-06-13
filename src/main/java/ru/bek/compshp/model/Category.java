@@ -57,6 +57,10 @@ public class Category {
     @Builder.Default
     @Column(name = "is_pc_component")
     private Boolean isPcComponent = false;
+    
+    @Builder.Default
+    @Column(name = "is_peripheral")
+    private Boolean isPeripheral = false;
 
     /**
      * Получает признак, является ли категория категорией компонентов ПК
@@ -73,6 +77,22 @@ public class Category {
     public void setPcComponent(Boolean pcComponent) {
         this.isPcComponent = pcComponent != null ? pcComponent : false;
     }
+    
+    /**
+     * Получает признак, является ли категория категорией периферии
+     * @return true, если категория является категорией периферии
+     */
+    public Boolean getPeripheral() {
+        return this.isPeripheral != null ? this.isPeripheral : false;
+    }
+
+    /**
+     * Устанавливает признак, является ли категория категорией периферии
+     * @param peripheral признак категории периферии
+     */
+    public void setPeripheral(Boolean peripheral) {
+        this.isPeripheral = peripheral != null ? peripheral : false;
+    }
 
     // Явно добавляем геттер и сеттер для JPA
     public Boolean getIsPcComponent() {
@@ -81,6 +101,15 @@ public class Category {
     
     public void setIsPcComponent(Boolean isPcComponent) {
         this.isPcComponent = isPcComponent;
+    }
+    
+    // Явно добавляем геттер и сеттер для JPA
+    public Boolean getIsPeripheral() {
+        return this.isPeripheral;
+    }
+    
+    public void setIsPeripheral(Boolean isPeripheral) {
+        this.isPeripheral = isPeripheral;
     }
 
     /**
@@ -126,6 +155,7 @@ public class Category {
             ", description='" + description + '\'' +
             ", slug='" + slug + '\'' +
             ", isPcComponent=" + isPcComponent +
+            ", isPeripheral=" + isPeripheral +
             ", createdAt=" + createdAt +
             ", updatedAt=" + updatedAt +
             '}';

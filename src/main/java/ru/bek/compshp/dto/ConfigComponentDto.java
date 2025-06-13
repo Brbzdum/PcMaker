@@ -22,6 +22,7 @@ public class ConfigComponentDto {
     private Long productId;
     private String productName;
     private ComponentType type;
+    private String peripheralType;
     private BigDecimal price;
     private String manufacturerName;
     private Long manufacturerId;

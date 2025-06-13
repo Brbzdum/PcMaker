@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import ru.bek.compshp.model.Product;
 import ru.bek.compshp.model.Manufacturer;
+import ru.bek.compshp.model.Category;
 import ru.bek.compshp.model.enums.ComponentType;
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,6 +34,36 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
      * @return страница продуктов
      */
     Page<Product> findByComponentType(ComponentType componentType, Pageable pageable);
+    
+    /**
+     * Находит продукты по категории периферии
+     * @param category категория периферии
+     * @return список продуктов
+     */
+    List<Product> findByCategoryAndCategoryIsPeripheralTrue(Category category);
+    
+    /**
+     * Находит продукты по категории периферии с пагинацией
+     * @param category категория периферии
+     * @param pageable параметры пагинации
+     * @return страница продуктов
+     */
+    Page<Product> findByCategoryAndCategoryIsPeripheralTrue(Category category, Pageable pageable);
+    
+    /**
+     * Находит все периферийные устройства
+     * @return список периферийных устройств
+     */
+    @Query("SELECT p FROM Product p WHERE p.category.isPeripheral = true")
+    List<Product> findAllPeripherals();
+    
+    /**
+     * Находит все периферийные устройства с пагинацией
+     * @param pageable параметры пагинации
+     * @return страница периферийных устройств
+     */
+    @Query("SELECT p FROM Product p WHERE p.category.isPeripheral = true")
+    Page<Product> findAllPeripherals(Pageable pageable);
     
     /**
      * Находит активные продукты
@@ -108,7 +139,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     
     // Методы для работы со спецификациями
     @Query(value = "SELECT * FROM products p WHERE p.is_active = true AND " +
-           "p.specs::text ILIKE %:spec%", 
+           "p.specs::text LIKE CONCAT('%', :spec, '%')", 
            nativeQuery = true)
     List<Product> findBySpecsContaining(@Param("spec") String spec);
     
@@ -126,6 +157,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     List<Product> findComponentsByMinPerformance(
         @Param("type") ComponentType type,
         @Param("minPerformance") Double minPerformance
+    );
+    
+    // Методы для поиска периферии
+    @Query("SELECT p FROM Product p WHERE p.category.id = :categoryId AND p.category.isPeripheral = true AND p.price <= :maxPrice AND p.isActive = true AND p.stock > 0")
+    List<Product> findPeripheralsInBudget(
+        @Param("categoryId") Long categoryId,
+        @Param("maxPrice") BigDecimal maxPrice
     );
     
     // Методы для поиска по спецификациям

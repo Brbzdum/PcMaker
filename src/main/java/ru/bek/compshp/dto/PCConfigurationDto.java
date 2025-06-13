@@ -56,6 +56,15 @@ public class PCConfigurationDto {
     @NotNull(message = "Накопитель обязателен")
     private Set<Long> storageIds;
     
+    // Поля для периферийных устройств
+    private Set<Long> monitorIds;
+    private Set<Long> keyboardIds;
+    private Set<Long> mouseIds;
+    private Set<Long> headsetIds;
+    private Set<Long> speakersIds;
+    private Set<Long> mousepadIds;
+    private Set<Long> microphoneIds;
+    
     private BigDecimal totalPrice;
     
     private Boolean isPublic;

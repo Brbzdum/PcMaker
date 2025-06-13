@@ -1,0 +1,1 @@
+ALTER TABLE categories ADD COLUMN is_peripheral BOOLEAN DEFAULT FALSE NOT NULL; 

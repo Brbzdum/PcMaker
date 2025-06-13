@@ -48,6 +48,11 @@ public class ComponentCompatibilityService {
      * @return true, если компоненты совместимы
      */
     public boolean checkComponentsCompatibility(Product source, Product target) {
+        // Если оба компонента - периферийные устройства, считаем их совместимыми
+        if (source.isPeripheral() && target.isPeripheral()) {
+            return true;
+        }
+        
         ComponentType sourceType = source.getComponentType();
         ComponentType targetType = target.getComponentType();
         
@@ -571,6 +576,11 @@ public class ComponentCompatibilityService {
         
         // Проверяем совместимость с каждым существующим компонентом
         for (Product existingComponent : existingComponents) {
+            // Если оба компонента - периферийные устройства, считаем их совместимыми
+            if (newComponent.isPeripheral() && existingComponent.isPeripheral()) {
+                continue;
+            }
+            
             if (!checkComponentsCompatibility(newComponent, existingComponent) && 
                 !checkComponentsCompatibility(existingComponent, newComponent)) {
                 return false;
@@ -614,6 +624,11 @@ public class ComponentCompatibilityService {
         
         for (ConfigComponent component : existingComponents) {
             Product existingProduct = component.getProduct();
+            
+            // Если оба компонента - периферийные устройства, считаем их совместимыми
+            if (product.isPeripheral() && existingProduct.isPeripheral()) {
+                continue;
+            }
             
             // Если компоненты одного типа
             if (product.getComponentType() == existingProduct.getComponentType()) {

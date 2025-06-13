@@ -73,7 +73,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     /**
      * Найти категорию по slug (URL-дружественному имени)
      */
-    Category findBySlug(String slug);
+    Optional<Category> findBySlug(String slug);
     
     /**
      * Найти категории по списку идентификаторов
@@ -93,4 +93,11 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
      * @return список категорий
      */
     List<Category> findByIsPcComponent(Boolean isPcComponent);
+    
+    /**
+     * Найти категории периферии
+     * @param isPeripheral флаг, указывающий на категории периферии
+     * @return список категорий
+     */
+    List<Category> findByIsPeripheral(Boolean isPeripheral);
 } 

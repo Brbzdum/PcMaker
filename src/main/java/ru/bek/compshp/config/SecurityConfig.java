@@ -82,7 +82,8 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/api/public/**",
                     "/api/products/**",
-                    "/api/categories/**"
+                    "/api/categories/**",
+                    "/api/peripherals/types"
                 ).permitAll()
                 // Остальные API запросы требуют аутентификации
                 .anyRequest().authenticated()

@@ -148,6 +148,47 @@ public class Product {
         return BigDecimal.valueOf(averageRating);
     }
     
+    /**
+     * Проверяет, является ли продукт периферийным устройством
+     * @return true, если продукт является периферийным устройством
+     */
+    public boolean isPeripheral() {
+        return category != null && category.getIsPeripheral();
+    }
+    
+    /**
+     * Получает тип продукта (компонент или периферия) в виде строки
+     * @return строковое представление типа продукта
+     */
+    public String getProductType() {
+        if (componentType != null) {
+            return componentType.name();
+        } else if (category != null && category.getIsPeripheral()) {
+            // Для периферии используем категорию
+            // Здесь должен использоваться PeripheralTypeMapper, но для простоты
+            // и избежания зависимости от сервиса в модели, используем известные соответствия
+            Long categoryId = category.getId();
+            if (categoryId != null) {
+                // Карта соответствия ID категорий типам периферии
+                switch (categoryId.intValue()) {
+                    case 38: return "monitor";
+                    case 39: return "keyboard";
+                    case 40: return "mouse";
+                    case 41: return "headset";
+                    case 42: return "speakers";
+                    case 43: return "mousepad";
+                    case 44: return "microphone";
+                    default: break;
+                }
+            }
+            // Если не нашли соответствия, возвращаем slug категории в нижнем регистре
+            if (category.getSlug() != null) {
+                return category.getSlug().toLowerCase();
+            }
+        }
+        return "UNKNOWN";
+    }
+    
     @Override
     public String toString() {
         return "Product{" +
@@ -157,6 +198,7 @@ public class Product {
             ", stock=" + stock +
             ", isActive=" + isActive +
             ", componentType=" + componentType +
+            ", category=" + (category != null ? category.getName() : "null") +
             ", createdAt=" + createdAt +
             ", updatedAt=" + updatedAt +
             '}';
