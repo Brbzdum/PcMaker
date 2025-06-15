@@ -844,7 +844,6 @@
                 if (targetDiv) {
                     targetDiv.style.display = 'block';
                 }
-                return;
             }
             
             // Если выбрана категория, определяем тип периферии и показываем соответствующие поля
@@ -893,8 +892,9 @@
                     });
                 }
             } 
+            
             // Обрабатываем спецификации периферии
-            else if (categoryId) {
+            if (categoryId) {
                 // Получаем название выбранной категории
                 const categorySelect = document.getElementById('categoryId');
                 const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -954,8 +954,9 @@
                         }
                     });
                 } 
+                
                 // Заполняем поля спецификаций для периферии
-                else if (categoryId) {
+                if (categoryId) {
                     // Получаем название выбранной категории
                     const categorySelect = document.getElementById('categoryId');
                     const selectedOption = categorySelect.options[categorySelect.selectedIndex];
@@ -981,15 +982,13 @@
             }
         }
         
-        // Функция для обработки взаимоисключающего выбора типа компонента и категории
+        // Функция для обработки выбора типа компонента и категории
         function handleComponentTypeAndCategorySelection() {
             const componentTypeSelect = document.getElementById('componentType');
             const categorySelect = document.getElementById('categoryId');
             
-            // Если выбран тип компонента, сбрасываем категорию
-            if (componentTypeSelect.value) {
-                categorySelect.value = '';
-            }
+            // Больше не сбрасываем категорию при выборе типа компонента
+            // и наоборот - позволяем выбрать оба значения
             
             showSpecFields();
             loadSpecsFromJson();
@@ -997,17 +996,19 @@
         
         // Слушатели событий изменения типа компонента и категории
         document.getElementById('componentType').addEventListener('change', function() {
-            if (this.value) {
-                document.getElementById('categoryId').value = '';
-            }
+            // Убираем сброс категории
+            // if (this.value) {
+            //     document.getElementById('categoryId').value = '';
+            // }
             showSpecFields();
             loadSpecsFromJson();
         });
         
         document.getElementById('categoryId').addEventListener('change', function() {
-            if (this.value) {
-                document.getElementById('componentType').value = '';
-            }
+            // Убираем сброс типа компонента
+            // if (this.value) {
+            //     document.getElementById('componentType').value = '';
+            // }
             showSpecFields();
             loadSpecsFromJson();
         });

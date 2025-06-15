@@ -13,6 +13,9 @@ import ru.bek.compshp.model.enums.RoleName;
 import ru.bek.compshp.service.AuthService;
 import ru.bek.compshp.service.EmailService;
 import ru.bek.compshp.service.RoleService;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
 
 /**
  * Контроллер для аутентификации и регистрации пользователей
@@ -35,17 +38,30 @@ public class AuthController {
     @PostMapping("/signup")
     public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signupRequest, 
                                         HttpServletRequest request) {
-        // Создаем нового пользователя
-        User user = authService.registerUser(signupRequest);
+        // Проверяем согласие на обработку персональных данных
+        if (!signupRequest.isDataProcessingConsent()) {
+            return ResponseEntity.badRequest().body("Необходимо согласие на обработку персональных данных");
+        }
         
-        // Добавляем роль USER
-        Role userRole = roleService.findByName(RoleName.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-        user.addRole(userRole);
-        
-        // Письмо с подтверждением отправляется в сервисе AuthService
-        
-        return ResponseEntity.ok("User registered successfully! Please check your email for verification.");
+        try {
+            // Создаем нового пользователя
+            User user = authService.registerUser(signupRequest);
+            
+            // Добавляем роль USER
+            Role userRole = roleService.findByName(RoleName.ROLE_USER)
+                    .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+            user.addRole(userRole);
+            
+            // Письмо с подтверждением отправляется в сервисе AuthService
+            
+            return ResponseEntity.ok("User registered successfully! Please check your email for verification.");
+        } catch (IllegalStateException e) {
+            // Возвращаем ошибку в формате JSON
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", e.getMessage());
+            response.put("error", "Registration failed");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
     }
 
     /**
