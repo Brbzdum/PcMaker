@@ -1,15 +1,33 @@
 -- Добавляем категории периферийных устройств
-INSERT INTO categories (name, description, is_pc_component, slug) VALUES
-('Мониторы', 'Дисплеи для отображения информации', false, 'monitors'),
-('Клавиатуры', 'Устройства ввода для ПК', false, 'keyboards'),
-('Мыши', 'Манипуляторы для управления курсором', false, 'mice'),
-('Гарнитуры', 'Наушники с микрофоном для компьютера', false, 'headsets'),
-('Колонки', 'Акустические системы для ПК', false, 'speakers'),
-('Web-камеры', 'Камеры для видеосвязи', false, 'webcams'),
-('Принтеры', 'Устройства для печати документов', false, 'printers'),
-('Сканеры', 'Устройства для оцифровки изображений', false, 'scanners'),
-('Игровые контроллеры', 'Джойстики и геймпады для игр', false, 'gamepads'),
-('Сетевое оборудование', 'Маршрутизаторы, коммутаторы и сетевые адаптеры', false, 'network');
+INSERT INTO categories (name, description, is_pc_component, slug, is_peripheral)
+SELECT name, description, false, slug, true
+FROM (VALUES
+    ('Мониторы', 'Дисплеи для отображения информации', 'monitors'),
+    ('Клавиатуры', 'Устройства ввода для ПК', 'keyboards'),
+    ('Мыши', 'Манипуляторы для управления курсором', 'mice'),
+    ('Гарнитуры', 'Наушники с микрофоном для компьютера', 'headsets'),
+    ('Колонки', 'Акустические системы для ПК', 'speakers'),
+    ('Web-камеры', 'Камеры для видеосвязи', 'webcams'),
+    ('Принтеры', 'Устройства для печати документов', 'printers'),
+    ('Сканеры', 'Устройства для оцифровки изображений', 'scanners'),
+    ('Игровые контроллеры', 'Джойстики и геймпады для игр', 'gamepads'),
+    ('Сетевое оборудование', 'Маршрутизаторы, коммутаторы и сетевые адаптеры', 'network'),
+    ('Наушники', 'Устройства для прослушивания аудио', 'headphones'),
+    ('Коврики для мыши', 'Поверхности для комфортного использования мыши', 'mousepads'),
+    ('Микрофоны', 'Устройства для записи звука', 'microphones')
+) AS new_categories(name, description, slug)
+WHERE NOT EXISTS (
+    SELECT 1 FROM categories WHERE categories.name = new_categories.name
+);
+
+-- Обновляем существующие категории периферии, устанавливая флаг is_peripheral
+UPDATE categories 
+SET is_peripheral = true
+WHERE name IN (
+    'Мониторы', 'Клавиатуры', 'Мыши', 'Гарнитуры', 'Колонки', 'Web-камеры', 
+    'Принтеры', 'Сканеры', 'Игровые контроллеры', 'Сетевое оборудование',
+    'Наушники', 'Коврики для мыши', 'Микрофоны'
+);
 
 -- Добавляем производителей периферийных устройств
 INSERT INTO manufacturers (name, description, rating) VALUES
@@ -188,4 +206,89 @@ true),
 (SELECT id FROM categories WHERE name = 'Колонки'), 
 NULL, 
 '{"type": "2.1", "power": "420", "frequency_response": "20-20000", "connectivity": "USB, Bluetooth, Optical", "subwoofer": "Yes", "subwoofer_size": "6", "control": "Remote", "bluetooth": "Yes", "remote": "Yes", "headphone_jack": "Yes", "special_features": "Chroma RGB lighting, Dolby Virtual Surround Sound"}', 
+true);
+
+-- Добавляем наушники
+INSERT INTO products (title, description, price, stock, manufacturer_id, category_id, component_type, specs, is_active) 
+VALUES 
+('HyperX Cloud Alpha', 'Наушники HyperX Cloud Alpha игровые, черно-красные', 6999.99, 25, 
+(SELECT id FROM manufacturers WHERE name = 'HyperX'), 
+(SELECT id FROM categories WHERE name = 'Наушники'), 
+NULL, 
+'{"type": "Gaming", "driver_size": "50", "frequency_response": "13-27000", "connection": "3.5mm", "impedance": "65", "weight": "298", "noise_cancellation": "Passive", "wireless": "No", "battery_life": "N/A", "foldable": "No", "special_features": "Dual Chamber Drivers, Detachable cable"}', 
+true),
+
+('Razer Kraken X', 'Наушники Razer Kraken X игровые, черные', 4999.99, 30, 
+(SELECT id FROM manufacturers WHERE name = 'Razer'), 
+(SELECT id FROM categories WHERE name = 'Наушники'), 
+NULL, 
+'{"type": "Gaming", "driver_size": "40", "frequency_response": "12-28000", "connection": "3.5mm", "impedance": "32", "weight": "250", "noise_cancellation": "Passive", "wireless": "No", "battery_life": "N/A", "foldable": "No", "special_features": "7.1 Surround Sound, Ultra-lightweight design"}', 
+true);
+
+-- Добавляем коврики для мыши
+INSERT INTO products (title, description, price, stock, manufacturer_id, category_id, component_type, specs, is_active) 
+VALUES 
+('SteelSeries QcK Edge', 'Коврик SteelSeries QcK Edge игровой, тканевый, размер XL', 1999.99, 40, 
+(SELECT id FROM manufacturers WHERE name = 'SteelSeries'), 
+(SELECT id FROM categories WHERE name = 'Коврики для мыши'), 
+NULL, 
+'{"type": "Gaming", "material": "Cloth", "size": "XL (900x300mm)", "thickness": "2", "rgb": "No", "surface": "Micro-woven", "base": "Non-slip rubber", "special_features": "Reinforced stitched edges"}', 
+true),
+
+('Razer Goliathus Chroma', 'Коврик Razer Goliathus Chroma игровой, тканевый, с RGB-подсветкой', 3999.99, 20, 
+(SELECT id FROM manufacturers WHERE name = 'Razer'), 
+(SELECT id FROM categories WHERE name = 'Коврики для мыши'), 
+NULL, 
+'{"type": "Gaming", "material": "Cloth", "size": "Medium (355x255mm)", "thickness": "3", "rgb": "Yes", "surface": "Micro-textured", "base": "Non-slip rubber", "special_features": "Razer Chroma RGB lighting, Cable management"}', 
+true);
+
+-- Добавляем микрофоны
+INSERT INTO products (title, description, price, stock, manufacturer_id, category_id, component_type, specs, is_active) 
+VALUES 
+('HyperX QuadCast', 'Микрофон HyperX QuadCast конденсаторный, для стриминга', 9999.99, 15, 
+(SELECT id FROM manufacturers WHERE name = 'HyperX'), 
+(SELECT id FROM categories WHERE name = 'Микрофоны'), 
+NULL, 
+'{"type": "Condenser", "pattern": "Multiple (Cardioid, Omnidirectional, Bidirectional, Stereo)", "frequency_response": "20-20000", "connection": "USB", "sample_rate": "48", "bit_depth": "16", "mount": "Shock mount included", "gain_control": "Yes", "mute_button": "Yes", "monitoring": "Yes", "special_features": "RGB lighting, Anti-vibration shock mount"}', 
+true),
+
+('Razer Seiren X', 'Микрофон Razer Seiren X конденсаторный, для стриминга', 7999.99, 20, 
+(SELECT id FROM manufacturers WHERE name = 'Razer'), 
+(SELECT id FROM categories WHERE name = 'Микрофоны'), 
+NULL, 
+'{"type": "Condenser", "pattern": "Supercardioid", "frequency_response": "20-20000", "connection": "USB", "sample_rate": "48", "bit_depth": "16", "mount": "Built-in", "gain_control": "Yes", "mute_button": "Yes", "monitoring": "Yes", "special_features": "Built-in shock mount, Compact design"}', 
+true);
+
+-- Добавляем сетевое оборудование
+INSERT INTO products (title, description, price, stock, manufacturer_id, category_id, component_type, specs, is_active) 
+VALUES 
+('TP-Link Archer AX50', 'Маршрутизатор TP-Link Archer AX50 Wi-Fi 6, двухдиапазонный', 7999.99, 15, 
+(SELECT id FROM manufacturers WHERE name = 'Dell'), -- Используем Dell как временного производителя
+(SELECT id FROM categories WHERE name = 'Сетевое оборудование'), 
+NULL, 
+'{"type": "Router", "wifi_standard": "Wi-Fi 6 (802.11ax)", "bands": "Dual-band", "max_speed": "3000", "ports": "4x Gigabit LAN, 1x Gigabit WAN, 1x USB 3.0", "antennas": "4", "processor": "Dual-core", "security": "WPA3", "special_features": "OFDMA, MU-MIMO, Beamforming"}', 
+true),
+
+('Netgear Nighthawk XR1000', 'Маршрутизатор Netgear Nighthawk XR1000 игровой, Wi-Fi 6', 14999.99, 10, 
+(SELECT id FROM manufacturers WHERE name = 'Dell'), -- Используем Dell как временного производителя
+(SELECT id FROM categories WHERE name = 'Сетевое оборудование'), 
+NULL, 
+'{"type": "Gaming Router", "wifi_standard": "Wi-Fi 6 (802.11ax)", "bands": "Dual-band", "max_speed": "5400", "ports": "4x Gigabit LAN, 1x Gigabit WAN, 1x USB 3.0", "antennas": "4", "processor": "Triple-core 1.5GHz", "security": "WPA3", "special_features": "DumaOS 3.0, Geo-Filter, QoS, Gaming Dashboard"}', 
+true);
+
+-- Добавляем игровые контроллеры
+INSERT INTO products (title, description, price, stock, manufacturer_id, category_id, component_type, specs, is_active) 
+VALUES 
+('Xbox Wireless Controller', 'Контроллер Xbox Series X|S беспроводной, черный', 5999.99, 30, 
+(SELECT id FROM manufacturers WHERE name = 'Dell'), -- Используем Dell как временного производителя
+(SELECT id FROM categories WHERE name = 'Игровые контроллеры'), 
+NULL, 
+'{"type": "Gamepad", "platform": "Xbox/PC", "connection": "Bluetooth/USB-C", "wireless": "Yes", "battery_type": "AA Batteries", "battery_life": "40", "vibration": "Yes", "buttons": "17", "analog_sticks": "2", "special_features": "Share button, Hybrid D-pad, Textured grip"}', 
+true),
+
+('DualSense Wireless Controller', 'Контроллер Sony DualSense для PlayStation 5, белый', 6999.99, 25, 
+(SELECT id FROM manufacturers WHERE name = 'Dell'), -- Используем Dell как временного производителя
+(SELECT id FROM categories WHERE name = 'Игровые контроллеры'), 
+NULL, 
+'{"type": "Gamepad", "platform": "PlayStation 5/PC", "connection": "Bluetooth/USB-C", "wireless": "Yes", "battery_type": "Rechargeable", "battery_life": "12", "vibration": "Yes", "buttons": "14", "analog_sticks": "2", "special_features": "Haptic feedback, Adaptive triggers, Built-in microphone"}', 
 true); 

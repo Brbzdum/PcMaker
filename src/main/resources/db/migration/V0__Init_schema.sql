@@ -1,6 +1,6 @@
--- Текущая схема базы данных после всех миграций
+-- Инициализация схемы базы данных
 
--- Создание типов данных (оставшиеся после миграций)
+-- Создание типов данных
 CREATE TYPE user_role AS ENUM ('USER', 'ADMIN');
 CREATE TYPE product_category AS ENUM (
     'PC_COMPONENT', 'LAPTOP', 'MONITOR',
@@ -253,7 +253,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Создание триггеров
+-- Триггеры для обновления временных меток
+CREATE TRIGGER trg_update_timestamp
+    BEFORE UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION update_timestamp();
+
 CREATE TRIGGER trg_update_timestamp
     BEFORE UPDATE ON products
     FOR EACH ROW
@@ -284,6 +289,7 @@ CREATE TRIGGER trg_update_timestamp
     FOR EACH ROW
     EXECUTE FUNCTION update_timestamp();
 
+-- Триггеры для управления запасами
 CREATE TRIGGER trg_reduce_stock
     AFTER INSERT ON order_items
     FOR EACH ROW
@@ -297,45 +303,4 @@ CREATE TRIGGER trg_restore_stock
 CREATE TRIGGER trg_adjust_stock
     AFTER UPDATE ON order_items
     FOR EACH ROW
-    EXECUTE FUNCTION adjust_stock_on_update();
-
--- Добавление базовых правил совместимости
-INSERT INTO compatibility_rules
-(source_type, target_type, rule_type, source_property, target_property, comparison_operator, description)
-VALUES
-    -- Основные правила совместимости
-    ('CPU', 'MB', 'EXACT_MATCH', 'socket', 'socket', '=', 'Сокет процессора должен совпадать с сокетом материнской платы'),
-    ('RAM', 'MB', 'EXACT_MATCH', 'type', 'ram_type', '=', 'Тип оперативной памяти должен совпадать с поддерживаемым типом на материнской плате'),
-    ('RAM', 'MB', 'RANGE_CHECK', 'frequency', 'max_ram_frequency', '<=', 'Частота оперативной памяти не должна превышать максимальную поддерживаемую частоту материнской платы'),
-    ('GPU', 'MB', 'EXACT_MATCH', 'interface', 'pcie_version', '=', 'Интерфейс видеокарты должен совпадать с версией PCIe на материнской плате'),
-    ('PSU', 'MB', 'SUBSET_CHECK', 'connectors', 'required_connectors', 'CONTAINS', 'Блок питания должен иметь все необходимые разъемы для материнской платы'),
-    ('PSU', 'GPU', 'GREATER_THAN', 'wattage', 'power', '>=', 'Мощность блока питания должна быть не меньше требуемой мощности видеокарты'),
-    ('CASE', 'MB', 'EXACT_MATCH', 'form_factor', 'form_factor', '=', 'Форм-фактор корпуса должен совпадать с форм-фактором материнской платы'),
-    ('CASE', 'GPU', 'GREATER_THAN', 'max_gpu_length', 'length', '>=', 'Максимальная длина видеокарты, поддерживаемая корпусом, должна быть не меньше длины видеокарты'),
-    ('COOLER', 'CPU', 'EXACT_MATCH', 'socket', 'socket', '=', 'Сокет системы охлаждения должен совпадать с сокетом процессора'),
-    ('STORAGE', 'MB', 'EXACT_MATCH', 'interface', 'storage_interface', '=', 'Интерфейс накопителя должен совпадать с интерфейсом на материнской плате'),
-    
-    -- Дополнительные правила совместимости
-    ('CPU', 'RAM', 'EXACT_MATCH', 'ram_type', 'type', '=', 'Процессор должен поддерживать тип используемой RAM'),
-    ('CPU', 'RAM', 'RANGE_CHECK', 'max_memory_channels', 'modules', '>=', 'Процессор должен поддерживать количество модулей памяти'),
-    ('CPU', 'COOLER', 'GREATER_THAN', 'tdp', 'max_tdp', '<=', 'TDP процессора не должен превышать максимальный TDP, поддерживаемый системой охлаждения'),
-    ('MB', 'CASE', 'EXACT_MATCH', 'form_factor', 'form_factor', '=', 'Форм-фактор материнской платы должен соответствовать поддерживаемому форм-фактору корпуса'),
-    ('MB', 'RAM', 'EXACT_MATCH', 'ram_slots', 'modules', '>=', 'Количество слотов для RAM должно быть не меньше количества модулей памяти'),
-    ('PSU', 'CPU', 'GREATER_THAN', 'wattage', 'tdp', '>=', 'Мощность блока питания должна быть достаточной для питания процессора'),
-    ('PSU', 'RAM', 'GREATER_THAN', 'wattage', 'power_consumption', '>=', 'Мощность блока питания должна быть достаточной для питания памяти'),
-    ('PSU', 'STORAGE', 'GREATER_THAN', 'wattage', 'power_consumption', '>=', 'Мощность блока питания должна быть достаточной для питания накопителей'),
-    ('STORAGE', 'CASE', 'EXACT_MATCH', 'form_factor', 'drive_bays', 'CONTAINS', 'Корпус должен иметь отсеки для установки накопителя данного форм-фактора'),
-    ('COOLER', 'CASE', 'RANGE_CHECK', 'height', 'max_cpu_cooler_height', '<=', 'Высота кулера не должна превышать максимальную высоту, поддерживаемую корпусом'),
-    ('COOLER', 'CASE', 'SUBSET_CHECK', 'radiator_size', 'radiator_support', 'CONTAINS', 'Корпус должен поддерживать размер радиатора системы жидкостного охлаждения'),
-    ('CPU', 'GPU', 'RANGE_CHECK', 'max_pcie_lanes', 'pcie_lanes', '>=', 'Процессор должен поддерживать количество линий PCIe, требуемых для видеокарты'),
-    ('RAM', 'CPU', 'RANGE_CHECK', 'frequency', 'max_memory_frequency', '<=', 'Частота оперативной памяти не должна превышать максимальную частоту, поддерживаемую процессором'),
-    
-    -- Правила для специализированных систем
-    ('CPU', 'GPU', 'COMPATIBILITY_LIST', 'performance', 'performance', 'BALANCED', 'Для геймерской системы процессор и видеокарта должны быть сбалансированы по производительности'),
-    ('RAM', 'GPU', 'RANGE_CHECK', 'capacity', 'memory', '>=', 'Объем оперативной памяти должен быть не меньше объема памяти видеокарты для геймерских конфигураций'),
-    ('COOLER', 'CPU', 'GREATER_THAN', 'max_tdp', 'tdp', '>=', 'Для геймерских процессоров с высоким TDP требуется соответствующее охлаждение'),
-    ('CPU', 'RAM', 'RANGE_CHECK', 'cores', 'capacity', '>=', 'Для профессиональных рабочих станций требуется достаточный объем памяти'),
-    ('CASE', 'SYSTEM', 'EXACT_MATCH', 'form_factor', 'size_factor', '=', 'Для компактных систем требуется корпус соответствующего форм-фактора'),
-    ('MB', 'SYSTEM', 'EXACT_MATCH', 'form_factor', 'size_factor', '=', 'Для компактных систем требуется материнская плата соответствующего форм-фактора'),
-    ('PSU', 'CASE', 'EXACT_MATCH', 'form_factor', 'psu_form_factor', '=', 'Форм-фактор блока питания должен соответствовать поддерживаемому корпусом'),
-    ('COOLER', 'SYSTEM', 'RANGE_CHECK', 'noise_level', 'environment', '<=', 'Для тихих рабочих сред требуется тихая система охлаждения'); 
+    EXECUTE FUNCTION adjust_stock_on_update(); 
