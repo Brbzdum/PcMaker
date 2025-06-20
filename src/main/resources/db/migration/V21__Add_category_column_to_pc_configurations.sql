@@ -1,1 +1,0 @@
-ALTER TABLE pc_configurations ADD COLUMN category VARCHAR(50); 

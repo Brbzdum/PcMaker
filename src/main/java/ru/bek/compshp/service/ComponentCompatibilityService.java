@@ -141,283 +141,24 @@ public class ComponentCompatibilityService {
                     }
                     break;
                 case CONTAINS:
-                    if (!sourceValue.contains(targetValue)) {
+                    // Специальная обработка для PCIe совместимости
+                    if (isPCIeCompatibilityCheck(rule.getSourceProperty(), rule.getTargetProperty())) {
+                        if (!checkPCIeCompatibility(sourceValue, targetValue, rule.getSourceProperty())) {
+                            return false;
+                        }
+                    } else if (!sourceValue.contains(targetValue)) {
                         return false;
                     }
                     break;
-                case BALANCED:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
-                        if (!isBalanced) {
-                            return false;
-                        }
-                    }
-                    break;
-                case CONDITION:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
-                        if (!conditionMet) {
-                            return false;
-                        }
-                    }
-                    break;
                 default:
+                    // Убираем сложные операторы BALANCED и CONDITION
+                    // Оставляем только базовые операторы сравнения
                     break;
             }
         }
         
         // Если все правила прошли проверку, компоненты совместимы
         return true;
-    }
-    
-    /**
-     * Оценивает условие баланса между компонентами
-     * @param expression выражение для оценки
-     * @param source первый компонент
-     * @param target второй компонент
-     * @return true, если условие баланса выполнено
-     */
-    private boolean evaluateBalancedCondition(String expression, Product source, Product target) {
-        try {
-            // Пример выражения: "CPU.performance * 0.8 <= GPU.performance AND CPU.performance * 1.2 >= GPU.performance"
-            // Разбиваем на части по AND/OR
-            String[] parts = expression.split("\\s+AND\\s+|\\s+OR\\s+");
-            boolean isAnd = expression.contains(" AND ");
-            
-            boolean result = isAnd; // Для AND начальное значение true, для OR - false
-            
-            for (String part : parts) {
-                boolean partResult = evaluateSimpleExpression(part, source, target);
-                if (isAnd) {
-                    result = result && partResult;
-                } else {
-                    result = result || partResult;
-                }
-            }
-            
-            return result;
-        } catch (Exception e) {
-            log.error("Ошибка при оценке условия баланса: {}", expression, e);
-            return true; // По умолчанию считаем, что условие выполнено
-        }
-    }
-    
-    /**
-     * Оценивает условное выражение
-     * @param expression выражение для оценки
-     * @param source первый компонент
-     * @param target второй компонент
-     * @return true, если условие выполнено
-     */
-    private boolean evaluateCondition(String expression, Product source, Product target) {
-        try {
-            // Пример выражения: "IF CPU.workload_type = \"ML\" THEN GPU.memory >= 12"
-            if (expression.startsWith("IF ")) {
-                // Извлекаем условие и следствие
-                Pattern pattern = Pattern.compile("IF\\s+(.+?)\\s+THEN\\s+(.+)");
-                Matcher matcher = pattern.matcher(expression);
-                
-                if (matcher.find()) {
-                    String condition = matcher.group(1);
-                    String consequence = matcher.group(2);
-                    
-                    // Оцениваем условие
-                    boolean conditionMet = evaluateSimpleExpression(condition, source, target);
-                    
-                    // Если условие выполнено, проверяем следствие
-                    if (conditionMet) {
-                        return evaluateSimpleExpression(consequence, source, target);
-                    } else {
-                        return true; // Если условие не выполнено, правило не применяется
-                    }
-                }
-            }
-            
-            // Если формат не соответствует IF-THEN, оцениваем как простое выражение
-            return evaluateSimpleExpression(expression, source, target);
-        } catch (Exception e) {
-            log.error("Ошибка при оценке условного выражения: {}", expression, e);
-            return true; // По умолчанию считаем, что условие выполнено
-        }
-    }
-    
-    /**
-     * Оценивает простое выражение сравнения
-     * @param expression выражение для оценки
-     * @param source первый компонент
-     * @param target второй компонент
-     * @return true, если выражение истинно
-     */
-    private boolean evaluateSimpleExpression(String expression, Product source, Product target) {
-        try {
-            // Поддерживаемые операторы: =, !=, >, <, >=, <=, IN, CONTAINS
-            Pattern pattern = Pattern.compile("(.+?)\\s*(=|!=|>|<|>=|<=|IN|CONTAINS)\\s*(.+)");
-            Matcher matcher = pattern.matcher(expression);
-            
-            if (matcher.find()) {
-                String leftPart = matcher.group(1).trim();
-                String operator = matcher.group(2).trim();
-                String rightPart = matcher.group(3).trim();
-                
-                // Получаем значения из компонентов
-                Object leftValue = extractValue(leftPart, source, target);
-                Object rightValue = extractValue(rightPart, source, target);
-                
-                // Если не удалось извлечь значения, считаем условие выполненным
-                if (leftValue == null || rightValue == null) {
-                    return true;
-                }
-                
-                // Оцениваем выражение в зависимости от оператора
-                return compareValues(leftValue, operator, rightValue);
-            }
-            
-            return true; // Если не удалось разобрать выражение, считаем условие выполненным
-        } catch (Exception e) {
-            log.error("Ошибка при оценке простого выражения: {}", expression, e);
-            return true; // По умолчанию считаем, что условие выполнено
-        }
-    }
-    
-    /**
-     * Извлекает значение из компонента по указанному пути
-     * @param path путь к значению (например, "CPU.cores" или "12")
-     * @param source первый компонент
-     * @param target второй компонент
-     * @return извлеченное значение или null, если не удалось извлечь
-     */
-    private Object extractValue(String path, Product source, Product target) {
-        try {
-            // Проверяем, является ли значение числом
-            if (path.matches("-?\\d+(\\.\\d+)?")) {
-                return Double.parseDouble(path);
-            }
-            
-            // Проверяем, является ли значение строкой в кавычках
-            if (path.startsWith("\"") && path.endsWith("\"")) {
-                return path.substring(1, path.length() - 1);
-            }
-            
-            // Проверяем, является ли значение списком
-            if (path.startsWith("[") && path.endsWith("]")) {
-                String[] items = path.substring(1, path.length() - 1).split(",\\s*");
-                List<String> list = new ArrayList<>();
-                for (String item : items) {
-                    if (item.startsWith("\"") && item.endsWith("\"")) {
-                        list.add(item.substring(1, item.length() - 1));
-                    } else {
-                        list.add(item);
-                    }
-                }
-                return list;
-            }
-            
-            // Извлекаем значение из компонента
-            if (path.contains(".")) {
-                String[] parts = path.split("\\.");
-                String componentType = parts[0];
-                String property = parts[1];
-                
-                Product component = null;
-                if (componentType.equalsIgnoreCase(source.getComponentType().toString())) {
-                    component = source;
-                } else if (componentType.equalsIgnoreCase(target.getComponentType().toString())) {
-                    component = target;
-                }
-                
-                if (component != null) {
-                    String value = component.getSpec(property);
-                    if (value.isEmpty()) {
-                        return null;
-                    }
-                    
-                    // Пытаемся преобразовать в число, если возможно
-                    try {
-                        return Double.parseDouble(value);
-                    } catch (NumberFormatException e) {
-                        return value;
-                    }
-                }
-            }
-            
-            return null;
-        } catch (Exception e) {
-            log.error("Ошибка при извлечении значения из пути: {}", path, e);
-            return null;
-        }
-    }
-    
-    /**
-     * Сравнивает два значения с использованием указанного оператора
-     * @param left левое значение
-     * @param operator оператор сравнения
-     * @param right правое значение
-     * @return результат сравнения
-     */
-    private boolean compareValues(Object left, String operator, Object right) {
-        try {
-            // Если оба значения числа, выполняем числовое сравнение
-            if (left instanceof Number && right instanceof Number) {
-                double leftNum = ((Number) left).doubleValue();
-                double rightNum = ((Number) right).doubleValue();
-                
-                switch (operator) {
-                    case "=":
-                        return leftNum == rightNum;
-                    case "!=":
-                        return leftNum != rightNum;
-                    case ">":
-                        return leftNum > rightNum;
-                    case "<":
-                        return leftNum < rightNum;
-                    case ">=":
-                        return leftNum >= rightNum;
-                    case "<=":
-                        return leftNum <= rightNum;
-                    default:
-                        return false;
-                }
-            }
-            
-            // Если оба значения строки, выполняем строковое сравнение
-            if (left instanceof String && right instanceof String) {
-                String leftStr = (String) left;
-                String rightStr = (String) right;
-                
-                switch (operator) {
-                    case "=":
-                        return leftStr.equals(rightStr);
-                    case "!=":
-                        return !leftStr.equals(rightStr);
-                    case "CONTAINS":
-                        return leftStr.contains(rightStr);
-                    case "IN":
-                        return rightStr.contains(leftStr);
-                    default:
-                        return false;
-                }
-            }
-            
-            // Если правое значение список, проверяем вхождение левого значения в список
-            if (right instanceof List) {
-                List<?> rightList = (List<?>) right;
-                
-                if (operator.equals("IN")) {
-                    for (Object item : rightList) {
-                        if (item.toString().equals(left.toString())) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-            }
-            
-            // По умолчанию считаем условие невыполненным
-            return false;
-        } catch (Exception e) {
-            log.error("Ошибка при сравнении значений: {} {} {}", left, operator, right, e);
-            return false;
-        }
     }
     
     /**
@@ -457,14 +198,14 @@ public class ComponentCompatibilityService {
             switch (operator) {
                 case EQUALS:
                     if (!sourceValue.equals(targetValue)) {
-                        return String.format("%s должен быть равен %s (текущие значения: %s и %s)",
-                                sourceProperty, targetProperty, sourceValue, targetValue);
+                        return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                sourceValue, targetValue, source, target, operator);
                     }
                     break;
                 case NOT_EQUALS:
                     if (sourceValue.equals(targetValue)) {
-                        return String.format("%s не должен быть равен %s (оба имеют значение %s)",
-                                sourceProperty, targetProperty, sourceValue);
+                        return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                sourceValue, targetValue, source, target, operator);
                     }
                     break;
                 case GREATER_THAN:
@@ -472,8 +213,8 @@ public class ComponentCompatibilityService {
                         double sourceNum = Double.parseDouble(sourceValue);
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum <= targetNum) {
-                            return String.format("%s должен быть больше %s (текущие значения: %s и %s)",
-                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                            return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                    sourceValue, targetValue, source, target, operator);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
@@ -484,8 +225,8 @@ public class ComponentCompatibilityService {
                         double sourceNum = Double.parseDouble(sourceValue);
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum >= targetNum) {
-                            return String.format("%s должен быть меньше %s (текущие значения: %s и %s)",
-                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                            return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                    sourceValue, targetValue, source, target, operator);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
@@ -496,8 +237,8 @@ public class ComponentCompatibilityService {
                         double sourceNum = Double.parseDouble(sourceValue);
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum > targetNum) {
-                            return String.format("%s должен быть меньше или равен %s (текущие значения: %s и %s)",
-                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                            return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                    sourceValue, targetValue, source, target, operator);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
@@ -508,33 +249,23 @@ public class ComponentCompatibilityService {
                         double sourceNum = Double.parseDouble(sourceValue);
                         double targetNum = Double.parseDouble(targetValue);
                         if (sourceNum < targetNum) {
-                            return String.format("%s должен быть больше или равен %s (текущие значения: %s и %s)",
-                                    sourceProperty, targetProperty, sourceValue, targetValue);
+                            return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                    sourceValue, targetValue, source, target, operator);
                         }
                     } catch (NumberFormatException e) {
                         // Если не числа, пропускаем правило
                     }
                     break;
                 case CONTAINS:
-                    if (!sourceValue.contains(targetValue)) {
-                        return String.format("%s должен содержать %s (текущие значения: %s и %s)",
-                                sourceProperty, targetProperty, sourceValue, targetValue);
-                    }
-                    break;
-                case BALANCED:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
-                        if (!isBalanced) {
-                            return String.format("Компоненты не сбалансированы по производительности: %s", rule.getDescription());
+                    // Специальная обработка для PCIe совместимости
+                    if (isPCIeCompatibilityCheck(rule.getSourceProperty(), rule.getTargetProperty())) {
+                        if (!checkPCIeCompatibility(sourceValue, targetValue, rule.getSourceProperty())) {
+                            return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                    sourceValue, targetValue, source, target, operator);
                         }
-                    }
-                    break;
-                case CONDITION:
-                    if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                        boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
-                        if (!conditionMet) {
-                            return String.format("Не выполнено условие: %s", rule.getDescription());
-                        }
+                    } else if (!sourceValue.contains(targetValue)) {
+                        return createUserFriendlyErrorMessage(sourceProperty, targetProperty, 
+                                sourceValue, targetValue, source, target, operator);
                     }
                     break;
                 default:
@@ -712,25 +443,14 @@ public class ComponentCompatibilityService {
                         break;
                     }
                     case CONTAINS: {
-                        isCompatible = sourceValue.contains(targetValue);
+                        // Специальная обработка для PCIe совместимости
+                        if (isPCIeCompatibilityCheck(rule.getSourceProperty(), rule.getTargetProperty())) {
+                            isCompatible = checkPCIeCompatibility(sourceValue, targetValue, rule.getSourceProperty());
+                        } else {
+                            isCompatible = sourceValue.contains(targetValue);
+                        }
                         break;
                     }
-                    case BALANCED:
-                        if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                            boolean isBalanced = evaluateBalancedCondition(rule.getValueModifier(), source, target);
-                            if (!isBalanced) {
-                                isCompatible = false;
-                            }
-                        }
-                        break;
-                    case CONDITION:
-                        if (rule.getValueModifier() != null && !rule.getValueModifier().isEmpty()) {
-                            boolean conditionMet = evaluateCondition(rule.getValueModifier(), source, target);
-                            if (!conditionMet) {
-                                isCompatible = false;
-                            }
-                        }
-                        break;
                     default: {
                         break;
                     }
@@ -886,5 +606,185 @@ public class ComponentCompatibilityService {
                 log.warn("Невозможно создать правило совместимости: {}", conflicts);
             }
         }
+    }
+    
+    /**
+     * Создает понятное пользователю сообщение об ошибке совместимости
+     */
+    private String createUserFriendlyErrorMessage(String sourceProperty, String targetProperty, 
+                                                 String sourceValue, String targetValue, 
+                                                 Product source, Product target, 
+                                                 CompatibilityRule.Operator operator) {
+        
+        // Переводим технические названия в понятные пользователю
+        String sourceComponentName = getComponentDisplayName(source);
+        String targetComponentName = getComponentDisplayName(target);
+        
+        switch (operator) {
+            case EQUALS:
+                // Специальные случаи для разных типов совместимости
+                if ("socket".equals(sourceProperty) && "socket".equals(targetProperty)) {
+                    return String.format("Несовместимые сокеты: %s использует сокет %s, а %s поддерживает сокет %s", 
+                            sourceComponentName, sourceValue, targetComponentName, targetValue);
+                }
+                if (("ram_type".equals(sourceProperty) && "type".equals(targetProperty)) ||
+                    ("type".equals(sourceProperty) && "ram_type".equals(targetProperty))) {
+                    return String.format("Несовместимые типы памяти: %s поддерживает %s, а %s поддерживает %s", 
+                            sourceComponentName, sourceValue, targetComponentName, targetValue);
+                }
+                if (("interface".equals(sourceProperty) && "pcie_version".equals(targetProperty)) ||
+                    ("pcie_version".equals(sourceProperty) && "interface".equals(targetProperty))) {
+                    return String.format("Несовместимые версии PCIe: %s использует %s, а %s поддерживает %s", 
+                            sourceComponentName, sourceValue, targetComponentName, targetValue);
+                }
+                if ("form_factor".equals(sourceProperty) && "form_factor".equals(targetProperty)) {
+                    return String.format("Несовместимые форм-факторы: %s имеет форм-фактор %s, а %s поддерживает %s", 
+                            sourceComponentName, sourceValue, targetComponentName, targetValue);
+                }
+                break;
+                
+            case NOT_EQUALS:
+                // Для NOT_EQUALS обычно проблема в том, что компоненты одного типа
+                return String.format("Конфликт компонентов: нельзя использовать несколько %s в одной конфигурации", 
+                        translateComponentType(source.getComponentType()).toLowerCase());
+                
+            case CONTAINS:
+                if ("form_factor".equals(sourceProperty) && "drive_bays".equals(targetProperty)) {
+                    return String.format("Корпус не поддерживает необходимые отсеки: %s требует отсеки %s, но %s поддерживает только %s", 
+                            targetComponentName, targetValue, sourceComponentName, sourceValue);
+                }
+                if (isPCIeCompatibilityCheck(sourceProperty, targetProperty)) {
+                    double sourceVersion = extractPCIeVersion(sourceValue);
+                    double targetVersion = extractPCIeVersion(targetValue);
+                    if ("interface".equals(sourceProperty)) {
+                        return String.format("Несовместимые версии PCIe: %s требует PCIe %s, но %s поддерживает только PCIe %s", 
+                                sourceComponentName, formatPCIeVersion(sourceVersion), targetComponentName, formatPCIeVersion(targetVersion));
+                    } else {
+                        return String.format("Несовместимые версии PCIe: %s поддерживает PCIe %s, но %s требует PCIe %s", 
+                                sourceComponentName, formatPCIeVersion(sourceVersion), targetComponentName, formatPCIeVersion(targetVersion));
+                    }
+                }
+                break;
+                
+            case LESS_THAN_EQUALS:
+                if ("power".equals(sourceProperty) && "wattage".equals(targetProperty)) {
+                    return String.format("Недостаточная мощность блока питания: требуется минимум %sВт, но %s обеспечивает только %sВт", 
+                            sourceValue, targetComponentName, targetValue);
+                }
+                break;
+        }
+        
+        // Общий случай, если специальная обработка не подошла
+        return String.format("Несовместимость компонентов: %s (%s = %s) и %s (%s = %s)", 
+                sourceComponentName, translatePropertyName(sourceProperty), sourceValue,
+                targetComponentName, translatePropertyName(targetProperty), targetValue);
+    }
+    
+    /**
+     * Получает отображаемое имя компонента
+     */
+    private String getComponentDisplayName(Product product) {
+        String name = product.getTitle();
+        if (name == null || name.trim().isEmpty()) {
+            name = translateComponentType(product.getComponentType()) + " #" + product.getId();
+        }
+        return name;
+    }
+    
+    /**
+     * Переводит тип компонента на русский язык
+     */
+    private String translateComponentType(ComponentType type) {
+        switch (type) {
+            case CPU: return "Процессор";
+            case GPU: return "Видеокарта";
+            case RAM: return "Оперативная память";
+            case MB: return "Материнская плата";
+            case STORAGE: return "Накопитель";
+            case PSU: return "Блок питания";
+            case CASE: return "Корпус";
+            case COOLER: return "Система охлаждения";
+            default: return type.toString();
+        }
+    }
+    
+    /**
+     * Переводит техническое название свойства в понятное пользователю
+     */
+    private String translatePropertyName(String property) {
+        switch (property) {
+            case "socket": return "сокет";
+            case "ram_type": return "тип памяти";
+            case "type": return "тип";
+            case "interface": return "интерфейс";
+            case "pcie_version": return "версия PCIe";
+            case "form_factor": return "форм-фактор";
+            case "drive_bays": return "отсеки для накопителей";
+            case "power": return "энергопотребление";
+            case "wattage": return "мощность";
+            default: return property;
+        }
+    }
+    
+    /**
+     * Проверяет, является ли правило проверкой совместимости PCIe
+     */
+    private boolean isPCIeCompatibilityCheck(String sourceProperty, String targetProperty) {
+        return ("interface".equals(sourceProperty) && "pcie_slots".equals(targetProperty)) ||
+               ("pcie_slots".equals(sourceProperty) && "interface".equals(targetProperty));
+    }
+    
+    /**
+     * Проверяет совместимость PCIe версий с учетом обратной совместимости
+     * PCIe 5.0 > 4.0 > 3.0 > 2.0 > 1.0
+     */
+    private boolean checkPCIeCompatibility(String sourceValue, String targetValue, String sourceProperty) {
+        // Извлекаем версии PCIe из строк
+        double sourceVersion = extractPCIeVersion(sourceValue);
+        double targetVersion = extractPCIeVersion(targetValue);
+        
+        if (sourceVersion == -1 || targetVersion == -1) {
+            // Если не удалось извлечь версии, используем обычную проверку на содержание
+            return sourceValue.contains(targetValue) || targetValue.contains(sourceValue);
+        }
+        
+        // Если источник - видеокарта (interface), а цель - материнская плата (pcie_slots)
+        if ("interface".equals(sourceProperty)) {
+            // Видеокарта может работать на материнской плате с равной или более высокой версией PCIe
+            return targetVersion >= sourceVersion;
+        } else {
+            // Материнская плата может поддерживать видеокарту с равной или более низкой версией PCIe
+            return sourceVersion >= targetVersion;
+        }
+    }
+    
+    /**
+     * Извлекает версию PCIe из строки (например, "PCIe 4.0" -> 4.0)
+     */
+    private double extractPCIeVersion(String pcieString) {
+        if (pcieString == null || pcieString.isEmpty()) {
+            return -1;
+        }
+        
+        // Ищем числа в строке (например, "PCIe 4.0", "PCI Express 3.0", "4.0")
+        Pattern pattern = Pattern.compile("(\\d+\\.\\d+|\\d+)");
+        Matcher matcher = pattern.matcher(pcieString);
+        
+        if (matcher.find()) {
+            try {
+                return Double.parseDouble(matcher.group(1));
+            } catch (NumberFormatException e) {
+                return -1;
+            }
+        }
+        
+        return -1;
+    }
+    
+    /**
+     * Форматирует версию PCIe в читаемый формат
+     */
+    private String formatPCIeVersion(double version) {
+        return String.format("PCIe %s", version);
     }
 } 

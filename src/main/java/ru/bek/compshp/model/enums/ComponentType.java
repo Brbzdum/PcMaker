@@ -7,6 +7,7 @@ import java.util.List;
  * Перечисление типов компонентов компьютера
  */
 public enum ComponentType {
+    // Компоненты ПК
     CPU("Процессор"),
     GPU("Видеокарта"),
     MB("Материнская плата"),
@@ -14,7 +15,22 @@ public enum ComponentType {
     PSU("Блок питания"),
     CASE("Корпус"),
     COOLER("Система охлаждения"),
-    STORAGE("Накопитель");
+    STORAGE("Накопитель"),
+    
+    // Периферийные устройства
+    MONITOR("Монитор"),
+    KEYBOARD("Клавиатура"),
+    MOUSE("Мышь"),
+    HEADSET("Гарнитура"),
+    SPEAKERS("Колонки"),
+    WEBCAM("Web-камера"),
+    PRINTER("Принтер"),
+    SCANNER("Сканер"),
+    GAMEPAD("Игровой контроллер"),
+    NETWORK("Сетевое оборудование"),
+    HEADPHONES("Наушники"),
+    MOUSEPAD("Коврик для мыши"),
+    MICROPHONE("Микрофон");
 
     private final String displayName;
     

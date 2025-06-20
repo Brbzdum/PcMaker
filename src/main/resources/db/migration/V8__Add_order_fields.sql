@@ -1,5 +1,0 @@
--- Добавление новых полей в таблицу orders
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS phone VARCHAR(255);
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS full_name VARCHAR(255);
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method VARCHAR(100);
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS comment TEXT; 

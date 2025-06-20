@@ -29,9 +29,7 @@ public class CompatibilityRule {
         LESS_THAN("<"),
         GREATER_THAN_EQUALS(">="),
         LESS_THAN_EQUALS("<="),
-        CONTAINS("CONTAINS"),
-        BALANCED("BALANCED"),
-        CONDITION("CONDITION");
+        CONTAINS("CONTAINS");
         
         private final String value;
         

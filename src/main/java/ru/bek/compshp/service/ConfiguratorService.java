@@ -419,9 +419,9 @@ public class ConfiguratorService {
 
     // Расчеты и статистика
     /**
-     * Рассчитывает потребляемую мощность конфигурации
+     * Рассчитывает общее энергопотребление конфигурации
      * @param configId ID конфигурации
-     * @return потребляемая мощность в ваттах
+     * @return общее энергопотребление в ваттах
      */
     public Integer calculatePowerRequirement(Long configId) {
         List<ConfigComponent> components = configComponentRepository.findByConfigId(configId);
@@ -429,16 +429,58 @@ public class ConfiguratorService {
         
         for (ConfigComponent component : components) {
             try {
-                String powerSpec = component.getProduct().getSpec("power");
-                if (powerSpec != null) {
-                    totalPower += Integer.parseInt(powerSpec);
+                Product product = component.getProduct();
+                
+                // ИСКЛЮЧАЕМ БП из расчета потребления - БП поставляет энергию, а не потребляет!
+                if (product.getComponentType() == ComponentType.PSU) {
+                    continue; // Пропускаем БП
+                }
+                
+                String powerSpec = null;
+                
+                // Для всех компонентов кроме БП ищем энергопотребление
+                powerSpec = product.getSpec("power_consumption");
+                if (powerSpec == null || powerSpec.isEmpty()) {
+                    powerSpec = product.getSpec("tdp");
+                }
+                if (powerSpec == null || powerSpec.isEmpty()) {
+                    powerSpec = product.getSpec("power");
+                }
+                
+                if (powerSpec != null && !powerSpec.isEmpty()) {
+                    int componentPower = Integer.parseInt(powerSpec);
+                    totalPower += componentPower;
+                    log.debug("Компонент {}: {}Вт", product.getTitle(), componentPower);
+                } else {
+                    // Добавляем базовое потребление для компонентов без указанного TDP
+                    int basePower = getBasePowerConsumption(product.getComponentType());
+                    totalPower += basePower;
+                    log.debug("Компонент {} (базовое потребление): {}Вт", product.getTitle(), basePower);
                 }
             } catch (Exception e) {
-                // Игнорируем компоненты без спецификации мощности
+                log.warn("Ошибка при расчете мощности для компонента: {}", e.getMessage());
             }
         }
         
+        log.info("Общее энергопотребление конфигурации {}: {}Вт", configId, totalPower);
         return totalPower;
+    }
+    
+    /**
+     * Возвращает базовое энергопотребление для типа компонента
+     */
+    private int getBasePowerConsumption(ComponentType componentType) {
+        switch (componentType) {
+            case CPU: return 100; // Базовое потребление процессора
+            case GPU: return 200; // Базовое потребление видеокарты  
+            case RAM: return 5;   // Потребление модуля памяти
+            case MB: return 30;   // Потребление материнской платы
+            case STORAGE: return 10; // Потребление накопителя
+            case COOLER: return 5;   // Потребление системы охлаждения
+            case CASE: return 0;     // Корпус не потребляет энергию
+            case PSU: return 0;      // БП не потребляет энергию
+            default: return 10;      // Для неизвестных компонентов
+        }
     }
     
     /**

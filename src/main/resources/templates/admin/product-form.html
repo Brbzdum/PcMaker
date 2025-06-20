@@ -309,8 +309,28 @@
                                                 <input type="number" step="0.1" class="form-control spec-field" id="spec-cpu-frequency" name="spec-cpu-frequency">
                                             </div>
                                             <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-max_frequency" class="form-label">Макс. частота (ГГц)</label>
+                                                <input type="number" step="0.1" class="form-control spec-field" id="spec-cpu-max_frequency" name="spec-cpu-max_frequency">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
                                                 <label for="spec-cpu-socket" class="form-label">Сокет</label>
-                                                <input type="text" class="form-control spec-field" id="spec-cpu-socket" name="spec-cpu-socket" placeholder="AM4, LGA1700...">
+                                                <input type="text" class="form-control spec-field" id="spec-cpu-socket" name="spec-cpu-socket" placeholder="LGA1700, AM5...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-ram_type" class="form-label">Тип памяти</label>
+                                                <input type="text" class="form-control spec-field" id="spec-cpu-ram_type" name="spec-cpu-ram_type" placeholder="DDR4, DDR5...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-max_ram_frequency" class="form-label">Макс. частота RAM (МГц)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cpu-max_ram_frequency" name="spec-cpu-max_ram_frequency">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-supported_chipsets" class="form-label">Поддерживаемые чипсеты</label>
+                                                <input type="text" class="form-control spec-field" id="spec-cpu-supported_chipsets" name="spec-cpu-supported_chipsets" placeholder="Z790, B760, H770">
                                             </div>
                                         </div>
                                         <div class="row">
@@ -319,8 +339,28 @@
                                                 <input type="number" class="form-control spec-field" id="spec-cpu-tdp" name="spec-cpu-tdp">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-cpu-technology" class="form-label">Техпроцесс (нм)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-cpu-technology" name="spec-cpu-technology">
+                                                <label for="spec-cpu-power" class="form-label">Энергопотребление (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cpu-power" name="spec-cpu-power">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-cache" class="form-label">Кэш (МБ)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cpu-cache" name="spec-cpu-cache">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-technology" class="form-label">Техпроцесс</label>
+                                                <input type="text" class="form-control spec-field" id="spec-cpu-technology" name="spec-cpu-technology" placeholder="5nm, 10nm...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-integrated_graphics" class="form-label">Встроенная графика</label>
+                                                <input type="text" class="form-control spec-field" id="spec-cpu-integrated_graphics" name="spec-cpu-integrated_graphics" placeholder="Intel UHD Graphics 770">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cpu-performance" class="form-label">Производительность (попугаи)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cpu-performance" name="spec-cpu-performance">
                                             </div>
                                         </div>
                                     </div>
@@ -333,28 +373,68 @@
                                                 <input type="number" class="form-control spec-field" id="spec-gpu-memory" name="spec-gpu-memory">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-gpu-memory-type" class="form-label">Тип памяти</label>
-                                                <input type="text" class="form-control spec-field" id="spec-gpu-memory-type" name="spec-gpu-memory-type" placeholder="GDDR6, GDDR6X...">
+                                                <label for="spec-gpu-memory_type" class="form-label">Тип памяти</label>
+                                                <input type="text" class="form-control spec-field" id="spec-gpu-memory_type" name="spec-gpu-memory_type" placeholder="GDDR6X, GDDR6...">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-gpu-bus" class="form-label">Разрядность шины (бит)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-gpu-bus" name="spec-gpu-bus" placeholder="128, 256...">
+                                                <label for="spec-gpu-interface" class="form-label">Интерфейс</label>
+                                                <input type="text" class="form-control spec-field" id="spec-gpu-interface" name="spec-gpu-interface" placeholder="PCIe 4.0">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-gpu-tdp" class="form-label">TDP (Вт)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-gpu-tdp" name="spec-gpu-tdp">
+                                                <label for="spec-gpu-core_clock" class="form-label">Базовая частота (МГц)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-core_clock" name="spec-gpu-core_clock">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-gpu-psu-recommended" class="form-label">Рекомендуемый БП (Вт)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-gpu-psu-recommended" name="spec-gpu-psu-recommended">
+                                                <label for="spec-gpu-boost_clock" class="form-label">Boost частота (МГц)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-boost_clock" name="spec-gpu-boost_clock">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-gpu-pcie" class="form-label">Версия PCIe</label>
-                                                <input type="text" class="form-control spec-field" id="spec-gpu-pcie" name="spec-gpu-pcie" placeholder="3.0, 4.0...">
+                                                <label for="spec-gpu-power" class="form-label">Энергопотребление (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-power" name="spec-gpu-power">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-recommended_psu" class="form-label">Рекомендуемый БП (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-recommended_psu" name="spec-gpu-recommended_psu">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-length" class="form-label">Длина (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-length" name="spec-gpu-length">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-width" class="form-label">Ширина (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-width" name="spec-gpu-width">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-height" class="form-label">Высота (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-height" name="spec-gpu-height">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-performance" class="form-label">Производительность (попугаи)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-performance" name="spec-gpu-performance">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-vram_size" class="form-label">Объем видеопамяти (ГБ)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-gpu-vram_size" name="spec-gpu-vram_size">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-ports" class="form-label">Порты</label>
+                                                <input type="text" class="form-control spec-field" id="spec-gpu-ports" name="spec-gpu-ports" placeholder="HDMI 2.1, 3x DisplayPort 1.4a">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gpu-power_connectors" class="form-label">Разъемы питания</label>
+                                                <input type="text" class="form-control spec-field" id="spec-gpu-power_connectors" name="spec-gpu-power_connectors" placeholder="1x 16-pin, 2x 8-pin">
                                             </div>
                                         </div>
                                     </div>
@@ -364,31 +444,107 @@
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
                                                 <label for="spec-mb-socket" class="form-label">Сокет</label>
-                                                <input type="text" class="form-control spec-field" id="spec-mb-socket" name="spec-mb-socket" placeholder="AM4, LGA1700...">
+                                                <input type="text" class="form-control spec-field" id="spec-mb-socket" name="spec-mb-socket" placeholder="LGA1700, AM5...">
                                             </div>
                                             <div class="col-md-6 mb-3">
                                                 <label for="spec-mb-chipset" class="form-label">Чипсет</label>
-                                                <input type="text" class="form-control spec-field" id="spec-mb-chipset" name="spec-mb-chipset" placeholder="B550, Z690...">
+                                                <input type="text" class="form-control spec-field" id="spec-mb-chipset" name="spec-mb-chipset" placeholder="Z790, X670E...">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-mb-memory-type" class="form-label">Тип памяти</label>
-                                                <input type="text" class="form-control spec-field" id="spec-mb-memory-type" name="spec-mb-memory-type" placeholder="DDR4, DDR5...">
+                                                <label for="spec-mb-form_factor" class="form-label">Форм-фактор</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-form_factor" name="spec-mb-form_factor" placeholder="ATX, mATX, Mini-ITX...">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-mb-memory-slots" class="form-label">Количество слотов памяти</label>
-                                                <input type="number" class="form-control spec-field" id="spec-mb-memory-slots" name="spec-mb-memory-slots" min="1" max="8">
+                                                <label for="spec-mb-memory_slots" class="form-label">Слотов памяти</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-memory_slots" name="spec-mb-memory_slots" min="1" max="8">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-mb-max-memory" class="form-label">Макс. объем памяти (ГБ)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-mb-max-memory" name="spec-mb-max-memory">
+                                                <label for="spec-mb-max_memory" class="form-label">Макс. память (ГБ)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-max_memory" name="spec-mb-max_memory">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-mb-form-factor" class="form-label">Форм-фактор</label>
-                                                <input type="text" class="form-control spec-field" id="spec-mb-form-factor" name="spec-mb-form-factor" placeholder="ATX, mATX...">
+                                                <label for="spec-mb-ram_type" class="form-label">Тип памяти</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-ram_type" name="spec-mb-ram_type" placeholder="DDR4, DDR5...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-max_ram_frequency" class="form-label">Макс. частота RAM (МГц)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-max_ram_frequency" name="spec-mb-max_ram_frequency">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-pcie_version" class="form-label">Версия PCIe</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-pcie_version" name="spec-mb-pcie_version" placeholder="4.0, 5.0...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-pcie_slots" class="form-label">PCIe слоты</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-pcie_slots" name="spec-mb-pcie_slots" placeholder="PCIe 5.0 x16, PCIe 4.0 x16">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-pcie_x16_slots" class="form-label">PCIe x16 слотов</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-pcie_x16_slots" name="spec-mb-pcie_x16_slots" min="0" max="4">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-storage_interfaces" class="form-label">Интерфейсы накопителей</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-storage_interfaces" name="spec-mb-storage_interfaces" placeholder="SATA 3.0, M.2 NVMe">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-ram_slots" class="form-label">Слотов RAM</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-ram_slots" name="spec-mb-ram_slots" min="1" max="8">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-max_ram" class="form-label">Макс. память (ГБ)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-max_ram" name="spec-mb-max_ram">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-supported_chipsets" class="form-label">Поддерживаемые чипсеты</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-supported_chipsets" name="spec-mb-supported_chipsets" placeholder="Z790, B760, H770">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-sata_ports" class="form-label">SATA портов</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-sata_ports" name="spec-mb-sata_ports" min="0">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-m2_slots" class="form-label">M.2 слотов</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-m2_slots" name="spec-mb-m2_slots" min="0">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-usb_ports" class="form-label">USB портов</label>
+                                                <input type="number" class="form-control spec-field" id="spec-mb-usb_ports" name="spec-mb-usb_ports" min="0">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-wifi" class="form-label">Wi-Fi</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-wifi" name="spec-mb-wifi" placeholder="Wi-Fi 6E, No...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-bluetooth" class="form-label">Bluetooth</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-bluetooth" name="spec-mb-bluetooth" placeholder="5.3, No...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mb-lan" class="form-label">Сетевой адаптер</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-lan" name="spec-mb-lan" placeholder="2.5 Gigabit, 10 Gigabit...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-12 mb-3">
+                                                <label for="spec-mb-required_connectors" class="form-label">Требуемые разъемы питания</label>
+                                                <input type="text" class="form-control spec-field" id="spec-mb-required_connectors" name="spec-mb-required_connectors" placeholder="24-pin ATX, 8-pin CPU">
                                             </div>
                                         </div>
                                     </div>
@@ -407,18 +563,45 @@
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-ram-speed" class="form-label">Частота (МГц)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-ram-speed" name="spec-ram-speed" step="100">
+                                                <label for="spec-ram-modules" class="form-label">Количество модулей</label>
+                                                <input type="number" class="form-control spec-field" id="spec-ram-modules" name="spec-ram-modules" min="1" max="8">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-ram-modules" class="form-label">Количество модулей</label>
-                                                <input type="number" class="form-control spec-field" id="spec-ram-modules" name="spec-ram-modules" min="1">
+                                                <label for="spec-ram-frequency" class="form-label">Частота (МГц)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-ram-frequency" name="spec-ram-frequency">
                                             </div>
                                         </div>
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-ram-cas-latency" class="form-label">Тайминги (CL)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-ram-cas-latency" name="spec-ram-cas-latency">
+                                                <label for="spec-ram-timings" class="form-label">Тайминги</label>
+                                                <input type="text" class="form-control spec-field" id="spec-ram-timings" name="spec-ram-timings" placeholder="36-36-36-76">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-ram-voltage" class="form-label">Напряжение (В)</label>
+                                                <input type="number" step="0.01" class="form-control spec-field" id="spec-ram-voltage" name="spec-ram-voltage" placeholder="1.35">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-ram-rgb" class="form-label">RGB подсветка</label>
+                                                <select class="form-control spec-field" id="spec-ram-rgb" name="spec-ram-rgb">
+                                                    <option value="">Выберите...</option>
+                                                    <option value="Yes">Да</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-ram-height" class="form-label">Высота (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-ram-height" name="spec-ram-height">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-ram-performance" class="form-label">Производительность (попугаи)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-ram-performance" name="spec-ram-performance">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <!-- Пустое поле для симметрии -->
                                             </div>
                                         </div>
                                     </div>
@@ -427,12 +610,20 @@
                                     <div id="specs-PSU" class="component-specs" style="display: none;">
                                         <div class="row">
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-psu-power" class="form-label">Мощность (Вт)</label>
-                                                <input type="number" class="form-control spec-field" id="spec-psu-power" name="spec-psu-power">
+                                                <label for="spec-psu-wattage" class="form-label">Мощность (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-psu-wattage" name="spec-psu-wattage">
                                             </div>
                                             <div class="col-md-6 mb-3">
-                                                <label for="spec-psu-certification" class="form-label">Сертификация</label>
-                                                <input type="text" class="form-control spec-field" id="spec-psu-certification" name="spec-psu-certification" placeholder="80+ Bronze, Gold...">
+                                                <label for="spec-psu-efficiency" class="form-label">Сертификат эффективности</label>
+                                                <select class="form-control spec-field" id="spec-psu-efficiency" name="spec-psu-efficiency">
+                                                    <option value="">Выберите...</option>
+                                                    <option value="80 PLUS">80 PLUS</option>
+                                                    <option value="80 PLUS Bronze">80 PLUS Bronze</option>
+                                                    <option value="80 PLUS Silver">80 PLUS Silver</option>
+                                                    <option value="80 PLUS Gold">80 PLUS Gold</option>
+                                                    <option value="80 PLUS Platinum">80 PLUS Platinum</option>
+                                                    <option value="80 PLUS Titanium">80 PLUS Titanium</option>
+                                                </select>
                                             </div>
                                         </div>
                                         <div class="row">
@@ -448,6 +639,12 @@
                                             <div class="col-md-6 mb-3">
                                                 <label for="spec-psu-form-factor" class="form-label">Форм-фактор</label>
                                                 <input type="text" class="form-control spec-field" id="spec-psu-form-factor" name="spec-psu-form-factor" placeholder="ATX, SFX...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-psu-length" class="form-label">Длина (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-psu-length" name="spec-psu-length">
                                             </div>
                                         </div>
                                     </div>
@@ -472,6 +669,26 @@
                                             <div class="col-md-6 mb-3">
                                                 <label for="spec-case-max-cooler-height" class="form-label">Макс. высота кулера (мм)</label>
                                                 <input type="number" class="form-control spec-field" id="spec-case-max-cooler-height" name="spec-case-max-cooler-height">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-case-max_gpu_height" class="form-label">Макс. высота видеокарты (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-case-max_gpu_height" name="spec-case-max_gpu_height">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-case-max_psu_length" class="form-label">Макс. длина БП (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-case-max_psu_length" name="spec-case-max_psu_length">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-case-psu_form_factor" class="form-label">Форм-фактор БП</label>
+                                                <input type="text" class="form-control spec-field" id="spec-case-psu_form_factor" name="spec-case-psu_form_factor" placeholder="ATX, SFX">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-case-max_cpu_cooler_height" class="form-label">Макс. высота кулера (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-case-max_cpu_cooler_height" name="spec-case-max_cpu_cooler_height">
                                             </div>
                                         </div>
                                     </div>
@@ -502,6 +719,36 @@
                                                 <input type="number" class="form-control spec-field" id="spec-cooler-height" name="spec-cooler-height">
                                             </div>
                                         </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-tdp" class="form-label">Рассеиваемая мощность (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cooler-tdp" name="spec-cooler-tdp">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-max_tdp" class="form-label">Макс. TDP (Вт)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cooler-max_tdp" name="spec-cooler-max_tdp">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-socket" class="form-label">Совместимые сокеты</label>
+                                                <input type="text" class="form-control spec-field" id="spec-cooler-socket" name="spec-cooler-socket" placeholder="LGA1700, AM5">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-height" class="form-label">Высота (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cooler-height" name="spec-cooler-height">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-ram_clearance" class="form-label">Зазор для RAM (мм)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-cooler-ram_clearance" name="spec-cooler-ram_clearance">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-cooler-noise_level" class="form-label">Уровень шума (дБ)</label>
+                                                <input type="number" step="0.1" class="form-control spec-field" id="spec-cooler-noise_level" name="spec-cooler-noise_level">
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Поля для накопителя (STORAGE) -->
@@ -529,6 +776,30 @@
                                             <div class="col-md-6 mb-3">
                                                 <label for="spec-storage-form-factor" class="form-label">Форм-фактор</label>
                                                 <input type="text" class="form-control spec-field" id="spec-storage-form-factor" name="spec-storage-form-factor" placeholder="2.5'', M.2 2280...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-storage-read_speed" class="form-label">Скорость чтения (МБ/с)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-storage-read_speed" name="spec-storage-read_speed">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-storage-write_speed" class="form-label">Скорость записи (МБ/с)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-storage-write_speed" name="spec-storage-write_speed">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-storage-m2_required" class="form-label">Требует M.2 слот</label>
+                                                <select class="form-select spec-field" id="spec-storage-m2_required" name="spec-storage-m2_required">
+                                                    <option value="">Выберите</option>
+                                                    <option value="0">Нет</option>
+                                                    <option value="1">Да</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-storage-performance" class="form-label">Производительность (попугаи)</label>
+                                                <input type="number" class="form-control spec-field" id="spec-storage-performance" name="spec-storage-performance">
                                             </div>
                                         </div>
                                     </div>
@@ -743,6 +1014,294 @@
                                         </div>
                                     </div>
 
+                                    <!-- Поля для микрофонов -->
+                                    <div id="peripheral-specs-microphone" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-microphone me-2"></i>
+                                            Характеристики микрофона
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-type" class="form-label">Тип микрофона</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-microphone-type" name="spec-microphone-type">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Condenser">Конденсаторный</option>
+                                                    <option value="Dynamic">Динамический</option>
+                                                    <option value="USB">USB</option>
+                                                    <option value="XLR">XLR</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-frequency-response" class="form-label">Частотная характеристика</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-microphone-frequency-response" name="spec-microphone-frequency-response" placeholder="20Hz-20kHz...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-pattern" class="form-label">Диаграмма направленности</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-microphone-pattern" name="spec-microphone-pattern">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Cardioid">Кардиоидная</option>
+                                                    <option value="Omnidirectional">Всенаправленная</option>
+                                                    <option value="Bidirectional">Двунаправленная</option>
+                                                    <option value="Multiple">Несколько режимов</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-microphone-connection" name="spec-microphone-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="USB">USB</option>
+                                                    <option value="XLR">XLR</option>
+                                                    <option value="3.5mm">3.5мм</option>
+                                                    <option value="Wireless">Беспроводное</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-sampling-rate" class="form-label">Частота дискретизации (kHz)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-microphone-sampling-rate" name="spec-microphone-sampling-rate" placeholder="44.1, 48, 96...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-microphone-bit-depth" class="form-label">Битность (бит)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-microphone-bit-depth" name="spec-microphone-bit-depth" placeholder="16, 24...">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Поля для ковриков для мыши -->
+                                    <div id="peripheral-specs-mousepad" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-square me-2"></i>
+                                            Характеристики коврика для мыши
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-material" class="form-label">Материал</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-mousepad-material" name="spec-mousepad-material" placeholder="Ткань, Пластик...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-size" class="form-label">Размер</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-mousepad-size" name="spec-mousepad-size">
+                                                    <option value="">Выберите размер</option>
+                                                    <option value="S">S (маленький)</option>
+                                                    <option value="M">M (средний)</option>
+                                                    <option value="L">L (большой)</option>
+                                                    <option value="XL">XL (очень большой)</option>
+                                                    <option value="XXL">XXL (настольный)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-dimensions" class="form-label">Размеры (мм)</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-mousepad-dimensions" name="spec-mousepad-dimensions" placeholder="320x270, 900x400...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-thickness" class="form-label">Толщина (мм)</label>
+                                                <input type="number" step="0.1" class="form-control peripheral-spec-field" id="spec-mousepad-thickness" name="spec-mousepad-thickness" placeholder="2, 3, 4...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-rgb" class="form-label">RGB-подсветка</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-mousepad-rgb" name="spec-mousepad-rgb">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-mousepad-surface" class="form-label">Тип поверхности</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-mousepad-surface" name="spec-mousepad-surface">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Speed">Скоростная</option>
+                                                    <option value="Control">Контрольная</option>
+                                                    <option value="Hybrid">Гибридная</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Поля для колонок/акустики -->
+                                    <div id="peripheral-specs-speakers" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-volume-up me-2"></i>
+                                            Характеристики колонок
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-type" class="form-label">Тип акустики</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-speakers-type" name="spec-speakers-type">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="2.0">2.0</option>
+                                                    <option value="2.1">2.1</option>
+                                                    <option value="5.1">5.1</option>
+                                                    <option value="7.1">7.1</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-power" class="form-label">Мощность (Вт)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-speakers-power" name="spec-speakers-power" placeholder="20, 50, 100...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-frequency-response" class="form-label">Частотная характеристика</label>
+                                                <input type="text" class="form-control peripheral-spec-field" id="spec-speakers-frequency-response" name="spec-speakers-frequency-response" placeholder="20Hz-20kHz...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-speakers-connection" name="spec-speakers-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="3.5mm">3.5мм</option>
+                                                    <option value="Bluetooth">Bluetooth</option>
+                                                    <option value="USB">USB</option>
+                                                    <option value="Optical">Оптический</option>
+                                                    <option value="Multiple">Несколько типов</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-bluetooth" class="form-label">Bluetooth</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-speakers-bluetooth" name="spec-speakers-bluetooth">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-speakers-rgb" class="form-label">RGB-подсветка</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-speakers-rgb" name="spec-speakers-rgb">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Поля для веб-камер -->
+                                    <div id="peripheral-specs-webcam" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-video me-2"></i>
+                                            Характеристики веб-камеры
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-resolution" class="form-label">Разрешение видео</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-webcam-resolution" name="spec-webcam-resolution">
+                                                    <option value="">Выберите разрешение</option>
+                                                    <option value="720p">HD (720p)</option>
+                                                    <option value="1080p">Full HD (1080p)</option>
+                                                    <option value="2K">2K</option>
+                                                    <option value="4K">4K</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-fps" class="form-label">Частота кадров (FPS)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-webcam-fps" name="spec-webcam-fps" placeholder="30, 60...">
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-webcam-connection" name="spec-webcam-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="USB">USB</option>
+                                                    <option value="USB-C">USB-C</option>
+                                                    <option value="Wireless">Беспроводное</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-microphone" class="form-label">Встроенный микрофон</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-webcam-microphone" name="spec-webcam-microphone">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-focus" class="form-label">Тип фокусировки</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-webcam-focus" name="spec-webcam-focus">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Fixed">Фиксированная</option>
+                                                    <option value="Autofocus">Автофокус</option>
+                                                    <option value="Manual">Ручная</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-webcam-fov" class="form-label">Угол обзора (градусы)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-webcam-fov" name="spec-webcam-fov" placeholder="78, 90...">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Поля для игровых контроллеров -->
+                                    <div id="peripheral-specs-gamepad" class="peripheral-specs" style="display: none;">
+                                        <div class="alert alert-info">
+                                            <i class="fas fa-gamepad me-2"></i>
+                                            Характеристики игрового контроллера
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-type" class="form-label">Тип контроллера</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-gamepad-type" name="spec-gamepad-type">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Gamepad">Геймпад</option>
+                                                    <option value="Joystick">Джойстик</option>
+                                                    <option value="Steering Wheel">Руль</option>
+                                                    <option value="Flight Stick">Штурвал</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-connection" class="form-label">Тип подключения</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-gamepad-connection" name="spec-gamepad-connection">
+                                                    <option value="">Выберите тип</option>
+                                                    <option value="Wired">Проводной</option>
+                                                    <option value="Wireless">Беспроводной</option>
+                                                    <option value="Bluetooth">Bluetooth</option>
+                                                    <option value="Multiple">Несколько типов</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-compatibility" class="form-label">Совместимость</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-gamepad-compatibility" name="spec-gamepad-compatibility">
+                                                    <option value="">Выберите</option>
+                                                    <option value="PC">PC</option>
+                                                    <option value="Xbox">Xbox</option>
+                                                    <option value="PlayStation">PlayStation</option>
+                                                    <option value="Nintendo">Nintendo</option>
+                                                    <option value="Universal">Универсальный</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-vibration" class="form-label">Вибрация</label>
+                                                <select class="form-select peripheral-spec-field" id="spec-gamepad-vibration" name="spec-gamepad-vibration">
+                                                    <option value="">Выберите</option>
+                                                    <option value="Yes">Есть</option>
+                                                    <option value="No">Нет</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-buttons" class="form-label">Количество кнопок</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-gamepad-buttons" name="spec-gamepad-buttons" placeholder="10, 12...">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="spec-gamepad-battery-life" class="form-label">Время работы (часы)</label>
+                                                <input type="number" class="form-control peripheral-spec-field" id="spec-gamepad-battery-life" name="spec-gamepad-battery-life" placeholder="20, 40...">
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     <!-- Скрытое поле для хранения JSON спецификаций -->
                                     <textarea th:field="*{specs}" class="form-control" id="specs" rows="3" style="display: none;"></textarea>
                                     <div class="form-text">Спецификации будут сохранены в JSON формате для использования в конфигураторе.</div>
@@ -796,20 +1355,43 @@
             'Мониторы': 'monitor',
             'мониторы': 'monitor',
             'monitor': 'monitor',
-            'monitors': 'monitor'
+            'monitors': 'monitor',
+            // Микрофоны
+            'Микрофоны': 'microphone',
+            'микрофоны': 'microphone',
+            'microphone': 'microphone',
+            'microphones': 'microphone',
+            // Коврики для мыши
+            'Коврики для мыши': 'mousepad',
+            'коврики для мыши': 'mousepad',
+            'mousepad': 'mousepad',
+            'mousepads': 'mousepad',
+            // Колонки
+            'Колонки': 'speakers',
+            'колонки': 'speakers',
+            'Акустика': 'speakers',
+            'акустика': 'speakers',
+            'speakers': 'speakers',
+            'speaker': 'speakers',
+            // Веб-камеры
+            'Web-камеры': 'webcam',
+            'web-камеры': 'webcam',
+            'Веб-камеры': 'webcam',
+            'веб-камеры': 'webcam',
+            'webcam': 'webcam',
+            'webcams': 'webcam',
+            // Игровые контроллеры
+            'Игровые контроллеры': 'gamepad',
+            'игровые контроллеры': 'gamepad',
+            'Геймпады': 'gamepad',
+            'геймпады': 'gamepad',
+            'gamepad': 'gamepad',
+            'gamepads': 'gamepad'
         };
 
         // Функция для определения типа периферии по категории
         function getPeripheralTypeByCategory(categoryId, categoryName) {
-            // Если есть название категории, проверяем его
-            if (categoryName) {
-                for (const [key, value] of Object.entries(peripheralCategoryMap)) {
-                    if (categoryName.toLowerCase().includes(key.toLowerCase())) {
-                        return value;
-                    }
-                }
-            }
-            
+            // Сначала проверяем по ID категории (более точный метод)
             // Маппинг по ID категории
             const categoryIdMap = {
                 38: 'monitor',
@@ -817,14 +1399,40 @@
                 40: 'mouse',
                 41: 'headset',
                 42: 'speakers',
-                43: 'mousepad',
-                44: 'microphone',
+                43: 'webcam',
+                44: 'printers',
+                45: 'scanners',
+                46: 'gamepad',
+                47: 'network',
                 49: 'headset',
                 50: 'mousepad',
                 51: 'microphone'
             };
             
-            return categoryIdMap[categoryId] || null;
+            // Если есть ID в маппинге, используем его
+            if (categoryId && categoryIdMap[categoryId]) {
+                return categoryIdMap[categoryId];
+            }
+            
+            // Если нет ID или его нет в маппинге, пробуем определить по имени
+            if (categoryName) {
+                // Проверяем сначала точные совпадения
+                if (peripheralCategoryMap[categoryName]) {
+                    return peripheralCategoryMap[categoryName];
+                }
+                
+                // Проверяем более специфичные названия перед общими
+                // Сортируем ключи по длине (от длинных к коротким)
+                const sortedKeys = Object.keys(peripheralCategoryMap).sort((a, b) => b.length - a.length);
+                
+                for (const key of sortedKeys) {
+                    if (categoryName.toLowerCase().includes(key.toLowerCase())) {
+                        return peripheralCategoryMap[key];
+                    }
+                }
+            }
+            
+            return null;
         }
         
         // Функция для отображения полей спецификаций в зависимости от типа компонента или категории
@@ -877,16 +1485,21 @@
             const componentType = document.getElementById('componentType').value;
             const categoryId = document.getElementById('categoryId').value;
             
+            console.log('updateSpecsJson - Component type:', componentType, 'Category ID:', categoryId);
+            
             // Обрабатываем спецификации компонентов
             if (componentType) {
                 const visibleSpecsDiv = document.getElementById('specs-' + componentType);
+                console.log('Ищем div спецификаций:', 'specs-' + componentType, 'Найден:', !!visibleSpecsDiv);
                 if (visibleSpecsDiv) {
                     const specFields = visibleSpecsDiv.querySelectorAll('.spec-field');
+                    console.log('Найдено полей спецификаций:', specFields.length);
                     
                     specFields.forEach(field => {
                         if (field.value) {
                             // Извлекаем ключ из id поля (например, из "spec-cpu-cores" получаем "cores")
                             const key = field.id.replace('spec-' + componentType.toLowerCase() + '-', '');
+                            console.log('Обрабатываем поле:', field.id, '→', key, '=', field.value);
                             specsObject[key] = field.value;
                         }
                     });
@@ -902,16 +1515,20 @@
                 
                 // Определяем тип периферии
                 const peripheralType = getPeripheralTypeByCategory(categoryId, categoryName);
+                console.log('updateSpecsJson - Peripheral type:', peripheralType, 'for category:', categoryName);
                 
                 if (peripheralType) {
                     const visibleSpecsDiv = document.getElementById('peripheral-specs-' + peripheralType);
+                    console.log('Ищем div периферии:', 'peripheral-specs-' + peripheralType, 'Найден:', !!visibleSpecsDiv);
                     if (visibleSpecsDiv) {
                         const specFields = visibleSpecsDiv.querySelectorAll('.peripheral-spec-field');
+                        console.log('Найдено полей периферии:', specFields.length);
                         
                         specFields.forEach(field => {
                             if (field.value) {
                                 // Извлекаем ключ из id поля (например, из "spec-mouse-dpi" получаем "dpi")
                                 const key = field.id.replace('spec-' + peripheralType + '-', '');
+                                console.log('Обрабатываем поле периферии:', field.id, '→', key, '=', field.value);
                                 specsObject[key] = field.value;
                             }
                         });
@@ -942,14 +1559,20 @@
                 const componentType = document.getElementById('componentType').value;
                 const categoryId = document.getElementById('categoryId').value;
                 
+                console.log('Component type:', componentType, 'Category ID:', categoryId);
+                
                 // Заполняем поля спецификаций для компонентов
                 if (componentType) {
                     Object.keys(specsObject).forEach(key => {
                         if (key !== 'model') {
                             const fieldId = 'spec-' + componentType.toLowerCase() + '-' + key;
                             const field = document.getElementById(fieldId);
+                            console.log('Ищем поле:', fieldId, 'Найдено:', !!field, 'Значение:', specsObject[key]);
                             if (field) {
                                 field.value = specsObject[key];
+                                console.log('Установлено значение', specsObject[key], 'для поля', fieldId);
+                            } else {
+                                console.warn('Поле не найдено:', fieldId);
                             }
                         }
                     });
@@ -964,14 +1587,19 @@
                     
                     // Определяем тип периферии
                     const peripheralType = getPeripheralTypeByCategory(categoryId, categoryName);
+                    console.log('Peripheral type:', peripheralType, 'for category:', categoryName);
                     
                     if (peripheralType) {
                         Object.keys(specsObject).forEach(key => {
                             if (key !== 'model') {
                                 const fieldId = 'spec-' + peripheralType + '-' + key;
                                 const field = document.getElementById(fieldId);
+                                console.log('Ищем поле периферии:', fieldId, 'Найдено:', !!field, 'Значение:', specsObject[key]);
                                 if (field) {
                                     field.value = specsObject[key];
+                                    console.log('Установлено значение', specsObject[key], 'для поля периферии', fieldId);
+                                } else {
+                                    console.warn('Поле периферии не найдено:', fieldId);
                                 }
                             }
                         });
